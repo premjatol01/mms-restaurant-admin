@@ -1,5 +1,5 @@
 import { useProfileStore } from "../../store/profileStore";
-import { MapPin, Phone, Mail, Clock, Globe } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, X } from "lucide-react";
 
 export default function ProfilePreview({ onClose }) {
   const { profile } = useProfileStore();
@@ -12,57 +12,78 @@ export default function ProfilePreview({ onClose }) {
     : "Closed today";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-surface rounded-2xl overflow-hidden w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      onClick={onClose}
+    >
+      <div 
+        className="rounded-2xl overflow-hidden w-full max-w-sm shadow-2xl"
+        style={{ backgroundColor: "var(--color-surface)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Cover */}
-        <div className="relative h-32 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)]">
-          {profile.coverImage && <img src={profile.coverImage} alt="Cover" className="w-full h-full object-cover" />}
-          <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/30 text-white flex items-center justify-center text-xs hover:bg-black/50">✕</button>
+        <div 
+          className="relative h-32"
+          style={{ 
+            background: profile.coverImage ? `url(${profile.coverImage}) center/cover` : "linear-gradient(135deg, var(--color-primary), var(--color-secondary))"
+          }}
+        >
+          <button 
+            onClick={onClose} 
+            className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-white"
+            style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+          >
+            <X size={14} />
+          </button>
         </div>
 
         {/* Logo */}
         <div className="flex justify-center -mt-10 mb-3">
-          <div className="w-20 h-20 rounded-xl border-4 border-surface bg-surface overflow-hidden shadow-md">
+          <div 
+            className="w-20 h-20 rounded-xl border-4 overflow-hidden shadow-md"
+            style={{ borderColor: "var(--color-surface)", backgroundColor: "var(--color-surface)" }}
+          >
             {profile.logo
               ? <img src={profile.logo} alt="Logo" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-primary flex items-center justify-center text-white font-bold text-xl">{profile.name?.[0] || "R"}</div>}
+              : <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl" style={{ backgroundColor: "var(--color-primary)" }}>{profile.name?.[0] || "R"}</div>}
           </div>
         </div>
 
         <div className="px-5 pb-5 space-y-3 text-center">
           <div>
-            <h2 className="text-lg font-bold text-theme">{profile.name || "Restaurant Name"}</h2>
-            {profile.tagline && <p className="text-xs text-secondary">{profile.tagline}</p>}
+            <h2 className="text-lg font-bold" style={{ color: "var(--color-text)" }}>{profile.name || "Restaurant Name"}</h2>
+            {profile.tagline && <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{profile.tagline}</p>}
             <div className="flex items-center justify-center gap-1 mt-1 flex-wrap">
               {profile.cuisineTypes?.slice(0, 3).map((c) => (
-                <span key={c} className="text-xs bg-primary-light text-theme px-2 py-0.5 rounded-full">{c}</span>
+                <span key={c} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-primary-light)", color: "var(--color-text)" }}>{c}</span>
               ))}
-              {profile.address?.city && <span className="text-xs text-secondary">• {profile.address.city}</span>}
+              {profile.address?.city && <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>• {profile.address.city}</span>}
             </div>
           </div>
 
-          <div className="text-left space-y-2 border-t border-theme pt-3">
+          <div className="text-left space-y-2 pt-3" style={{ borderColor: "var(--color-border)" }}>
             {profile.address?.line1 && (
-              <div className="flex gap-2 text-xs text-secondary">
+              <div className="flex gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
                 <MapPin size={13} className="flex-shrink-0 mt-0.5" />
                 <span>{[profile.address.line1, profile.address.area, profile.address.city].filter(Boolean).join(", ")}</span>
               </div>
             )}
             {profile.contact?.primaryPhone && (
-              <div className="flex gap-2 text-xs text-secondary">
+              <div className="flex gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
                 <Phone size={13} className="flex-shrink-0" />
                 <span>{profile.contact.primaryPhone}</span>
               </div>
             )}
             {profile.contact?.email && (
-              <div className="flex gap-2 text-xs text-secondary">
+              <div className="flex gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
                 <Mail size={13} className="flex-shrink-0" />
                 <span>{profile.contact.email}</span>
               </div>
             )}
             <div className="flex gap-2 text-xs">
-              <Clock size={13} className={`flex-shrink-0 ${isOpenToday ? "text-green-500" : "text-red-400"}`} />
-              <span className={isOpenToday ? "text-green-600" : "text-red-400"}>
+              <Clock size={13} className="flex-shrink-0" style={{ color: isOpenToday ? "#22c55e" : "#f87171" }} />
+              <span style={{ color: isOpenToday ? "#16a34a" : "#dc2626" }}>
                 {isOpenToday ? "Open" : "Closed"} • {hoursText}
               </span>
             </div>
