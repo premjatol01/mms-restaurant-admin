@@ -3,6 +3,8 @@ import { Toaster } from "sonner";
 import AdminLayout from "./layouts/AdminLayout";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RestaurantProfilePage from "./pages/profile/RestaurantProfilePage";
+import MenuPage from "./pages/menu/MenuPage";
+import TablesAndQRPage from "./pages/tables-qr/TablesAndQRPage";
 
 export default function App() {
   return (
@@ -12,8 +14,8 @@ export default function App() {
         <Route element={<AdminLayout />}>
           <Route index element={<PlaceholderPage title="Dashboard" />} />
           <Route path="/profile" element={<RestaurantProfilePage />} />
-          <Route path="/menu" element={<PlaceholderPage title="Menu Management" />} />
-          <Route path="/tables" element={<PlaceholderPage title="Table & QR Management" />} />
+          <Route path="/menu" element={<MenuPage />} />
+          <Route path="/tables" element={<TablesAndQRPage />} />
           <Route path="/orders" element={<PlaceholderPage title="Order & Session Management" />} />
           <Route path="/customers" element={<PlaceholderPage title="Customer Management" />} />
           <Route path="/offers" element={<PlaceholderPage title="Offer & Promotion Management" />} />
