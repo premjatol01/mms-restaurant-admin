@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useProfileStore } from "../../store/profileStore";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
 
 function Toggle({ label, description, checked, onChange }) {
   return (

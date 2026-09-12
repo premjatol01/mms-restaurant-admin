@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
 import { Upload, X, Image } from "lucide-react";
 import { toast } from "sonner";
-import { useProfileStore } from "../../store/profileStore";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_SIZE = 2 * 1024 * 1024;
 
 function ImageUploader({ label, hint, value, onUpload, onRemove, aspectClass = "aspect-square", previewClass = "" }) {
   const inputRef = useRef();

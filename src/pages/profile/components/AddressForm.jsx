@@ -3,10 +3,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { useProfileStore } from "../../store/profileStore";
-import Input from "../ui/Input";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Input from "../../../components/ui/Input";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
 
 const schema = z.object({
   line1: z.string().min(1, "Address line 1 is required"),

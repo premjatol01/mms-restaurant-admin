@@ -3,12 +3,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import Select from "react-select";
-import { useProfileStore } from "../../store/profileStore";
-import Input from "../ui/Input";
-import Textarea from "../ui/Textarea";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Input from "../../../components/ui/Input";
+import Textarea from "../../../components/ui/Textarea";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
+import SelectInput from "./SelectInput";
 
 const RESTAURANT_TYPES = ["Restaurant", "Café", "Fast Food", "Bakery", "Bar & Restaurant", "Hotel Restaurant", "Food Court", "Other"];
 const CUISINE_TYPES = ["Indian", "Chinese", "Italian", "Mexican", "Continental", "North Indian", "South Indian", "Rajasthani", "Fast Food", "Desserts"];
@@ -66,7 +66,7 @@ export default function BasicInformationForm() {
   };
 
   const cuisineOptions = CUISINE_TYPES.map((c) => ({ value: c, label: c }));
-  const selectedCuisines = cuisineOptions.filter((o) => cuisineValues.includes(o.value));
+  const restaurantTypeOptions = RESTAURANT_TYPES.map((t) => ({ value: t, label: t }));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -77,51 +77,30 @@ export default function BasicInformationForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="text-sm font-medium text-theme block mb-1">Restaurant Type <span className="text-red-500">*</span></label>
-            <select
-              className={`w-full px-3 py-2 rounded-lg border text-sm text-theme bg-surface focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-light)] ${errors.restaurantType ? "border-red-400" : "border-theme"}`}
-              {...register("restaurantType")}
-            >
-              <option value="">Select type</option>
-              {RESTAURANT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {errors.restaurantType && <p className="text-xs text-red-500 mt-1">{errors.restaurantType.message}</p>}
-          </div>
+          <SelectInput
+            label="Restaurant Type"
+            required
+            options={restaurantTypeOptions}
+            value={watch("restaurantType")}
+            onChange={(val) => setValue("restaurantType", val, { shouldValidate: true })}
+            error={errors.restaurantType?.message}
+            placeholder="Select type"
+          />
 
-          <div>
-            <label className="text-sm font-medium text-theme block mb-1">Establishment Year</label>
-            <Input error={errors.establishmentYear?.message} {...register("establishmentYear")} placeholder="e.g. 2010" type="number" min="1900" max={new Date().getFullYear()} />
-          </div>
+          <Input label="Establishment Year" error={errors.establishmentYear?.message} {...register("establishmentYear")} placeholder="e.g. 2010" type="number" min="1900" max={new Date().getFullYear()} />
         </div>
 
         <div className="mt-4">
-          <label className="text-sm font-medium text-theme block mb-1">Cuisine Types <span className="text-red-500">*</span></label>
-          <Select
+          <SelectInput
+            label="Cuisine Types"
+            required
             isMulti
             options={cuisineOptions}
-            value={selectedCuisines}
-            onChange={(selected) => setValue("cuisineTypes", selected.map((s) => s.value), { shouldValidate: true })}
+            value={cuisineValues}
+            onChange={(val) => setValue("cuisineTypes", val, { shouldValidate: true })}
+            error={errors.cuisineTypes?.message}
             placeholder="Select cuisines..."
-            classNamePrefix="rs"
-            styles={{
-              control: (base, state) => ({
-                ...base,
-                backgroundColor: "var(--color-surface)",
-                borderColor: errors.cuisineTypes ? "#f87171" : "var(--color-border)",
-                boxShadow: state.isFocused ? "0 0 0 2px var(--color-primary-light)" : "none",
-                "&:hover": { borderColor: "var(--color-primary)" },
-                fontSize: "0.875rem",
-              }),
-              menu: (base) => ({ ...base, backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", zIndex: 50 }),
-              option: (base, state) => ({ ...base, backgroundColor: state.isSelected ? "var(--color-primary)" : state.isFocused ? "var(--color-primary-light)" : "transparent", color: state.isSelected ? "#fff" : "var(--color-text)", fontSize: "0.875rem" }),
-              multiValue: (base) => ({ ...base, backgroundColor: "var(--color-primary-light)" }),
-              multiValueLabel: (base) => ({ ...base, color: "var(--color-text)", fontSize: "0.75rem" }),
-              input: (base) => ({ ...base, color: "var(--color-text)" }),
-              singleValue: (base) => ({ ...base, color: "var(--color-text)" }),
-            }}
           />
-          {errors.cuisineTypes && <p className="text-xs text-red-500 mt-1">{errors.cuisineTypes.message}</p>}
         </div>
 
         <div className="mt-4">

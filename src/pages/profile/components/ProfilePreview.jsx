@@ -1,4 +1,4 @@
-import { useProfileStore } from "../../store/profileStore";
+import { useProfileStore } from "../../../store/profileStore";
 import { MapPin, Phone, Mail, Clock, X } from "lucide-react";
 
 export default function ProfilePreview({ onClose }) {
@@ -22,7 +22,6 @@ export default function ProfilePreview({ onClose }) {
         style={{ backgroundColor: "var(--color-surface)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cover */}
         <div 
           className="relative h-32"
           style={{ 
@@ -38,7 +37,6 @@ export default function ProfilePreview({ onClose }) {
           </button>
         </div>
 
-        {/* Logo */}
         <div className="flex justify-center -mt-10 mb-3">
           <div 
             className="w-20 h-20 rounded-xl border-4 overflow-hidden shadow-md"

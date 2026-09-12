@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { useProfileStore } from "../../store/profileStore";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 

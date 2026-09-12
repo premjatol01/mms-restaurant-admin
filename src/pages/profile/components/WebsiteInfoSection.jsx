@@ -1,7 +1,7 @@
 import { Copy, ExternalLink, Globe } from "lucide-react";
 import { toast } from "sonner";
-import { useProfileStore } from "../../store/profileStore";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import FormSection from "../../../components/ui/FormSection";
 
 export default function WebsiteInfoSection() {
   const { profile } = useProfileStore();

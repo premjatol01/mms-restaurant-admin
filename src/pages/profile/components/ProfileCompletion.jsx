@@ -1,5 +1,5 @@
 import { CheckCircle, Circle } from "lucide-react";
-import { useProfileStore } from "../../store/profileStore";
+import { useProfileStore } from "../../../store/profileStore";
 
 const SECTIONS = [
   { key: "basic", label: "Basic Information", check: (p) => !!(p?.name && p?.restaurantType && p?.cuisineTypes?.length) },

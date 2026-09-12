@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import { Eye, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
-import BasicInformationForm from "../../components/profile/BasicInformationForm";
-import BrandingForm from "../../components/profile/BrandingForm";
-import ContactInformationForm from "../../components/profile/ContactInformationForm";
-import AddressForm from "../../components/profile/AddressForm";
-import BusinessHoursForm from "../../components/profile/BusinessHoursForm";
-import SocialLinksForm from "../../components/profile/SocialLinksForm";
-import WebsiteInfoSection from "../../components/profile/WebsiteInfoSection";
-import RestaurantSettingsForm from "../../components/profile/RestaurantSettingsForm";
-import ProfileCompletion from "../../components/profile/ProfileCompletion";
-import ProfilePreview from "../../components/profile/ProfilePreview";
-import UnsavedChangesModal from "../../components/profile/UnsavedChangesModal";
+import BasicInformationForm from "./components/BasicInformationForm";
+import BrandingForm from "./components/BrandingForm";
+import ContactInformationForm from "./components/ContactInformationForm";
+import AddressForm from "./components/AddressForm";
+import BusinessHoursForm from "./components/BusinessHoursForm";
+import SocialLinksForm from "./components/SocialLinksForm";
+import WebsiteInfoSection from "./components/WebsiteInfoSection";
+import RestaurantSettingsForm from "./components/RestaurantSettingsForm";
+import ProfileCompletion from "./components/ProfileCompletion";
+import ProfilePreview from "./components/ProfilePreview";
+import UnsavedChangesModal from "./modals/UnsavedChangesModal";
 import Button from "../../components/ui/Button";
 
 const TABS = [
@@ -25,6 +25,7 @@ const TABS = [
   { id: "website", label: "Website" },
   { id: "settings", label: "Settings" },
 ];
+
 
 function SkeletonLoader() {
   return (

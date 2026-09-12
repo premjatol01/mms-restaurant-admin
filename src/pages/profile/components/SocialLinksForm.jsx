@@ -4,10 +4,10 @@ import { z } from "zod";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { AtSign, Users, Play, Hash, MessageCircle, Link } from "lucide-react";
-import { useProfileStore } from "../../store/profileStore";
-import Input from "../ui/Input";
-import Button from "../ui/Button";
-import FormSection from "../ui/FormSection";
+import { useProfileStore } from "../../../store/profileStore";
+import Input from "../../../components/ui/Input";
+import Button from "../../../components/ui/Button";
+import FormSection from "../../../components/ui/FormSection";
 
 const urlOrEmpty = z.string().url("Enter a valid URL").optional().or(z.literal(""));
 
