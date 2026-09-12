@@ -24,7 +24,7 @@ const navItems = [
   { label: "Tables & QR", icon: QrCode, path: "/tables" },
   { label: "Orders", icon: ClipboardList, path: "/orders" },
   { label: "Customers", icon: Users, path: "/customers" },
-  { label: "Offers & Promos", icon: Tag, path: "/offers" },
+  { label: "Offers & Promos", icon: Tag, path: "/offers-promos" },
   { label: "Website", icon: Globe, path: "/website" },
   { label: "Google Reviews", icon: Star, path: "/reviews" },
 ];
