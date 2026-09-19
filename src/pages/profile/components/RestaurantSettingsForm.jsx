@@ -28,8 +28,14 @@ export default function RestaurantSettingsForm() {
   const update = (key, val) => setSettings((prev) => ({ ...prev, [key]: val }));
 
   const onSave = async () => {
-    updateSection("settings", settings);
-    const result = await saveProfile({ settings });
+    // Only send the settings that still exist in the UI.
+    const payload = {
+      isActive: !!settings.isActive,
+      acceptOrders: !!settings.acceptOrders,
+      showOnPublicWebsite: !!settings.showOnPublicWebsite,
+    };
+    updateSection("settings", payload);
+    const result = await saveProfile({ settings: payload });
     if (result.success) toast.success("Settings updated.");
     else toast.error(result.message);
   };
@@ -39,21 +45,7 @@ export default function RestaurantSettingsForm() {
       <FormSection title="General" description="Control your restaurant's operational status.">
         <Toggle label="Restaurant Active" description="Activate or deactivate your restaurant on the platform." checked={!!settings.isActive} onChange={(v) => update("isActive", v)} />
         <Toggle label="Accept Orders" description="Allow customers to place orders through the QR menu." checked={!!settings.acceptOrders} onChange={(v) => update("acceptOrders", v)} />
-        <Toggle label="Restaurant Visible" description="Show your restaurant in public listings." checked={!!settings.isVisible} onChange={(v) => update("isVisible", v)} />
         <Toggle label="Show on Public Website" description="Display your restaurant on the platform's public website." checked={!!settings.showOnPublicWebsite} onChange={(v) => update("showOnPublicWebsite", v)} />
-      </FormSection>
-
-      <FormSection title="Customer-Facing Display" description="Control what information is visible to customers.">
-        <Toggle label="Display Restaurant Name" checked={!!settings.displayName} onChange={(v) => update("displayName", v)} />
-        <Toggle label="Display Restaurant Logo" checked={!!settings.displayLogo} onChange={(v) => update("displayLogo", v)} />
-        <Toggle label="Display Contact Information" checked={!!settings.displayContact} onChange={(v) => update("displayContact", v)} />
-        <Toggle label="Display Address" checked={!!settings.displayAddress} onChange={(v) => update("displayAddress", v)} />
-        <Toggle label="Display Business Hours" checked={!!settings.displayHours} onChange={(v) => update("displayHours", v)} />
-      </FormSection>
-
-      <FormSection title="Ordering" description="Configure ordering-related preferences.">
-        <Toggle label="Enable Customer Ordering" description="Allow customers to place orders via QR menu." checked={!!settings.enableOrdering} onChange={(v) => update("enableOrdering", v)} />
-        <Toggle label="Allow Customer Phone Number" description="Show optional phone number field during ordering." checked={!!settings.allowCustomerPhone} onChange={(v) => update("allowCustomerPhone", v)} />
       </FormSection>
 
       <div className="flex justify-end">

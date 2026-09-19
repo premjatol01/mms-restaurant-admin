@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Eye, RotateCcw } from "lucide-react";
+import {
+  Armchair, Clock, CreditCard, Globe, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Share2, Star, Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
 import BasicInformationForm from "./components/BasicInformationForm";
@@ -9,21 +11,28 @@ import AddressForm from "./components/AddressForm";
 import BusinessHoursForm from "./components/BusinessHoursForm";
 import SocialLinksForm from "./components/SocialLinksForm";
 import WebsiteInfoSection from "./components/WebsiteInfoSection";
+import MenuMasterSection from "./components/MenuMasterSection";
+import TableConfigSection from "./components/TableConfigSection";
+import GoogleReviewForm from "./components/GoogleReviewForm";
+import SubscriptionSection from "./components/SubscriptionSection";
 import RestaurantSettingsForm from "./components/RestaurantSettingsForm";
 import ProfileCompletion from "./components/ProfileCompletion";
-import ProfilePreview from "./components/ProfilePreview";
 import UnsavedChangesModal from "./modals/UnsavedChangesModal";
 import Button from "../../components/ui/Button";
 
 const TABS = [
-  { id: "basic", label: "Basic Information" },
-  { id: "branding", label: "Branding" },
-  { id: "contact", label: "Contact" },
-  { id: "address", label: "Address" },
-  { id: "hours", label: "Business Hours" },
-  { id: "social", label: "Social Links" },
-  { id: "website", label: "Website" },
-  { id: "settings", label: "Settings" },
+  { id: "basic", label: "Basic Information", icon: Store },
+  { id: "branding", label: "Branding", icon: Image },
+  { id: "contact", label: "Contact", icon: Phone },
+  { id: "address", label: "Address", icon: MapPin },
+  { id: "hours", label: "Business Hours", icon: Clock },
+  { id: "social", label: "Social Links", icon: Share2 },
+  { id: "website", label: "Website", icon: Globe },
+  { id: "menu", label: "Menu Master", icon: LayoutGrid },
+  { id: "tables", label: "Table Configuration", icon: Armchair },
+  { id: "review", label: "Google Review", icon: Star },
+  { id: "subscription", label: "Subscription", icon: CreditCard },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 
@@ -42,7 +51,6 @@ function SkeletonLoader() {
 export default function RestaurantProfilePage() {
   const { profile, loading, isDirty, fetchProfile, discardChanges } = useProfileStore();
   const [activeTab, setActiveTab] = useState("basic");
-  const [showPreview, setShowPreview] = useState(false);
   const [pendingTab, setPendingTab] = useState(null);
   const [showUnsaved, setShowUnsaved] = useState(false);
 
@@ -95,16 +103,13 @@ export default function RestaurantProfilePage() {
             {profile?.tagline && <p className="text-sm text-secondary">{profile.tagline}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isDirty && (
+        {isDirty && (
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={handleDiscard}>
               <RotateCcw size={14} /> Discard
             </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={() => setShowPreview(true)}>
-            <Eye size={14} /> Preview
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {isDirty && (
@@ -116,21 +121,22 @@ export default function RestaurantProfilePage() {
 
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Sidebar nav */}
-        <aside className="lg:w-52 flex-shrink-0">
+        <aside className="lg:w-56 flex-shrink-0">
           <div className="space-y-3">
             <ProfileCompletion onTabChange={handleTabChange} />
             <nav className="bg-surface rounded-xl border border-theme overflow-hidden">
-              {TABS.map((tab) => (
+              {TABS.map(({ id, label, icon: Icon }) => (
                 <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-theme last:border-0 ${
-                    activeTab === tab.id
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={`w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm transition-colors border-b border-theme last:border-0 ${
+                    activeTab === id
                       ? "bg-primary text-white font-medium"
                       : "text-theme hover:bg-primary-light"
                   }`}
                 >
-                  {tab.label}
+                  <Icon size={15} className="flex-shrink-0" />
+                  {label}
                 </button>
               ))}
             </nav>
@@ -146,11 +152,14 @@ export default function RestaurantProfilePage() {
           {activeTab === "hours" && <BusinessHoursForm />}
           {activeTab === "social" && <SocialLinksForm />}
           {activeTab === "website" && <WebsiteInfoSection />}
+          {activeTab === "menu" && <MenuMasterSection />}
+          {activeTab === "tables" && <TableConfigSection />}
+          {activeTab === "review" && <GoogleReviewForm />}
+          {activeTab === "subscription" && <SubscriptionSection />}
           {activeTab === "settings" && <RestaurantSettingsForm />}
         </div>
       </div>
 
-      {showPreview && <ProfilePreview onClose={() => setShowPreview(false)} />}
       {showUnsaved && <UnsavedChangesModal onStay={handleStay} onLeave={handleLeave} />}
     </div>
   );
