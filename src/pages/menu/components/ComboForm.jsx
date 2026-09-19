@@ -5,11 +5,12 @@ import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
 import ImageUploader from "../../../components/ui/ImageUploader";
+import SearchInput from "../../../components/ui/SearchInput";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 
 export default function ComboForm({ isOpen, onClose, editCombo }) {
-  const { menuItems, addCombo, updateCombo } = useMenuStore();
+  const { menuItems, categories, addCombo, updateCombo } = useMenuStore();
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -19,6 +20,7 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
     status: "available",
   });
   const [errors, setErrors] = useState({});
+  const [itemSearch, setItemSearch] = useState("");
 
   useEffect(() => {
     if (editCombo) {
@@ -34,6 +36,7 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
       setForm({ name: "", description: "", image: null, itemIds: [], price: "", status: "available" });
     }
     setErrors({});
+    setItemSearch("");
   }, [editCombo, isOpen]);
 
   const originalTotal = useMemo(() => {
@@ -44,6 +47,23 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
   }, [form.itemIds, menuItems]);
 
   const savings = originalTotal - (Number(form.price) || 0);
+
+  const getCategoryName = (catId) => categories.find((c) => c.id === catId)?.name || "";
+
+  // Search by item name, description or category name.
+  // Selections are kept in form.itemIds, so they are not lost while filtering.
+  const visibleItems = useMemo(() => {
+    const q = itemSearch.trim().toLowerCase();
+    if (!q) return menuItems;
+    return menuItems.filter((item) => {
+      const categoryName = categories.find((c) => c.id === item.categoryId)?.name || "";
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q) ||
+        categoryName.toLowerCase().includes(q)
+      );
+    });
+  }, [menuItems, categories, itemSearch]);
 
   const toggleItem = (itemId) => {
     setForm((prev) => ({
@@ -99,7 +119,7 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
           </div>
         </FormSection>
 
-        <FormSection title="Combo Image">
+        <FormSection title="Combo Image (Optional)">
           <ImageUploader
             value={form.image}
             onChange={(img) => setForm({ ...form, image: img })}
@@ -107,11 +127,21 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
         </FormSection>
 
         <FormSection title="Select Menu Items">
+          {menuItems.length > 0 && (
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1">
+                <SearchInput value={itemSearch} onChange={setItemSearch} placeholder="Search items by name or category..." />
+              </div>
+              <span className="text-xs text-secondary whitespace-nowrap">{form.itemIds.length} selected</span>
+            </div>
+          )}
           <div className="space-y-2 max-h-60 overflow-y-auto border border-theme rounded-lg p-2">
             {menuItems.length === 0 ? (
               <p className="text-sm text-secondary p-2">No menu items available. Create menu items first.</p>
+            ) : visibleItems.length === 0 ? (
+              <p className="text-sm text-secondary p-2">No items match "{itemSearch.trim()}".</p>
             ) : (
-              menuItems.map((item) => (
+              visibleItems.map((item) => (
                 <label
                   key={item.id}
                   className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border ${
@@ -124,8 +154,11 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
                     onChange={() => toggleItem(item.id)}
                     className="w-4 h-4 text-primary rounded"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-theme">{item.name}</p>
+                    {getCategoryName(item.categoryId) && (
+                      <p className="text-xs text-secondary">{getCategoryName(item.categoryId)}</p>
+                    )}
                   </div>
                   <span className="text-sm text-secondary">₹{item.price}</span>
                 </label>

@@ -4,19 +4,20 @@ import { useMenuStore } from "../../../store/menuStore";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
+import ImageUploader from "../../../components/ui/ImageUploader";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 
 export default function CategoryForm({ isOpen, onClose, editCategory }) {
   const { addCategory, updateCategory } = useMenuStore();
-  const [form, setForm] = useState({ name: "", description: "", status: "active" });
+  const [form, setForm] = useState({ name: "", description: "", image: null, status: "active" });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (editCategory) {
-      setForm({ name: editCategory.name, description: editCategory.description || "", status: editCategory.status });
+      setForm({ name: editCategory.name, description: editCategory.description || "", image: editCategory.image || null, status: editCategory.status });
     } else {
-      setForm({ name: "", description: "", status: "active" });
+      setForm({ name: "", description: "", image: null, status: "active" });
     }
     setErrors({});
   }, [editCategory, isOpen]);
@@ -61,6 +62,13 @@ export default function CategoryForm({ isOpen, onClose, editCategory }) {
               rows={3}
             />
           </div>
+        </FormSection>
+
+        <FormSection title="Category Image (Optional)">
+          <ImageUploader
+            value={form.image}
+            onChange={(img) => setForm({ ...form, image: img })}
+          />
         </FormSection>
 
         <FormSection title="Status">

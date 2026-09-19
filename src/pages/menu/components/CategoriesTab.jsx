@@ -5,7 +5,7 @@ import { useMenuStore } from "../../../store/menuStore";
 import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import CategoryForm from "./CategoryForm";
-import DeleteConfirmDialog from "./DeleteConfirmDialog";
+import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import ActionsMenu from "./ActionsMenu";
 
 export default function CategoriesTab() {
@@ -62,8 +62,8 @@ export default function CategoriesTab() {
                 <tr key={category.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary flex-shrink-0">
-                        <Folder size={18} />
+                      <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary flex-shrink-0 overflow-hidden">
+                        {category.image ? <img src={category.image} alt={category.name} className="w-full h-full object-cover" /> : <Folder size={18} />}
                       </div>
                       <div>
                         <p className="font-medium text-theme">{category.name}</p>

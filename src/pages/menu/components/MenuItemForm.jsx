@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { useMenuStore } from "../../../store/menuStore";
 import Drawer from "../../../components/ui/Drawer";
@@ -17,6 +18,7 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
     description: "",
     price: "",
     image: null,
+    isPopular: false,
     status: "available",
   });
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -30,11 +32,12 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
         categoryId: editItem.categoryId || "",
         description: editItem.description || "",
         price: editItem.price?.toString() || "",
-        image: editItem.image,
+        image: editItem.image || null,
+        isPopular: !!editItem.isPopular,
         status: editItem.status,
       });
     } else {
-      setForm({ name: "", categoryId: "", description: "", price: "", image: null, status: "available" });
+      setForm({ name: "", categoryId: "", description: "", price: "", image: null, isPopular: false, status: "available" });
     }
     setShowNewCategory(false);
     setNewCategory("");
@@ -60,9 +63,8 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
 
   const handleCreateCategory = () => {
     if (!newCategory.trim()) return;
-    const newCatId = `cat-${Date.now()}`;
-    addCategory({ id: newCatId, name: newCategory.trim(), description: "", status: "active" });
-    setForm({ ...form, categoryId: newCatId });
+    const created = addCategory({ name: newCategory.trim(), description: "", status: "active" });
+    setForm({ ...form, categoryId: created.id });
     setNewCategory("");
     setShowNewCategory(false);
     toast.success("Category created successfully.");
@@ -138,11 +140,29 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
           </div>
         </FormSection>
 
-        <FormSection title="Item Image">
+        <FormSection title="Item Image (Optional)">
           <ImageUploader
             value={form.image}
             onChange={(img) => setForm({ ...form, image: img })}
           />
+        </FormSection>
+
+        <FormSection title="Popular Item">
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-theme cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isPopular}
+              onChange={(e) => setForm({ ...form, isPopular: e.target.checked })}
+              className="mt-0.5 w-4 h-4"
+              style={{ accentColor: "var(--color-primary)" }}
+            />
+            <div>
+              <p className="text-sm font-medium text-theme flex items-center gap-1.5">
+                <Star size={14} className="text-amber-500" fill="currentColor" /> Mark as popular
+              </p>
+              <p className="text-xs text-secondary">Popular items are featured in the menu section of your restaurant website.</p>
+            </div>
+          </label>
         </FormSection>
 
         <FormSection title="Item Status">

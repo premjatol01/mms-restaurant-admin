@@ -5,7 +5,7 @@ import { useMenuStore } from "../../../store/menuStore";
 import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import ComboForm from "./ComboForm";
-import DeleteConfirmDialog from "./DeleteConfirmDialog";
+import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import ActionsMenu from "./ActionsMenu";
 
 export default function CombosTab() {
