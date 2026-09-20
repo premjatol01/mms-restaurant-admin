@@ -1,26 +1,34 @@
-import { X, Clock, QrCode, User, FileText } from "lucide-react";
+import { Ban, FileText, QrCode, User, X } from "lucide-react";
 import { useOrdersStore } from "../../../store/ordersStore";
-import Button from "../../../components/ui/Button";
+import StatusChip from "./StatusChip";
+import { TINT_SOFT, btn, getReasonLabel } from "../constants";
+import {
+  canCancelOrder,
+  formatCurrency,
+  formatTime,
+  getActiveQty,
+  getCancelledAmount,
+  getSessionOrders,
+  getSessionTotal,
+  isItemCancelled,
+} from "../utils/orderUtils";
 
-const STATUS_COLORS = { 
-  new: "bg-blue-100 text-blue-700", 
-  preparing: "bg-yellow-100 text-yellow-700", 
-  ready: "bg-green-100 text-green-700", 
-  served: "bg-purple-100 text-purple-700",
-  cancelled: "bg-red-100 text-red-700"
-};
+export default function OrderDetailsDrawer({ orderId, onClose, onCancel }) {
+  const orders = useOrdersStore((state) => state.orders);
+  const sessions = useOrdersStore((state) => state.sessions);
+  const completedSessions = useOrdersStore((state) => state.completedSessions);
+  const getTableName = useOrdersStore((state) => state.getTableName);
 
-const STATUS_LABELS = { 
-  new: "New", 
-  preparing: "Preparing", 
-  ready: "Ready", 
-  served: "Served",
-  cancelled: "Cancelled"
-};
+  const order = orders.find((o) => o.id === orderId);
+  if (!order) return null;
 
-export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
-  const { sessions, getTableName } = useOrdersStore();
-  const session = sessions.find((s) => s.id === order.sessionId);
+  const session =
+    sessions.find((s) => s.id === order.sessionId) ||
+    completedSessions.find((s) => s.id === order.sessionId);
+  const sessionOrders = session ? getSessionOrders(session, orders) : [];
+  const isPaid = session?.status === "completed" && session.paymentStatus !== "pending";
+  const cancelledAmount = getCancelledAmount(order);
+  const cancellations = order.cancellations || [];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -28,7 +36,11 @@ export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
       <div className="relative bg-surface w-full max-w-md h-full flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-theme">
           <h2 className="text-lg font-semibold text-theme">{order.orderNumber}</h2>
-          <button onClick={onClose} className="p-1 text-secondary hover:text-theme rounded">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 rounded text-theme opacity-60 hover:opacity-100 transition-opacity"
+          >
             <X size={20} />
           </button>
         </div>
@@ -37,21 +49,17 @@ export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
           {/* Order Info */}
           <div className="space-y-3">
             <h3 className="font-medium text-theme">Order Information</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-secondary">Table</span></div>
-              <div className="text-theme font-medium">{getTableName(order.tableId)}</div>
-              <div><span className="text-secondary">Order Time</span></div>
-              <div className="text-theme">
-                {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </div>
-              <div><span className="text-secondary">Order Source</span></div>
-              <div className="text-theme">{order.source === "qr" ? "QR Menu" : "Manual Order"}</div>
-              <div><span className="text-secondary">Status</span></div>
-              <div>
-                <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status]}`}>
-                  {STATUS_LABELS[order.status]}
-                </span>
-              </div>
+            <div className="grid grid-cols-2 gap-3 text-sm items-center">
+              <span className="text-secondary">Table</span>
+              <span className="text-theme font-medium">{getTableName(order.tableId)}</span>
+              <span className="text-secondary">Order Time</span>
+              <span className="text-theme">{formatTime(order.createdAt)}</span>
+              <span className="text-secondary">Order Source</span>
+              <span className="text-theme">{order.source === "qr" ? "QR Menu" : "Manual Order"}</span>
+              <span className="text-secondary">Status</span>
+              <span>
+                <StatusChip status={order.status} />
+              </span>
             </div>
           </div>
 
@@ -60,9 +68,7 @@ export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
             <h3 className="font-medium text-theme flex items-center gap-2">
               <User size={16} /> Customer
             </h3>
-            <p className="text-sm text-secondary">
-              {order.customer?.mobile || "Contact number not provided"}
-            </p>
+            <p className="text-sm text-secondary">{order.customer?.mobile || "Contact number not provided"}</p>
           </div>
 
           {/* Items */}
@@ -71,20 +77,78 @@ export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
               <FileText size={16} /> Items
             </h3>
             <div className="space-y-2">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <div className="text-theme">
-                    {item.name} <span className="text-secondary">× {item.quantity}</span>
+              {order.items.map((item) => {
+                const cancelled = isItemCancelled(item);
+                const quantity = cancelled ? item.quantity : getActiveQty(item);
+                return (
+                  <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div className={cancelled ? "text-secondary line-through" : "text-theme"}>
+                      {item.name} <span className="text-secondary">× {quantity}</span>
+                      {!cancelled && item.cancelledQty > 0 && (
+                        <span className="ml-1.5 text-xs text-red-600">
+                          ({item.cancelledQty} cancelled)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusChip status={item.status} />
+                      <span className={`w-16 text-right ${cancelled ? "text-secondary line-through" : "text-theme"}`}>
+                        {formatCurrency(item.price * quantity)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-theme">₹{item.price * item.quantity}</div>
+                );
+              })}
+              <div className="border-t border-theme pt-2 space-y-1">
+                {cancelledAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">Cancelled / removed</span>
+                    <span className="text-red-600">−{formatCurrency(cancelledAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-medium">
+                  <span className="text-theme">Total</span>
+                  <span className="text-theme">{formatCurrency(order.total)}</span>
                 </div>
-              ))}
-              <div className="border-t border-theme pt-2 flex justify-between font-medium">
-                <span className="text-theme">Total</span>
-                <span className="text-theme">₹{order.total}</span>
               </div>
             </div>
           </div>
+
+          {/* Cancellation history */}
+          {cancellations.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-medium text-theme flex items-center gap-2">
+                <Ban size={16} /> Cancellations
+              </h3>
+              <div className="space-y-2">
+                {cancellations.map((entry) => (
+                  <div key={entry.id} className="rounded-lg border border-theme p-3 space-y-1.5 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">
+                        {entry.type === "full" ? "Full cancellation" : "Partial cancellation"}
+                      </span>
+                      <span className="text-xs text-secondary">
+                        {new Date(entry.at).toLocaleDateString([], { day: "numeric", month: "short" })},{" "}
+                        {formatTime(entry.at)}
+                      </span>
+                    </div>
+                    <p className="text-theme">
+                      {entry.items.map((i) => `${i.name} × ${i.quantity}`).join(", ")}
+                      <span className="text-secondary"> · −{formatCurrency(entry.amount)}</span>
+                    </p>
+                    <p className="text-secondary">
+                      <span className="font-medium">Reason:</span> {getReasonLabel(entry.reason)}
+                    </p>
+                    {entry.comment && (
+                      <p className="text-secondary">
+                        <span className="font-medium">Comment:</span> {entry.comment}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Table Session */}
           {session && (
@@ -92,44 +156,37 @@ export default function OrderDetailsDrawer({ order, onClose, onViewSession }) {
               <h3 className="font-medium text-theme flex items-center gap-2">
                 <QrCode size={16} /> Table Session
               </h3>
-              <div className="bg-primary-light/20 rounded-lg p-3 space-y-2">
+              <div className={`rounded-lg p-3 space-y-2 ${TINT_SOFT}`}>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Session</span>
                   <span className="text-theme">{session.sessionNumber}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Orders</span>
-                  <span className="text-theme">{session.orderIds.length}</span>
+                  <span className="text-theme">{sessionOrders.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Session Total</span>
-                  <span className="text-theme font-medium">₹{session.total}</span>
+                  <span className="text-theme font-medium">{formatCurrency(getSessionTotal(sessionOrders))}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Status</span>
-                  <span className="text-theme capitalize">
-                    {session.paymentStatus === "pending" ? "Payment Pending" : "Payment Successful"}
-                  </span>
+                  <span className="text-secondary">Payment</span>
+                  <span className="text-theme">{isPaid ? "Paid" : "Payment Pending"}</span>
                 </div>
               </div>
-
-              {onViewSession && (
-                <Button 
-                  variant="secondary" 
-                  className="w-full"
-                  onClick={() => { onClose(); onViewSession(session); }}
-                >
-                  View Table Session
-                </Button>
-              )}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-theme">
-          <Button variant="secondary" className="w-full" onClick={onClose}>
+        <div className="px-6 py-4 border-t border-theme flex flex-col gap-2">
+          {canCancelOrder(order) && (
+            <button onClick={() => onCancel(order.id)} className={`${btn("outlineDanger", "lg")} w-full`}>
+              <Ban size={16} /> Cancel Order / Items
+            </button>
+          )}
+          <button onClick={onClose} className={`${btn("outline", "lg")} w-full`}>
             Close
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -1,117 +1,120 @@
 import { useState } from "react";
-import { ClipboardList, Users, DollarSign, Clock } from "lucide-react";
+import { ChefHat, ClipboardList, IndianRupee, Users } from "lucide-react";
+import { isToday } from "date-fns";
 import { useOrdersStore } from "../../store/ordersStore";
-import ActiveOrdersTab from "./components/ActiveOrdersTab";
-import TableSessionsTab from "./components/TableSessionsTab";
-import CompletedTab from "./components/CompletedTab";
+import PendingOrdersTab from "./components/PendingOrdersTab";
+import ActiveSessionsTab from "./components/ActiveSessionsTab";
+import ExportControls from "./components/ExportControls";
+import AnimatedCount from "./components/AnimatedCount";
+import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
+import CancelOrderModal from "./modals/CancelOrderModal";
+import { formatCurrency } from "./utils/orderUtils";
 
 const TABS = [
-  { id: "active", label: "Active Orders" },
-  { id: "sessions", label: "Table Sessions" },
-  { id: "completed", label: "Completed" },
+  { id: "pending", label: "Pending Orders" },
+  { id: "sessions", label: "Active Table Sessions" },
 ];
 
-function SummaryCards() {
-  const { orders, sessions, completedSessions } = useOrdersStore();
-  
-  const activeOrders = orders.filter((o) => {
-    const session = sessions.find((s) => s.id === o.sessionId);
-    return session && session.status === "active";
-  });
-  
-  const activeTablesCount = sessions.filter((s) => s.status === "active").length;
-  const todayOrders = orders.length + completedSessions.reduce((sum, s) => sum + s.orderIds.length, 0);
-  const todayRevenue = sessions.reduce((sum, s) => sum + s.total, 0) + 
-    completedSessions.reduce((sum, s) => sum + s.total, 0);
-
+function StatCard({ icon: Icon, iconBg, iconColor, label, children }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-            <ClipboardList className="text-blue-600" size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-secondary">Active Orders</p>
-            <p className="text-xl font-bold text-theme">{activeOrders.length}</p>
-          </div>
+    <div className="bg-surface rounded-xl border border-theme p-4">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBg}`}>
+          <Icon className={iconColor} size={20} />
         </div>
-      </div>
-      
-      <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-            <Users className="text-purple-600" size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-secondary">Active Tables</p>
-            <p className="text-xl font-bold text-theme">{activeTablesCount}</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-            <Clock className="text-green-600" size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-secondary">Today's Orders</p>
-            <p className="text-xl font-bold text-theme">{todayOrders}</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-            <DollarSign className="text-amber-600" size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-secondary">Today's Revenue</p>
-            <p className="text-xl font-bold text-theme">₹{todayRevenue.toLocaleString()}</p>
-          </div>
+        <div>
+          <p className="text-xs text-secondary">{label}</p>
+          <p className="text-xl font-bold text-theme">{children}</p>
         </div>
       </div>
     </div>
   );
 }
 
+function SummaryCards() {
+  const orders = useOrdersStore((state) => state.orders);
+  const sessions = useOrdersStore((state) => state.sessions);
+
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
+  const processingCount = orders.filter((o) => o.status === "processing").length;
+  const todayRevenue = orders
+    .filter((o) => isToday(new Date(o.createdAt)))
+    .reduce((sum, o) => sum + o.total, 0);
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatCard icon={ClipboardList} iconBg="bg-yellow-100" iconColor="text-yellow-600" label="Pending Orders">
+        <AnimatedCount value={pendingCount} />
+      </StatCard>
+      <StatCard icon={ChefHat} iconBg="bg-blue-100" iconColor="text-blue-600" label="Under Process">
+        <AnimatedCount value={processingCount} />
+      </StatCard>
+      <StatCard icon={Users} iconBg="bg-purple-100" iconColor="text-purple-600" label="Active Tables">
+        {sessions.length}
+      </StatCard>
+      <StatCard icon={IndianRupee} iconBg="bg-green-100" iconColor="text-green-600" label="Today's Revenue">
+        {formatCurrency(todayRevenue)}
+      </StatCard>
+    </div>
+  );
+}
+
 export default function OrdersPage() {
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState("pending");
+  const [viewOrderId, setViewOrderId] = useState(null);
+  const [cancelOrderId, setCancelOrderId] = useState(null);
+  const pendingCount = useOrdersStore((state) => state.orders.filter((o) => o.status === "pending").length);
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-theme">Orders</h1>
-        <p className="text-sm text-secondary">Manage customer orders, table sessions and payments.</p>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-theme">Orders</h1>
+          <p className="text-sm text-secondary">Manage customer orders, table sessions and payments.</p>
+        </div>
+        <ExportControls />
       </div>
 
       <SummaryCards />
 
       <div className="bg-surface rounded-xl border border-theme overflow-hidden">
-        <div className="flex border-b border-theme">
+        <div className="flex border-b border-theme" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-primary text-white"
-                  : "text-theme hover:bg-primary-light"
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === tab.id ? "bg-primary text-white" : "text-theme hover:bg-primary-light"
               }`}
             >
               {tab.label}
+              {tab.id === "pending" && <AnimatedCount variant="badge" value={pendingCount} />}
             </button>
           ))}
         </div>
 
         <div className="p-6">
-          {activeTab === "active" && <ActiveOrdersTab />}
-          {activeTab === "sessions" && <TableSessionsTab />}
-          {activeTab === "completed" && <CompletedTab />}
+          {activeTab === "pending" && (
+            <PendingOrdersTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
+          )}
+          {activeTab === "sessions" && (
+            <ActiveSessionsTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
+          )}
         </div>
       </div>
+
+      {viewOrderId && (
+        <OrderDetailsDrawer
+          orderId={viewOrderId}
+          onClose={() => setViewOrderId(null)}
+          onCancel={setCancelOrderId}
+        />
+      )}
+      {cancelOrderId && (
+        <CancelOrderModal orderId={cancelOrderId} onClose={() => setCancelOrderId(null)} />
+      )}
     </div>
   );
 }

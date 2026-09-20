@@ -43,7 +43,7 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
     startDate: editOffer?.validity?.startDate || "",
     endDate: editOffer?.validity?.endDate || "",
     terms: editOffer?.terms || "",
-    status: editOffer?.status || "active"
+    status: editOffer?.status === "inactive" ? "inactive" : "active"
   });
 
   const menuItemOptions = menuItems.map((item) => ({ value: item.id, label: item.name }));
@@ -166,7 +166,6 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
           onChange={(v) => handleChange("status", v)}
           options={[
             { value: "active", label: "Active" },
-            { value: "scheduled", label: "Scheduled" },
             { value: "inactive", label: "Inactive" }
           ]}
         />

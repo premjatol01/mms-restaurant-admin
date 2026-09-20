@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Globe, MessageSquare, Copy, ExternalLink, Check } from "lucide-react";
 import { useWebsiteStore } from "../../store/websiteStore";
 import Button from "../../components/ui/Button";
+import PublishConfirmModal from "./modals/PublishConfirmModal";
+import { BASE_DOMAIN } from "./utils/constants";
 import WebsiteBuilder from "./components/WebsiteBuilder";
 import InquiryList from "./components/InquiryList";
 
@@ -11,7 +13,7 @@ export default function WebsitePage() {
   const [copied, setCopied] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-  const websiteUrl = `https://${restaurantSlug}.yourplatform.com`;
+  const websiteUrl = `https://${restaurantSlug}.${BASE_DOMAIN}`;
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(websiteUrl);
@@ -112,25 +114,12 @@ export default function WebsitePage() {
       {activeTab === "builder" ? <WebsiteBuilder /> : <InquiryList />}
 
       {/* Publish Confirmation Modal */}
-      {showPublishConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowPublishConfirm(false)} />
-          <div className="relative bg-surface border border-theme rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-semibold text-theme mb-2">Publish Website?</h3>
-            <p className="text-sm text-secondary mb-6">
-              Your restaurant website will become available through your platform subdomain.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowPublishConfirm(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handlePublish}>
-                Publish
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PublishConfirmModal
+        open={showPublishConfirm}
+        onClose={() => setShowPublishConfirm(false)}
+        onConfirm={handlePublish}
+        websiteUrl={websiteUrl}
+      />
     </div>
   );
 }

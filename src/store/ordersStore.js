@@ -1,90 +1,220 @@
 import { create } from "zustand";
+import {
+  initialOrders,
+  initialSessions,
+  initialCompletedSessions,
+  TABLE_NAMES,
+} from "../pages/orders/data/ordersData";
+import {
+  applyCancellation,
+  getSessionOrders,
+  getSessionTotal,
+  getUnresolvedItems,
+  isItemCancellable,
+  isItemCancelled,
+  nextSequence,
+  recalcOrder,
+} from "../pages/orders/utils/orderUtils";
 
-const defaultSessions = [
-  { id: "session-5", sessionNumber: "#S-1005", tableId: "table-5", status: "active", paymentStatus: "pending", orderIds: ["order-1001", "order-1002", "order-1003"], startedAt: "2026-09-12T19:15:00", closedAt: null, total: 1500 },
-  { id: "session-3", sessionNumber: "#S-1004", tableId: "table-3", status: "active", paymentStatus: "pending", orderIds: ["order-1004", "order-1005"], startedAt: "2026-09-12T19:30:00", closedAt: null, total: 950 },
-  { id: "session-8", sessionNumber: "#S-1003", tableId: "table-8", status: "active", paymentStatus: "pending", orderIds: ["order-1006"], startedAt: "2026-09-12T19:45:00", closedAt: null, total: 450 },
-];
+const EDITABLE_STATUSES = ["pending", "processing", "served"];
 
-const defaultOrders = [
-  { id: "order-1001", orderNumber: "#1001", tableId: "table-5", sessionId: "session-5", source: "qr", customer: { mobile: null }, items: [{ menuItemId: "item-1", name: "Margherita Pizza", quantity: 1, price: 299 }, { menuItemId: "item-5", name: "French Fries", quantity: 1, price: 99 }, { menuItemId: "item-7", name: "Cold Coffee", quantity: 1, price: 149 }], subtotal: 547, discount: 0, total: 547, status: "new", createdAt: "2026-09-12T19:15:00" },
-  { id: "order-1002", orderNumber: "#1002", tableId: "table-5", sessionId: "session-5", source: "qr", customer: { mobile: "+91 98765 43210" }, items: [{ menuItemId: "item-3", name: "Chicken Burger", quantity: 2, price: 249 }, { menuItemId: "item-7", name: "Cold Coffee", quantity: 1, price: 149 }], subtotal: 647, discount: 0, total: 647, status: "preparing", createdAt: "2026-09-12T19:22:00" },
-  { id: "order-1003", orderNumber: "#1003", tableId: "table-5", sessionId: "session-5", source: "manual", customer: { mobile: null }, items: [{ menuItemId: "item-9", name: "Butter Chicken", quantity: 1, price: 349 }], subtotal: 349, discount: 0, total: 349, status: "ready", createdAt: "2026-09-12T19:30:00" },
-  { id: "order-1004", orderNumber: "#1004", tableId: "table-3", sessionId: "session-3", source: "qr", customer: { mobile: "+91 91234 56789" }, items: [{ menuItemId: "item-2", name: "Veggie Supreme", quantity: 1, price: 349 }, { menuItemId: "item-6", name: "Garlic Bread", quantity: 1, price: 79 }], subtotal: 428, discount: 0, total: 428, status: "new", createdAt: "2026-09-12T19:30:00" },
-  { id: "order-1005", orderNumber: "#1005", tableId: "table-3", sessionId: "session-3", source: "qr", customer: { mobile: null }, items: [{ menuItemId: "item-10", name: "Paneer Tikka", quantity: 1, price: 299 }, { menuItemId: "item-12", name: "Gulab Jamun", quantity: 2, price: 69 }], subtotal: 522, discount: 0, total: 522, status: "preparing", createdAt: "2026-09-12T19:40:00" },
-  { id: "order-1006", orderNumber: "#1006", tableId: "table-8", sessionId: "session-8", source: "qr", customer: { mobile: null }, items: [{ menuItemId: "item-4", name: "Veg Burger", quantity: 2, price: 199 }, { menuItemId: "item-5", name: "French Fries", quantity: 1, price: 99 }], subtotal: 497, discount: 0, total: 497, status: "served", createdAt: "2026-09-12T19:45:00" },
-];
+// Keeps each open session's total in step with its orders.
+const syncSessionTotals = (sessions, orders) =>
+  sessions.map((session) => ({
+    ...session,
+    total: getSessionTotal(getSessionOrders(session, orders)),
+  }));
 
-const completedSessions = [
-  { id: "session-1", sessionNumber: "#S-1001", tableId: "table-1", status: "completed", paymentStatus: "successful", orderIds: ["order-901", "order-902", "order-903"], startedAt: "2026-09-12T18:00:00", closedAt: "2026-09-12T18:45:00", total: 1500 },
-  { id: "session-2", sessionNumber: "#S-1002", tableId: "table-2", status: "completed", paymentStatus: "successful", orderIds: ["order-904", "order-905"], startedAt: "2026-09-12T18:30:00", closedAt: "2026-09-12T19:00:00", total: 850 },
-];
-
-const tableNames = { "table-1": "Table 01", "table-2": "Table 02", "table-3": "Table 03", "table-4": "Table 04", "table-5": "Table 05", "table-6": "Table 06", "table-7": "Table 07", "table-8": "Table 08" };
+// Applies `fn` to a single order and re-derives its totals / status.
+const mapOrder = (orders, orderId, fn) =>
+  orders.map((order) => (order.id === orderId ? recalcOrder(fn(order)) : order));
 
 export const useOrdersStore = create((set, get) => ({
-  orders: [...defaultOrders],
-  sessions: [...defaultSessions],
-  completedSessions: [...completedSessions],
+  orders: [...initialOrders],
+  sessions: [...initialSessions],
+  completedSessions: [...initialCompletedSessions],
   loading: false,
 
-  addOrder: (order) => set((state) => {
-    const orderNumber = "#" + (1007 + state.orders.length);
-    const newOrder = { ...order, id: "order-" + Date.now(), orderNumber, status: "new", createdAt: new Date().toISOString() };
-    let newSessions = [...state.sessions];
-    let newOrders = [...state.orders, newOrder];
+  // -------------------------------------------------------------------------
+  // Creating orders (QR menu + manual orders from the admin)
+  // -------------------------------------------------------------------------
+  addOrder: (order) =>
+    set((state) => {
+      const id = "order-" + Date.now();
+      const orderNumber = "#" + nextSequence(state.orders.map((o) => o.orderNumber), 1001);
 
-    const activeSession = newSessions.find((s) => s.tableId === order.tableId && s.status === "active");
-    
-    if (activeSession) {
-      newSessions = newSessions.map((s) => 
-        s.id === activeSession.id 
-          ? { ...s, orderIds: [...s.orderIds, newOrder.id], total: s.total + newOrder.total }
-          : s
+      let sessions = [...state.sessions];
+      let session = sessions.find((s) => s.tableId === order.tableId && s.status === "active");
+
+      if (!session) {
+        const sessionLabels = [...state.sessions, ...state.completedSessions].map((s) => s.sessionNumber);
+        session = {
+          id: "session-" + Date.now(),
+          sessionNumber: "#S-" + nextSequence(sessionLabels, 1001),
+          tableId: order.tableId,
+          status: "active",
+          paymentStatus: "pending",
+          orderIds: [],
+          startedAt: new Date().toISOString(),
+          closedAt: null,
+          paidAt: null,
+          total: 0,
+        };
+        sessions.push(session);
+      }
+
+      const newOrder = recalcOrder({
+        ...order,
+        id,
+        orderNumber,
+        sessionId: session.id,
+        discount: order.discount || 0,
+        createdAt: new Date().toISOString(),
+        cancellations: [],
+        // Every new order starts as Pending.
+        items: order.items.map((item, index) => ({
+          ...item,
+          id: item.id || `${id}-i${index + 1}`,
+          status: "pending",
+          cancelledQty: 0,
+        })),
+      });
+
+      const orders = [...state.orders, newOrder];
+      sessions = sessions.map((s) =>
+        s.id === session.id ? { ...s, orderIds: [...s.orderIds, newOrder.id] } : s
       );
-    } else {
-      const sessionNumber = "#S-" + (1001 + newSessions.length + state.completedSessions.length);
-      const newSession = {
-        id: "session-" + Date.now(),
-        sessionNumber,
-        tableId: order.tableId,
-        status: "active",
-        paymentStatus: "pending",
-        orderIds: [newOrder.id],
-        startedAt: new Date().toISOString(),
-        closedAt: null,
-        total: newOrder.total
-      };
-      newSessions.push(newSession);
-      newOrder.sessionId = newSession.id;
-    }
 
-    return { orders: newOrders, sessions: newSessions };
-  }),
+      return { orders, sessions: syncSessionTotals(sessions, orders) };
+    }),
 
-  updateOrderStatus: (orderId, status) => set((state) => ({
-    orders: state.orders.map((o) => o.id === orderId ? { ...o, status } : o)
-  })),
+  // -------------------------------------------------------------------------
+  // Status updates (manual, by the restaurant admin)
+  // -------------------------------------------------------------------------
 
-  markPaymentSuccessful: (sessionId) => set((state) => ({
-    sessions: state.sessions.map((s) => s.id === sessionId ? { ...s, paymentStatus: "successful" } : s)
-  })),
-
-  closeSession: (sessionId) => set((state) => {
-    const session = state.sessions.find((s) => s.id === sessionId);
-    if (!session) return state;
-    return {
-      sessions: state.sessions.filter((s) => s.id !== sessionId),
-      completedSessions: [...state.completedSessions, { ...session, status: "completed", closedAt: new Date().toISOString() }]
-    };
-  }),
-
-  getOrdersBySession: (sessionId) => {
-    const state = get();
-    const session = state.sessions.find((s) => s.id === sessionId) || state.completedSessions.find((s) => s.id === sessionId);
-    if (!session) return [];
-    return session.orderIds.map((oid) => state.orders.find((o) => o.id === oid)).filter(Boolean);
+  // Moves every item that is still on the order to `status`.
+  updateOrderStatus: (orderId, status) => {
+    if (!EDITABLE_STATUSES.includes(status)) return;
+    set((state) => ({
+      orders: mapOrder(state.orders, orderId, (order) => ({
+        ...order,
+        items: order.items.map((item) => (isItemCancelled(item) ? item : { ...item, status })),
+      })),
+    }));
   },
 
-  getTableName: (tableId) => tableNames[tableId] || tableId
+  // Changes a single item; the order status follows from its items.
+  updateItemStatus: (orderId, itemId, status) => {
+    if (!EDITABLE_STATUSES.includes(status)) return;
+    set((state) => ({
+      orders: mapOrder(state.orders, orderId, (order) => ({
+        ...order,
+        items: order.items.map((item) =>
+          item.id === itemId && !isItemCancelled(item) ? { ...item, status } : item
+        ),
+      })),
+    }));
+  },
+
+  // Marks everything still open in a session as served.
+  serveAllInSession: (sessionId) =>
+    set((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId);
+      if (!session) return state;
+      return {
+        orders: state.orders.map((order) =>
+          order.sessionId === sessionId
+            ? recalcOrder({
+                ...order,
+                items: order.items.map((item) =>
+                  isItemCancelled(item) ? item : { ...item, status: "served" }
+                ),
+              })
+            : order
+        ),
+      };
+    }),
+
+  // -------------------------------------------------------------------------
+  // Cancellation
+  // -------------------------------------------------------------------------
+
+  // Cancels whole or part of an order.
+  // selections: [{ itemId, quantity }]; meta: { reason, comment }
+  cancelOrderItems: (orderId, selections, meta) =>
+    set((state) => {
+      const orders = mapOrder(state.orders, orderId, (order) =>
+        applyCancellation(order, selections, meta)
+      );
+      return { orders, sessions: syncSessionTotals(state.sessions, orders) };
+    }),
+
+  // Full cancellation: everything that has not been served yet.
+  cancelOrder: (orderId, meta) => {
+    const order = get().orders.find((o) => o.id === orderId);
+    if (!order) return;
+    const selections = order.items
+      .filter(isItemCancellable)
+      .map((item) => ({ itemId: item.id, quantity: item.quantity - (item.cancelledQty || 0) }));
+    get().cancelOrderItems(orderId, selections, meta);
+  },
+
+  // Removes an item that cannot be served (cancels its remaining quantity).
+  removeItem: (orderId, itemId, meta) => {
+    const order = get().orders.find((o) => o.id === orderId);
+    const item = order?.items.find((i) => i.id === itemId);
+    if (!item || !isItemCancellable(item)) return;
+    get().cancelOrderItems(
+      orderId,
+      [{ itemId, quantity: item.quantity - (item.cancelledQty || 0) }],
+      meta
+    );
+  },
+
+  // -------------------------------------------------------------------------
+  // Payment
+  // -------------------------------------------------------------------------
+
+  // Marks the bill as paid and closes the session (frees the table).
+  // Refuses while any item is still Pending / Under Process.
+  markSessionPaid: (sessionId) => {
+    const { sessions, orders } = get();
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return { ok: false, reason: "not_found" };
+
+    const sessionOrders = getSessionOrders(session, orders);
+    if (getUnresolvedItems(sessionOrders).length > 0) return { ok: false, reason: "unresolved" };
+
+    const total = getSessionTotal(sessionOrders);
+    const now = new Date().toISOString();
+
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.id !== sessionId),
+      completedSessions: [
+        ...state.completedSessions,
+        {
+          ...session,
+          total,
+          status: "completed",
+          // Nothing to collect if every order was cancelled.
+          paymentStatus: total > 0 ? "successful" : "not_required",
+          paidAt: now,
+          closedAt: now,
+        },
+      ],
+    }));
+    return { ok: true, total };
+  },
+
+  // -------------------------------------------------------------------------
+  // Selectors / helpers
+  // -------------------------------------------------------------------------
+  getOrdersBySession: (sessionId) => {
+    const { sessions, completedSessions, orders } = get();
+    const session =
+      sessions.find((s) => s.id === sessionId) || completedSessions.find((s) => s.id === sessionId);
+    return session ? getSessionOrders(session, orders) : [];
+  },
+
+  getTableName: (tableId) => TABLE_NAMES[tableId] || tableId,
 }));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Copy, Phone, Mail, Edit2, RefreshCw } from "lucide-react";
+import { X, Copy, Phone, Mail, Edit2, RefreshCw, Ticket, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { useOffersStore } from "../../../store/offersStore";
 import Button from "../../../components/ui/Button";
@@ -24,8 +24,8 @@ function OfferTypeBadge({ type }) {
 }
 
 function StatusBadge({ status }) {
-  const labels = { active: "Active", scheduled: "Scheduled", inactive: "Inactive" };
-  const colors = { active: "bg-green-100 text-green-700", scheduled: "bg-yellow-100 text-yellow-700", inactive: "bg-gray-100 text-gray-500" };
+  const labels = { active: "Active", inactive: "Inactive" };
+  const colors = { active: "bg-green-100 text-green-700", inactive: "bg-gray-100 text-gray-500" };
   return (
     <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors[status]}`}>
       {labels[status]}
@@ -53,6 +53,9 @@ function generateSocialPrompt(offer) {
   
   return `Create an engaging promotional post for ${restaurantName}'s "${offer.name}" - ${offer.benefit.value}% OFF!`;
 }
+
+const formatCount = (n) => Number(n ?? 0).toLocaleString("en-IN");
+const formatInr = (n) => `₹${Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
 function formatDate(dateStr) {
   if (!dateStr) return "—";
@@ -131,6 +134,27 @@ export default function OfferDetailsDrawer({ offer, onClose }) {
               <StatusBadge status={offer.status} />
             </div>
 
+            {/* Performance */}
+            <div className="space-y-2">
+              <h3 className="font-medium text-theme">Performance</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-primary-light/20 rounded-lg p-3">
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <Ticket size={14} />
+                    <span className="text-xs">No. of Times Availed</span>
+                  </div>
+                  <p className="text-lg font-bold text-theme mt-1">{formatCount(offer.performance?.timesAvailed)}</p>
+                </div>
+                <div className="bg-primary-light/20 rounded-lg p-3">
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <IndianRupee size={14} />
+                    <span className="text-xs">Total Discount Given (INR)</span>
+                  </div>
+                  <p className="text-lg font-bold text-theme mt-1">{formatInr(offer.performance?.totalDiscountGiven)}</p>
+                </div>
+              </div>
+            </div>
+
             {/* Validity */}
             <div className="space-y-2">
               <h3 className="font-medium text-theme">Validity</h3>
@@ -175,11 +199,11 @@ export default function OfferDetailsDrawer({ offer, onClose }) {
               <Button className="w-full" onClick={handleToggleStatus}>
                 Activate Offer
               </Button>
-            ) : offer.status === "active" ? (
+            ) : (
               <Button variant="secondary" className="w-full" onClick={handleToggleStatus}>
                 Deactivate Offer
               </Button>
-            ) : null}
+            )}
             <Button variant="secondary" className="w-full" onClick={onClose}>
               Close
             </Button>

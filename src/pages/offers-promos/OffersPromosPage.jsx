@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tag, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Tag, CheckCircle, XCircle } from "lucide-react";
 import { useOffersStore } from "../../store/offersStore";
 import SearchInput from "../../components/ui/SearchInput";
 import Select from "../../components/ui/Select";
@@ -8,12 +8,15 @@ import EmptyState from "../../components/ui/EmptyState";
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import CreateOfferDrawer from "./components/CreateOfferDrawer";
 
+const formatCount = (n) => Number(n ?? 0).toLocaleString("en-IN");
+const formatInr = (n) => `₹${Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
 function SummaryCards() {
   const { getStats } = useOffersStore();
   const stats = getStats();
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="bg-surface rounded-xl border border-theme p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -34,18 +37,6 @@ function SummaryCards() {
           <div>
             <p className="text-xs text-secondary">Active Offers</p>
             <p className="text-xl font-bold text-theme">{stats.active}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-surface rounded-xl border border-theme p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-            <Clock className="text-purple-600" size={20} />
-          </div>
-          <div>
-            <p className="text-xs text-secondary">Scheduled</p>
-            <p className="text-xl font-bold text-theme">{stats.scheduled}</p>
           </div>
         </div>
       </div>
@@ -84,8 +75,8 @@ function OfferTypeBadge({ type }) {
 }
 
 function StatusBadge({ status }) {
-  const labels = { active: "Active", scheduled: "Scheduled", inactive: "Inactive" };
-  const colors = { active: "bg-green-100 text-green-700", scheduled: "bg-yellow-100 text-yellow-700", inactive: "bg-gray-100 text-gray-500" };
+  const labels = { active: "Active", inactive: "Inactive" };
+  const colors = { active: "bg-green-100 text-green-700", inactive: "bg-gray-100 text-gray-500" };
   return (
     <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors[status]}`}>
       {labels[status]}
@@ -129,6 +120,8 @@ function OfferTable({ offers, onViewOffer }) {
             <th className="text-left px-4 py-3 font-medium text-theme">Benefit</th>
             <th className="text-left px-4 py-3 font-medium text-theme">Condition</th>
             <th className="text-left px-4 py-3 font-medium text-theme">Validity</th>
+            <th className="text-right px-4 py-3 font-medium text-theme whitespace-nowrap">Times Availed</th>
+            <th className="text-right px-4 py-3 font-medium text-theme whitespace-nowrap">Total Discount Given (INR)</th>
             <th className="text-left px-4 py-3 font-medium text-theme">Status</th>
             <th className="text-right px-4 py-3 font-medium text-theme">Actions</th>
           </tr>
@@ -143,6 +136,8 @@ function OfferTable({ offers, onViewOffer }) {
               <td className="px-4 py-3 text-secondary">
                 {formatDate(offer.validity.startDate)} – {formatDate(offer.validity.endDate)}
               </td>
+              <td className="px-4 py-3 text-right text-theme">{formatCount(offer.performance?.timesAvailed)}</td>
+              <td className="px-4 py-3 text-right text-theme">{formatInr(offer.performance?.totalDiscountGiven)}</td>
               <td className="px-4 py-3"><StatusBadge status={offer.status} /></td>
               <td className="px-4 py-3 text-right">
                 <button onClick={() => onViewOffer(offer)} className="text-primary hover:underline text-sm">
@@ -198,6 +193,17 @@ function OfferCard({ offer, onViewOffer }) {
         <span className="text-secondary">
           {formatDate(offer.validity.startDate)} – {formatDate(offer.validity.endDate)}
         </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-theme">
+        <div>
+          <p className="text-xs text-secondary">Times Availed</p>
+          <p className="text-sm font-semibold text-theme">{formatCount(offer.performance?.timesAvailed)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-secondary">Total Discount Given (INR)</p>
+          <p className="text-sm font-semibold text-theme">{formatInr(offer.performance?.totalDiscountGiven)}</p>
+        </div>
       </div>
 
       <button
@@ -271,7 +277,6 @@ export default function OffersPromosPage() {
             options={[
               { value: "", label: "All Status" },
               { value: "active", label: "Active" },
-              { value: "scheduled", label: "Scheduled" },
               { value: "inactive", label: "Inactive" }
             ]}
             className="w-full sm:w-36"

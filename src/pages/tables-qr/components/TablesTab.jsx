@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Search, QrCode, Grid3X3 } from "lucide-react";
+import { useState } from "react";
+import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
 import SearchInput from "../../../components/ui/SearchInput";
@@ -7,9 +7,12 @@ import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import TableForm from "./TableForm";
-import DeleteConfirmDialog from "./DeleteConfirmDialog";
-import AssignQRDialog from "./AssignQRDialog";
-import TableDetailsDrawer from "./TableDetailsDrawer";
+import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
+import AssignQRDialog from "../modals/AssignQRDialog";
+import { QR_TYPE_META } from "../data/tablesQRData";
+import { getAssignedPairs } from "../utils/qrRules";
+import { buildTableQRUrl } from "../utils/qrLink";
+import { downloadQRCode, downloadAllQRCodes } from "../utils/qrDownload";
 
 export default function TablesTab() {
   const { tables, qrCodes, updateTable } = useTablesQRStore();
@@ -19,7 +22,8 @@ export default function TablesTab() {
   const [editTable, setEditTable] = useState(null);
   const [deleteTable, setDeleteTable] = useState(null);
   const [assignQR, setAssignQR] = useState(null);
-  const [viewTable, setViewTable] = useState(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const filteredTables = tables.filter((table) => {
     const matchSearch = !search || table.tableId.toLowerCase().includes(search.toLowerCase());
@@ -29,10 +33,41 @@ export default function TablesTab() {
 
   const getQRInfo = (qrId) => qrCodes.find((qr) => qr.id === qrId);
 
+  // Every table that currently has a QR - this is what "Download All" exports
+  const assignedPairs = getAssignedPairs(tables, qrCodes);
+
   const handleToggleStatus = (table) => {
     const newStatus = table.status === "active" ? "inactive" : "active";
     updateTable(table.id, { status: newStatus });
     toast.success(`Table marked as ${newStatus}.`);
+  };
+
+  const handleDownloadOne = async (table, qr) => {
+    setDownloadingId(table.id);
+    try {
+      await downloadQRCode({ qr, table, url: buildTableQRUrl({ table, qr }) });
+      toast.success(`${qr.name} downloaded.`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Couldn't generate the QR file. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!assignedPairs.length) return;
+    setDownloadingAll(true);
+    try {
+      const items = assignedPairs.map(({ table, qr }) => ({ table, qr, url: buildTableQRUrl({ table, qr }) }));
+      const count = await downloadAllQRCodes(items);
+      toast.success(`Downloaded ${count} QR ${count === 1 ? "code" : "codes"} as a ZIP file.`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Couldn't create the ZIP file. Please try again.");
+    } finally {
+      setDownloadingAll(false);
+    }
   };
 
   const clearFilters = () => {
@@ -58,6 +93,10 @@ export default function TablesTab() {
           ]}
           className="w-full sm:w-40"
         />
+        <Button variant="secondary" disabled={!assignedPairs.length || downloadingAll} onClick={handleDownloadAll}>
+          {downloadingAll ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          {downloadingAll ? "Preparing ZIP..." : "Download All QR Codes"}
+        </Button>
         <Button onClick={() => { setEditTable(null); setShowForm(true); }}>
           <Plus size={16} /> Add Table
         </Button>
@@ -84,7 +123,7 @@ export default function TablesTab() {
           <table className="w-full text-sm">
             <thead className="bg-primary-light/30 border-b border-theme">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-theme">Table ID</th>
+                <th className="text-left px-4 py-3 font-medium text-theme">Table No.</th>
                 <th className="text-left px-4 py-3 font-medium text-theme">QR Code</th>
                 <th className="text-left px-4 py-3 font-medium text-theme">QR Type</th>
                 <th className="text-left px-4 py-3 font-medium text-theme">Session</th>
@@ -97,14 +136,7 @@ export default function TablesTab() {
                 const qr = getQRInfo(table.qrCodeId);
                 return (
                   <tr key={table.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10">
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setViewTable(table)}
-                        className="font-medium text-theme hover:text-primary hover:underline"
-                      >
-                        {table.tableId}
-                      </button>
-                    </td>
+                    <td className="px-4 py-3 font-medium text-theme">{table.tableId}</td>
                     <td className="px-4 py-3">
                       {qr ? (
                         <span className="inline-flex items-center gap-1 text-theme">
@@ -115,11 +147,7 @@ export default function TablesTab() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {qr ? (
-                        <QRTypeBadge type={qr.type} />
-                      ) : (
-                        <span className="text-secondary">—</span>
-                      )}
+                      {qr ? <QRTypeBadge type={qr.type} /> : <span className="text-secondary">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">Inactive</span>
@@ -133,9 +161,10 @@ export default function TablesTab() {
                       <TableActions
                         table={table}
                         qr={qr}
+                        downloading={downloadingId === table.id}
                         onEdit={() => { setEditTable(table); setShowForm(true); }}
                         onAssign={() => setAssignQR(table)}
-                        onView={() => setViewTable(table)}
+                        onDownload={() => handleDownloadOne(table, qr)}
                         onToggle={() => handleToggleStatus(table)}
                         onDelete={() => setDeleteTable(table)}
                       />
@@ -157,7 +186,7 @@ export default function TablesTab() {
       {deleteTable && (
         <DeleteConfirmDialog
           title="Delete Table?"
-          message={`Are you sure you want to delete "${deleteTable.tableId}"? The table's QR association will also be removed.`}
+          message={`Are you sure you want to delete "${deleteTable.tableId}"? Its QR code will be released and can be assigned to another table.`}
           onConfirm={() => {
             useTablesQRStore.getState().deleteTable(deleteTable.id);
             toast.success("Table deleted successfully.");
@@ -174,47 +203,48 @@ export default function TablesTab() {
           onAssigned={() => setAssignQR(null)}
         />
       )}
-
-      {viewTable && (
-        <TableDetailsDrawer
-          table={viewTable}
-          qr={getQRInfo(viewTable.qrCodeId)}
-          onClose={() => setViewTable(null)}
-          onAssign={() => { setViewTable(null); setAssignQR(viewTable); }}
-        />
-      )}
     </div>
   );
 }
 
 function QRTypeBadge({ type }) {
-  const colors = {
-    default: "bg-blue-100 text-blue-700",
-    premium: "bg-purple-100 text-purple-700",
-    paid: "bg-amber-100 text-amber-700",
-  };
-  const labels = { default: "Default", premium: "Premium", paid: "Paid" };
-  return <span className={`text-xs px-2 py-1 rounded-full font-medium ${colors[type] || colors.default}`}>{labels[type]}</span>;
+  const meta = QR_TYPE_META[type] || QR_TYPE_META.default;
+  return <span className={`text-xs px-2 py-1 rounded-full font-medium ${meta.className}`}>{meta.label}</span>;
 }
 
-function TableActions({ table, qr, onEdit, onAssign, onView, onToggle, onDelete }) {
+function TableActions({ table, qr, downloading, onEdit, onAssign, onDownload, onToggle, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
+  const itemClass = "w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light";
+  const run = (action) => () => { action(); setIsOpen(false); };
+
   return (
     <div className="relative">
-      <button onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} className="p-1.5 text-secondary hover:text-theme rounded hover:bg-primary-light">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      <button
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        aria-label={`Actions for ${table.tableId}`}
+        className="p-1.5 text-secondary hover:text-theme rounded hover:bg-primary-light"
+      >
+        <MoreVertical size={18} />
       </button>
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 w-44 bg-surface border border-theme rounded-lg shadow-xl z-20 py-1">
-            <button onClick={() => { onView(); setIsOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light"><Search size={14} /> View Details</button>
-            <button onClick={() => { onEdit(); setIsOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+          <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-theme rounded-lg shadow-xl z-20 py-1">
+            <button onClick={run(onEdit)} className={itemClass}><Pencil size={14} /> Edit</button>
             {table.status === "active" && (
-              <button onClick={() => { onAssign(); setIsOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light"><QrCode size={14} /> {qr ? "Change QR" : "Assign QR"}</button>
+              <button onClick={run(onAssign)} className={itemClass}><QrCode size={14} /> {qr ? "Change QR" : "Assign QR"}</button>
             )}
-            <button onClick={() => { onToggle(); setIsOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light">{table.status === "active" ? "Mark Inactive" : "Mark Active"}</button>
-            <button onClick={() => { onDelete(); setIsOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete</button>
+            {qr && (
+              <button disabled={downloading} onClick={run(onDownload)} className={`${itemClass} disabled:opacity-50`}>
+                <Download size={14} /> Download QR
+              </button>
+            )}
+            <button onClick={run(onToggle)} className={itemClass}>
+              <ToggleRight size={14} /> {table.status === "active" ? "Mark Inactive" : "Mark Active"}
+            </button>
+            <button onClick={run(onDelete)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50">
+              <Trash2 size={14} /> Delete
+            </button>
           </div>
         </>
       )}

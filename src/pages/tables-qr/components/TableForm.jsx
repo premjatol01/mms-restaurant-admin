@@ -6,28 +6,34 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
+import { getFreeQRCodes, formatQROption } from "../utils/qrRules";
 
 export default function TableForm({ isOpen, onClose, editTable }) {
-  const { tables, qrCodes, addTable, updateTable } = useTablesQRStore();
+  const { tables, qrCodes, addTable, updateTable, assignQRToTable } = useTablesQRStore();
   const [form, setForm] = useState({ tableId: "", status: "active", qrCodeId: "" });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (editTable) {
-      setForm({ tableId: editTable.tableId, status: editTable.status, qrCodeId: editTable.qrCodeId || "" });
-    } else {
-      setForm({ tableId: "", status: "active", qrCodeId: "" });
-    }
+    // qrCodeId "" means: add -> skip for now, edit -> keep the current QR
+    setForm(
+      editTable
+        ? { tableId: editTable.tableId, status: editTable.status, qrCodeId: "" }
+        : { tableId: "", status: "active", qrCodeId: "" }
+    );
     setErrors({});
   }, [editTable, isOpen]);
 
-  const availableQRCodes = qrCodes.filter((qr) => qr.status === "available" || qr.id === editTable?.qrCodeId);
+  // Only free QR codes can be picked
+  const freeQRCodes = getFreeQRCodes(qrCodes, tables);
+  const liveEditTable = editTable ? tables.find((t) => t.id === editTable.id) || editTable : null;
+  const currentQR = liveEditTable ? qrCodes.find((qr) => qr.id === liveEditTable.qrCodeId) : null;
 
   const validate = () => {
     const errs = {};
-    if (!form.tableId.trim()) errs.tableId = "Table ID is required";
-    if (tables.some((t) => t.tableId.toLowerCase() === form.tableId.toLowerCase() && t.id !== editTable?.id)) {
-      errs.tableId = "Table ID already exists";
+    const tableNo = form.tableId.trim();
+    if (!tableNo) errs.tableId = "Table No. is required";
+    else if (tables.some((t) => t.tableId.trim().toLowerCase() === tableNo.toLowerCase() && t.id !== editTable?.id)) {
+      errs.tableId = "Table No. already exists";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -35,18 +41,21 @@ export default function TableForm({ isOpen, onClose, editTable }) {
 
   const handleSubmit = () => {
     if (!validate()) return;
-    const data = { ...form, qrCodeId: form.qrCodeId || null };
+    const tableNo = form.tableId.trim();
+
     if (editTable) {
-      updateTable(editTable.id, data);
-      if (form.qrCodeId && form.qrCodeId !== editTable.qrCodeId) {
-        useTablesQRStore.getState().assignQRToTable(editTable.id, form.qrCodeId);
+      updateTable(editTable.id, { tableId: tableNo, status: form.status });
+      if (form.qrCodeId && !assignQRToTable(editTable.id, form.qrCodeId)) {
+        toast.error("Table updated, but the selected QR code is no longer available.");
+        return onClose();
       }
       toast.success("Table updated successfully.");
     } else {
-      addTable(data);
-      if (form.qrCodeId) {
-        const newTable = tables[tables.length];
-        useTablesQRStore.getState().assignQRToTable(newTable?.id, form.qrCodeId);
+      // New tables only ever ADD a mapping - existing tables/QRs are never touched.
+      const { qrAssigned } = addTable({ tableId: tableNo, status: form.status, qrCodeId: form.qrCodeId });
+      if (form.qrCodeId && !qrAssigned) {
+        toast.error("Table added, but the selected QR code is no longer available.");
+        return onClose();
       }
       toast.success("Table added successfully.");
     }
@@ -59,7 +68,7 @@ export default function TableForm({ isOpen, onClose, editTable }) {
         <FormSection title="Table Details">
           <div className="space-y-4">
             <Input
-              label="Table ID"
+              label="Table No."
               required
               placeholder="e.g., Table 12"
               value={form.tableId}
@@ -70,11 +79,11 @@ export default function TableForm({ isOpen, onClose, editTable }) {
               <label className="text-sm font-medium text-theme block mb-2">Status</label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="status" checked={form.status === "active"} onChange={() => setForm({ ...form, status: "active" })} className="w-4 h-4 text-primary" />
+                  <input type="radio" name="status" checked={form.status === "active"} onChange={() => setForm({ ...form, status: "active" })} className="w-4 h-4" style={{ accentColor: "var(--color-primary)" }} />
                   <span className="text-sm text-theme">Active</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="status" checked={form.status === "inactive"} onChange={() => setForm({ ...form, status: "inactive" })} className="w-4 h-4 text-primary" />
+                  <input type="radio" name="status" checked={form.status === "inactive"} onChange={() => setForm({ ...form, status: "inactive" })} className="w-4 h-4" style={{ accentColor: "var(--color-primary)" }} />
                   <span className="text-sm text-theme">Inactive</span>
                 </label>
               </div>
@@ -84,14 +93,15 @@ export default function TableForm({ isOpen, onClose, editTable }) {
 
         <FormSection title="QR Assignment">
           <Select
-            label="Assign QR Code"
+            label={currentQR ? "Change QR Code" : "Assign QR Code"}
             value={form.qrCodeId}
             onChange={(val) => setForm({ ...form, qrCodeId: val })}
             options={[
-              { value: "", label: "Skip for now" },
-              ...availableQRCodes.map((qr) => ({ value: qr.id, label: `${qr.name} (${qr.type}) - ${qr.layout}` }))
+              { value: "", label: currentQR ? `Keep current (${currentQR.name})` : "Skip for now" },
+              ...freeQRCodes.map((qr) => ({ value: qr.id, label: formatQROption(qr) })),
             ]}
           />
+          <p className="text-xs text-secondary mt-2">Only QR codes that are not assigned to another table are listed.</p>
         </FormSection>
 
         <div className="flex gap-3 pt-4 border-t border-theme">

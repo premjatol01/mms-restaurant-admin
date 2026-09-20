@@ -1,88 +1,27 @@
-import { useState } from "react";
-import { Search, ChevronRight, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
-import Button from "../../../components/ui/Button";
+import InquiryDetailsDrawer, { StatusBadge } from "../modals/InquiryDetailsDrawer";
 
-function StatusBadge({ status }) {
-  const styles = {
-    new: "bg-blue-100 text-blue-700",
-    in_progress: "bg-yellow-100 text-yellow-700",
-    resolved: "bg-green-100 text-green-700"
-  };
-  const labels = { new: "New", in_progress: "In Progress", resolved: "Resolved" };
+const formatDate = (dateStr) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 0 && diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+};
+
+function PurposeTag({ purpose }) {
+  if (!purpose) return <span className="text-secondary">-</span>;
   return (
-    <span className={`text-xs px-2 py-1 rounded-full font-medium ${styles[status]}`}>
-      {labels[status]}
+    <span className="inline-block text-xs px-2 py-1 rounded-full font-medium bg-secondary-soft text-theme whitespace-nowrap">
+      {purpose}
     </span>
-  );
-}
-
-function InquiryDetailsDrawer({ inquiry, onClose, onUpdateStatus }) {
-  if (!inquiry) return null;
-
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleString("en-IN", {
-      day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-surface w-full max-w-lg h-full flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-theme">
-          <h2 className="text-lg font-semibold text-theme">Inquiry Details</h2>
-          <button onClick={onClose} className="p-1 text-secondary hover:text-theme rounded">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-secondary">Name</p>
-              <p className="text-sm font-medium text-theme">{inquiry.name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary">Mobile</p>
-              <p className="text-sm text-theme">{inquiry.mobile}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary">Email</p>
-              <p className="text-sm text-theme">{inquiry.email}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary">Message</p>
-              <p className="text-sm text-theme whitespace-pre-wrap">{inquiry.message}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary">Submitted</p>
-              <p className="text-sm text-theme">{formatDate(inquiry.submittedAt)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-secondary mb-2">Status</p>
-              <StatusBadge status={inquiry.status} />
-            </div>
-          </div>
-        </div>
-        <div className="px-6 py-4 border-t border-theme space-y-2">
-          {inquiry.status === "new" && (
-            <Button className="w-full" onClick={() => onUpdateStatus(inquiry.id, "in_progress")}>
-              Mark as In Progress
-            </Button>
-          )}
-          {inquiry.status === "in_progress" && (
-            <Button className="w-full" onClick={() => onUpdateStatus(inquiry.id, "resolved")}>
-              Mark as Resolved
-            </Button>
-          )}
-          <Button variant="secondary" className="w-full" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -90,29 +29,30 @@ export default function InquiryList() {
   const { inquiries, updateInquiryStatus, getInquiryStats } = useWebsiteStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [purposeFilter, setPurposeFilter] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   const stats = getInquiryStats();
 
-  const filteredInquiries = inquiries.filter((inq) => {
-    const matchSearch = !search || 
-      inq.name.toLowerCase().includes(search.toLowerCase()) ||
-      inq.mobile.includes(search) ||
-      inq.email.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || inq.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Read the selected inquiry from the store so the drawer updates after a status change.
+  const selectedInquiry = inquiries.find((inq) => inq.id === selectedId) ?? null;
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-  };
+  const purposeOptions = useMemo(() => {
+    const purposes = [...new Set(inquiries.map((inq) => inq.purpose).filter(Boolean))];
+    return [{ value: "", label: "All Purposes" }, ...purposes.map((p) => ({ value: p, label: p }))];
+  }, [inquiries]);
+
+  const filteredInquiries = inquiries.filter((inq) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      !search ||
+      inq.name?.toLowerCase().includes(q) ||
+      inq.mobile?.includes(search) ||
+      inq.email?.toLowerCase().includes(q);
+    const matchStatus = !statusFilter || inq.status === statusFilter;
+    const matchPurpose = !purposeFilter || inq.purpose === purposeFilter;
+    return matchSearch && matchStatus && matchPurpose;
+  });
 
   return (
     <div className="space-y-5">
@@ -139,12 +79,18 @@ export default function InquiryList() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1">
-          <SearchInput 
-            value={search} 
-            onChange={setSearch} 
-            placeholder="Search by name, mobile, or email..." 
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, mobile, or email..."
           />
         </div>
+        <Select
+          value={purposeFilter}
+          onChange={setPurposeFilter}
+          options={purposeOptions}
+          className="w-full sm:w-48"
+        />
         <Select
           value={statusFilter}
           onChange={setStatusFilter}
@@ -168,11 +114,12 @@ export default function InquiryList() {
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-primary-light/30 border-b border-theme">
+              <thead className="bg-primary-soft border-b border-theme">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-theme">Name</th>
                   <th className="text-left px-4 py-3 font-medium text-theme">Contact</th>
                   <th className="text-left px-4 py-3 font-medium text-theme">Email</th>
+                  <th className="text-left px-4 py-3 font-medium text-theme">Purpose</th>
                   <th className="text-left px-4 py-3 font-medium text-theme">Message</th>
                   <th className="text-left px-4 py-3 font-medium text-theme">Submitted</th>
                   <th className="text-left px-4 py-3 font-medium text-theme">Status</th>
@@ -181,16 +128,17 @@ export default function InquiryList() {
               </thead>
               <tbody>
                 {filteredInquiries.map((inq) => (
-                  <tr key={inq.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10">
+                  <tr key={inq.id} className="border-b border-theme last:border-0 hover-bg-primary-soft">
                     <td className="px-4 py-3 font-medium text-theme">{inq.name}</td>
                     <td className="px-4 py-3 text-theme">{inq.mobile}</td>
                     <td className="px-4 py-3 text-theme">{inq.email}</td>
+                    <td className="px-4 py-3"><PurposeTag purpose={inq.purpose} /></td>
                     <td className="px-4 py-3 text-secondary max-w-xs truncate">{inq.message}</td>
                     <td className="px-4 py-3 text-secondary">{formatDate(inq.submittedAt)}</td>
                     <td className="px-4 py-3"><StatusBadge status={inq.status} /></td>
                     <td className="px-4 py-3 text-right">
-                      <button 
-                        onClick={() => setSelectedInquiry(inq)}
+                      <button
+                        onClick={() => setSelectedId(inq.id)}
                         className="text-primary hover:underline text-sm"
                       >
                         View
@@ -214,11 +162,12 @@ export default function InquiryList() {
                   </div>
                   <StatusBadge status={inq.status} />
                 </div>
+                {inq.purpose && <PurposeTag purpose={inq.purpose} />}
                 <p className="text-sm text-secondary line-clamp-2">{inq.message}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-secondary">{formatDate(inq.submittedAt)}</span>
-                  <button 
-                    onClick={() => setSelectedInquiry(inq)}
+                  <button
+                    onClick={() => setSelectedId(inq.id)}
                     className="text-primary hover:underline text-sm flex items-center gap-1"
                   >
                     View <ChevronRight size={14} />
@@ -231,13 +180,11 @@ export default function InquiryList() {
       )}
 
       {/* Details Drawer */}
-      {selectedInquiry && (
-        <InquiryDetailsDrawer
-          inquiry={selectedInquiry}
-          onClose={() => setSelectedInquiry(null)}
-          onUpdateStatus={updateInquiryStatus}
-        />
-      )}
+      <InquiryDetailsDrawer
+        inquiry={selectedInquiry}
+        onClose={() => setSelectedId(null)}
+        onUpdateStatus={updateInquiryStatus}
+      />
     </div>
   );
 }

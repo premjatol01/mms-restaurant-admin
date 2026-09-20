@@ -11,6 +11,7 @@ const mockOffers = [
     validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
     terms: "Valid on eligible repeat orders only. Cannot be combined with other offers.",
     status: "active",
+    performance: { timesAvailed: 42, totalDiscountGiven: 18650 },
     createdAt: "2026-09-01T10:00:00"
   },
   {
@@ -22,6 +23,7 @@ const mockOffers = [
     validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
     terms: "Applicable when the order value reaches ₹1,500 or more.",
     status: "active",
+    performance: { timesAvailed: 27, totalDiscountGiven: 31200 },
     createdAt: "2026-09-01T10:00:00"
   },
   {
@@ -36,6 +38,7 @@ const mockOffers = [
     validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
     terms: "Valid every Tuesday during the offer period. Minimum order ₹1,000.",
     status: "active",
+    performance: { timesAvailed: 64, totalDiscountGiven: 47800 },
     createdAt: "2026-09-01T10:00:00"
   },
   {
@@ -50,7 +53,8 @@ const mockOffers = [
     benefit: { type: "percentage", value: 20 },
     validity: { startDate: "2026-10-01", endDate: "2026-10-31" },
     terms: "Valid on Margherita Pizza every Wednesday in October.",
-    status: "scheduled",
+    status: "active",
+    performance: { timesAvailed: 0, totalDiscountGiven: 0 },
     createdAt: "2026-09-10T10:00:00"
   },
   {
@@ -62,6 +66,7 @@ const mockOffers = [
     validity: { startDate: "2026-08-01", endDate: "2026-08-31" },
     terms: "Valid on weekends only.",
     status: "inactive",
+    performance: { timesAvailed: 89, totalDiscountGiven: 21340 },
     createdAt: "2026-08-01T10:00:00"
   }
 ];
@@ -78,7 +83,15 @@ export const useOffersStore = create((set, get) => ({
   designerContact,
 
   addOffer: (offer) => set((state) => ({
-    offers: [...state.offers, { ...offer, id: `OFF-${Date.now()}`, createdAt: new Date().toISOString() }]
+    offers: [
+      ...state.offers,
+      {
+        ...offer,
+        id: `OFF-${Date.now()}`,
+        performance: { timesAvailed: 0, totalDiscountGiven: 0 },
+        createdAt: new Date().toISOString()
+      }
+    ]
   })),
 
   updateOffer: (id, data) => set((state) => ({
@@ -99,8 +112,7 @@ export const useOffersStore = create((set, get) => ({
     const { offers } = get();
     const total = offers.length;
     const active = offers.filter((o) => o.status === "active").length;
-    const scheduled = offers.filter((o) => o.status === "scheduled").length;
     const inactive = offers.filter((o) => o.status === "inactive").length;
-    return { total, active, scheduled, inactive };
+    return { total, active, inactive };
   }
 }));
