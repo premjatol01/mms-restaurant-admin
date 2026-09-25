@@ -4,6 +4,7 @@ import { isToday } from "date-fns";
 import { useOrdersStore } from "../../store/ordersStore";
 import PendingOrdersTab from "./components/PendingOrdersTab";
 import ActiveSessionsTab from "./components/ActiveSessionsTab";
+import CompletedTab from "./components/CompletedTab";
 import ExportControls from "./components/ExportControls";
 import AnimatedCount from "./components/AnimatedCount";
 import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
@@ -13,6 +14,7 @@ import { formatCurrency } from "./utils/orderUtils";
 const TABS = [
   { id: "pending", label: "Pending Orders" },
   { id: "sessions", label: "Active Table Sessions" },
+  { id: "completed", label: "Completed Sessions" },
 ];
 
 function StatCard({ icon: Icon, iconBg, iconColor, label, children }) {
@@ -101,6 +103,9 @@ export default function OrdersPage() {
           )}
           {activeTab === "sessions" && (
             <ActiveSessionsTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
+          )}
+          {activeTab === "completed" && (
+            <CompletedTab />
           )}
         </div>
       </div>

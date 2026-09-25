@@ -9,7 +9,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import TableForm from "./TableForm";
 import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import AssignQRDialog from "../modals/AssignQRDialog";
-import { QR_TYPE_META } from "../data/tablesQRData";
+import { defaultQRLayouts } from "../data/tablesQRData";
 import { getAssignedPairs } from "../utils/qrRules";
 import { buildTableQRUrl } from "../utils/qrLink";
 import { downloadQRCode, downloadAllQRCodes } from "../utils/qrDownload";
@@ -147,7 +147,7 @@ export default function TablesTab() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {qr ? <QRTypeBadge type={qr.type} /> : <span className="text-secondary">—</span>}
+                      {qr ? <QRTypeBadge layout={qr.layout} /> : <span className="text-secondary">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">Inactive</span>
@@ -207,9 +207,10 @@ export default function TablesTab() {
   );
 }
 
-function QRTypeBadge({ type }) {
-  const meta = QR_TYPE_META[type] || QR_TYPE_META.default;
-  return <span className={`text-xs px-2 py-1 rounded-full font-medium ${meta.className}`}>{meta.label}</span>;
+function QRTypeBadge({ layout }) {
+  const layoutObj = defaultQRLayouts.find((l) => l.id === layout);
+  const name = layoutObj ? layoutObj.name : layout;
+  return <span className="text-xs px-2 py-1 rounded-full font-medium bg-primary-light text-primary uppercase">{name}</span>;
 }
 
 function TableActions({ table, qr, downloading, onEdit, onAssign, onDownload, onToggle, onDelete }) {

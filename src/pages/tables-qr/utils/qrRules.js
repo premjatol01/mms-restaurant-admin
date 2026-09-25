@@ -1,4 +1,4 @@
-import { QR_TYPE_META, CURRENT_RESTAURANT_ID } from "../data/tablesQRData";
+import { CURRENT_RESTAURANT_ID } from "../data/tablesQRData";
 
 /**
  * Custom QR codes belong to one restaurant and are only visible to it.
@@ -26,7 +26,7 @@ export const getAssignedPairs = (tables, qrCodes, restaurantId = CURRENT_RESTAUR
 
 export const formatQROption = (qr) => {
   const layout = qr.layout.charAt(0).toUpperCase() + qr.layout.slice(1);
-  return `${qr.name} (${QR_TYPE_META[qr.type]?.label ?? qr.type}) - ${layout}`;
+  return `${qr.name} - ${layout}`;
 };
 
 /**

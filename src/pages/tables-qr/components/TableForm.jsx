@@ -6,10 +6,10 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
-import { getFreeQRCodes, formatQROption } from "../utils/qrRules";
+import { defaultQRLayouts } from "../data/tablesQRData";
 
 export default function TableForm({ isOpen, onClose, editTable }) {
-  const { tables, qrCodes, addTable, updateTable, assignQRToTable } = useTablesQRStore();
+  const { tables, qrCodes, addTable, updateTable, assignQRToTable, addQRCode } = useTablesQRStore();
   const [form, setForm] = useState({ tableId: "", status: "active", qrCodeId: "" });
   const [errors, setErrors] = useState({});
 
@@ -23,8 +23,6 @@ export default function TableForm({ isOpen, onClose, editTable }) {
     setErrors({});
   }, [editTable, isOpen]);
 
-  // Only free QR codes can be picked
-  const freeQRCodes = getFreeQRCodes(qrCodes, tables);
   const liveEditTable = editTable ? tables.find((t) => t.id === editTable.id) || editTable : null;
   const currentQR = liveEditTable ? qrCodes.find((qr) => qr.id === liveEditTable.qrCodeId) : null;
 
@@ -43,18 +41,28 @@ export default function TableForm({ isOpen, onClose, editTable }) {
     if (!validate()) return;
     const tableNo = form.tableId.trim();
 
+    // If they picked a template, generate a new QR entity for it
+    let finalQrCodeId = form.qrCodeId;
+    if (finalQrCodeId && finalQrCodeId.startsWith("tpl-")) {
+      const newQR = addQRCode({
+        name: `QR-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+        type: "template",
+        layout: finalQrCodeId,
+      });
+      finalQrCodeId = newQR.id;
+    }
+
     if (editTable) {
       updateTable(editTable.id, { tableId: tableNo, status: form.status });
-      if (form.qrCodeId && !assignQRToTable(editTable.id, form.qrCodeId)) {
-        toast.error("Table updated, but the selected QR code is no longer available.");
+      if (finalQrCodeId && !assignQRToTable(editTable.id, finalQrCodeId)) {
+        toast.error("Table updated, but could not assign the QR template.");
         return onClose();
       }
       toast.success("Table updated successfully.");
     } else {
-      // New tables only ever ADD a mapping - existing tables/QRs are never touched.
-      const { qrAssigned } = addTable({ tableId: tableNo, status: form.status, qrCodeId: form.qrCodeId });
-      if (form.qrCodeId && !qrAssigned) {
-        toast.error("Table added, but the selected QR code is no longer available.");
+      const { qrAssigned } = addTable({ tableId: tableNo, status: form.status, qrCodeId: finalQrCodeId });
+      if (finalQrCodeId && !qrAssigned) {
+        toast.error("Table added, but could not assign the QR template.");
         return onClose();
       }
       toast.success("Table added successfully.");
@@ -92,16 +100,35 @@ export default function TableForm({ isOpen, onClose, editTable }) {
         </FormSection>
 
         <FormSection title="QR Assignment">
-          <Select
-            label={currentQR ? "Change QR Code" : "Assign QR Code"}
-            value={form.qrCodeId}
-            onChange={(val) => setForm({ ...form, qrCodeId: val })}
-            options={[
-              { value: "", label: currentQR ? `Keep current (${currentQR.name})` : "Skip for now" },
-              ...freeQRCodes.map((qr) => ({ value: qr.id, label: formatQROption(qr) })),
-            ]}
-          />
-          <p className="text-xs text-secondary mt-2">Only QR codes that are not assigned to another table are listed.</p>
+          <div className="mb-3">
+            <p className="text-sm font-medium text-theme mb-2">{currentQR ? "Change QR Template" : "Assign QR Template (Optional)"}</p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, qrCodeId: "" })}
+                className={`border-2 rounded-lg p-2 text-center transition-all ${
+                  form.qrCodeId === "" ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20" : "border-theme hover:border-[var(--color-primary)]/50"
+                }`}
+              >
+                <div className="w-full aspect-square bg-surface border border-theme border-dashed rounded mb-1 flex items-center justify-center text-xs text-secondary">None</div>
+                <p className="text-[10px] font-medium text-theme">Keep / Skip</p>
+              </button>
+              {defaultQRLayouts.map((layout) => (
+                <button
+                  key={layout.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, qrCodeId: layout.id })}
+                  className={`border-2 rounded-lg p-2 text-center transition-all ${
+                    form.qrCodeId === layout.id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20" : "border-theme hover:border-[var(--color-primary)]/50"
+                  }`}
+                >
+                  <img src={layout.image} alt={layout.name} className="w-full aspect-square object-cover rounded mb-1 bg-white" />
+                  <p className="text-[10px] font-medium text-theme leading-tight">{layout.name}</p>
+                </button>
+              ))}
+            </div>
+            {currentQR && <p className="text-xs text-secondary mt-2">Currently assigned: {defaultQRLayouts.find(l => l.id === currentQR.layout)?.name || currentQR.layout}</p>}
+          </div>
         </FormSection>
 
         <div className="flex gap-3 pt-4 border-t border-theme">

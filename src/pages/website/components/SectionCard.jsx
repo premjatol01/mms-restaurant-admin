@@ -1,6 +1,4 @@
 import {
-  ChevronDown,
-  ChevronUp,
   Images,
   Info,
   LayoutTemplate,
@@ -82,24 +80,6 @@ export default function SectionCard({ section, onEdit, onMoveUp, onMoveDown, isF
             />
             <span className="text-secondary">Enabled</span>
           </label>
-          <button
-            onClick={onMoveUp}
-            disabled={isFirst}
-            className="p-1.5 text-secondary hover-text-primary hover-bg-primary-soft rounded disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Move up"
-            aria-label={`Move ${section.title} up`}
-          >
-            <ChevronUp size={16} />
-          </button>
-          <button
-            onClick={onMoveDown}
-            disabled={isLast}
-            className="p-1.5 text-secondary hover-text-primary hover-bg-primary-soft rounded disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Move down"
-            aria-label={`Move ${section.title} down`}
-          >
-            <ChevronDown size={16} />
-          </button>
           <button
             onClick={() => onEdit(section)}
             className="p-1.5 text-secondary hover-text-primary hover-bg-primary-soft rounded"

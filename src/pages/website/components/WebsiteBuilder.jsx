@@ -57,15 +57,13 @@ export default function WebsiteBuilder() {
       <div className="space-y-4">
         <div>
           <h2 className="font-semibold text-theme">Website Sections</h2>
-          <p className="text-xs text-secondary">Turn sections on or off, change their order and edit their content</p>
+          <p className="text-xs text-secondary">Turn sections on or off and edit their content</p>
         </div>
         {sortedSections.map((section, index) => (
           <SectionCard
             key={section.id}
             section={section}
             onEdit={(s) => setEditingId(s.id)}
-            onMoveUp={() => moveSection(section.id, "up")}
-            onMoveDown={() => moveSection(section.id, "down")}
             isFirst={index === 0}
             isLast={index === sortedSections.length - 1}
           />
