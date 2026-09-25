@@ -51,3 +51,62 @@ export const DEFAULT_PAYMENT_INSTRUCTIONS = [
   "Upload the screenshot below and submit your renewal request.",
   "Our team will verify the payment and activate your renewal.",
 ];
+
+/**
+ * Available plans catalog — shown in the "Available Plans" section.
+ * tier: lower number = lower plan. Used to decide Upgrade vs Downgrade label.
+ */
+export const AVAILABLE_PLANS = [
+  {
+    id: "PKG-001",
+    name: "Basic",
+    tier: 1,
+    duration: 30,
+    durationDisplay: "30 Days",
+    amount: 999,
+    billingCycle: "monthly",
+    description: "Essential tools to get your restaurant online.",
+    features: [
+      "QR Menu",
+      "Restaurant Website",
+    ],
+  },
+  {
+    id: "PKG-002",
+    name: "Standard",
+    tier: 2,
+    duration: 90,
+    durationDisplay: "90 Days",
+    amount: 2499,
+    billingCycle: "quarterly",
+    description: "Advanced features to grow your restaurant.",
+    features: [
+      "QR Menu",
+      "Premium QR",
+      "Restaurant Website",
+      "Customer Inquiry",
+      "Offers & Promotions",
+      "Google Review Integration",
+    ],
+    popular: true,
+  },
+  {
+    id: "PKG-003",
+    name: "Premium",
+    tier: 3,
+    duration: 365,
+    durationDisplay: "1 Year",
+    amount: 4999,
+    billingCycle: "yearly",
+    description: "Full suite for high-volume restaurants.",
+    features: [
+      "QR Menu",
+      "Premium QR",
+      "Additional QR Code",
+      "Restaurant Website",
+      "Customer Inquiry",
+      "Offers & Promotions",
+      "Google Review Integration",
+    ],
+  },
+];
