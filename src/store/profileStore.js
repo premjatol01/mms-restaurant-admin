@@ -324,27 +324,27 @@ export const useProfileStore = create((set, get) => ({
   },
 
   // First-time setup and "add more tables" are the same call: it only ever appends.
-  createTables: async ({ count, assignQr }) => {
-    // TODO: await profileApi.createTables({ count, assignQr }) — the backend must only append
+  createTables: async ({ count, assignQr, qrType = "tpl-1" }) => {
+    // TODO: await profileApi.createTables({ count, assignQr, qrType }) — the backend must only append
     // tables (numbered after the current highest) and return the newly created ones.
     const start = get().tables.reduce((max, t) => Math.max(max, t.number), 0);
-    const created = Array.from({ length: count }, (_, i) => createDummyTable(start + i + 1, assignQr));
+    const created = Array.from({ length: count }, (_, i) => createDummyTable(start + i + 1, assignQr, qrType));
     set((s) => ({ tables: appendNewTables(s.tables, created) }));
     return { success: true, created: count };
   },
 
-  assignTableQr: async (tableId) => {
+  assignTableQr: async (tableId, qrType = "tpl-1") => {
     const table = get().tables.find((t) => t.id === tableId);
     if (!table) return { success: false, message: "Table not found." };
     if (table.qrCode) return { success: false, message: "This table already has a QR code." };
-    // TODO: const { data } = await profileApi.assignTableQr(tableId);
-    set((s) => ({ tables: fillMissingQr(s.tables, new Map([[tableId, createDummyQr()]])) }));
+    // TODO: const { data } = await profileApi.assignTableQr(tableId, qrType);
+    set((s) => ({ tables: fillMissingQr(s.tables, new Map([[tableId, createDummyQr(qrType)]])) }));
     return { success: true };
   },
 
-  assignAllTableQr: async () => {
-    // TODO: const { data } = await profileApi.assignAllTableQr(); — skips tables that already have one.
-    const qrById = new Map(get().tables.filter((t) => !t.qrCode).map((t) => [t.id, createDummyQr()]));
+  assignAllTableQr: async (qrType = "tpl-1") => {
+    // TODO: const { data } = await profileApi.assignAllTableQr({ qrType }); — skips tables that already have one.
+    const qrById = new Map(get().tables.filter((t) => !t.qrCode).map((t) => [t.id, createDummyQr(qrType)]));
     set((s) => ({ tables: fillMissingQr(s.tables, qrById) }));
     return { success: true, assigned: qrById.size };
   },

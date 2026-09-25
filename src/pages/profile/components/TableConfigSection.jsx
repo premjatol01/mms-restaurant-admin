@@ -6,6 +6,7 @@ import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 import Input from "../../../components/ui/Input";
 import ConfirmModal from "../modals/ConfirmModal";
+import { DUMMY_QR_TEMPLATES } from "../data/tablesData";
 
 const MAX_PER_BATCH = 100;
 
@@ -41,6 +42,7 @@ export default function TableConfigSection() {
   const [saving, setSaving] = useState(false);
   const [count, setCount] = useState("");
   const [assignNow, setAssignNow] = useState(true);
+  const [qrType, setQrType] = useState("tpl-1");
   const [filter, setFilter] = useState("all");
   const [confirm, setConfirm] = useState(null); // { type: "create", count } | { type: "assignAll" }
   const [assigningId, setAssigningId] = useState(null);
@@ -63,7 +65,7 @@ export default function TableConfigSection() {
   const handleConfirm = async () => {
     setSaving(true);
     if (confirm.type === "create") {
-      const result = await createTables({ count: confirm.count, assignQr: assignNow });
+      const result = await createTables({ count: confirm.count, assignQr: assignNow, qrType });
       if (result.success) {
         toast.success(`${result.created} ${result.created === 1 ? "table" : "tables"} added.`);
         setCount("");
@@ -71,7 +73,7 @@ export default function TableConfigSection() {
         toast.error(result.message);
       }
     } else {
-      const result = await assignAllTableQr();
+      const result = await assignAllTableQr(qrType);
       if (result.success) toast.success(`QR codes assigned to ${result.assigned} ${result.assigned === 1 ? "table" : "tables"}.`);
       else toast.error(result.message);
     }
@@ -81,7 +83,7 @@ export default function TableConfigSection() {
 
   const handleAssignOne = async (table) => {
     setAssigningId(table.id);
-    const result = await assignTableQr(table.id);
+    const result = await assignTableQr(table.id, qrType);
     setAssigningId(null);
     if (result.success) toast.success(`QR code assigned to ${table.label}.`);
     else toast.error(result.message);
@@ -105,6 +107,24 @@ export default function TableConfigSection() {
           </div>
         </FormSection>
       )}
+
+      <FormSection title="Default QR Template" description="Select the default QR code design that will be assigned to your tables.">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {DUMMY_QR_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              onClick={() => setQrType(tpl.id)}
+              className={`border-2 rounded-lg p-3 text-left transition-all ${
+                qrType === tpl.id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/10" : "border-theme hover:border-[var(--color-primary)]/50"
+              }`}
+            >
+              <img src={tpl.image} alt={tpl.name} className="w-full aspect-square object-cover rounded mb-2 bg-white" />
+              <p className="text-sm font-medium text-theme">{tpl.name}</p>
+            </button>
+          ))}
+        </div>
+      </FormSection>
 
       <FormSection
         title={hasTables ? "Add More Tables" : "Set Up Tables"}
@@ -137,7 +157,7 @@ export default function TableConfigSection() {
           </label>
 
           {hasTables && (
-            <div className="flex items-start gap-2 text-xs text-secondary">
+            <div className="flex items-start gap-2 text-xs text-secondary mt-3">
               <Lock size={13} className="mt-0.5 flex-shrink-0" />
               <p>Adding tables never changes your existing tables or their QR codes.</p>
             </div>
@@ -192,7 +212,12 @@ export default function TableConfigSection() {
                   {table.qrCode ? (
                     <div className="flex items-center gap-1.5">
                       <QrCode size={14} className="text-green-600 flex-shrink-0" />
-                      <span className="text-xs text-secondary truncate flex-1">{table.qrCode.code}</span>
+                      <span className="text-xs text-secondary truncate flex-1">
+                        {table.qrCode.code}
+                        <span className="ml-1.5 text-[10px] uppercase font-semibold text-primary bg-primary-light px-1.5 py-0.5 rounded">
+                          {DUMMY_QR_TEMPLATES.find((t) => t.id === table.qrCode.type)?.name || table.qrCode.type}
+                        </span>
+                      </span>
                       {table.qrCode.url && (
                         <>
                           <button type="button" onClick={() => copyLink(table.qrCode.url)} title="Copy QR link" aria-label={`Copy QR link for ${table.label}`} className="text-secondary hover:text-theme transition-colors">
