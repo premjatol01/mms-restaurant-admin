@@ -1,25 +1,43 @@
 import { useState } from "react";
+import { Sparkles, Palette } from "lucide-react";
 import MenuItemsTab from "./components/MenuItemsTab";
 import CategoriesTab from "./components/CategoriesTab";
 import CombosTab from "./components/CombosTab";
-import MenuDesignTab from "./components/MenuDesignTab";
+import AIPromptGenerator from "./components/AIPromptGenerator";
+import ContactDesignerModal from "./modals/ContactDesignerModal";
+import Button from "../../components/ui/Button";
 
 const TABS = [
   { id: "items", label: "Menu Items" },
   { id: "categories", label: "Categories" },
   { id: "combos", label: "Combos" },
-  { id: "design", label: "Menu Design" },
 ];
 
 export default function MenuPage() {
   const [activeTab, setActiveTab] = useState("items");
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [showDesigner, setShowDesigner] = useState(false);
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-theme">Menu</h1>
-        <p className="text-sm text-secondary">Manage your restaurant menu, categories, items and combos.</p>
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-theme">Menu</h1>
+          <p className="text-sm text-secondary">Manage your restaurant menu, categories, items and combos.</p>
+        </div>
+
+        {/* Header action buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="secondary" onClick={() => setShowAIPrompt(true)}>
+            <Sparkles size={15} />
+            AI Menu Prompt
+          </Button>
+          <Button variant="secondary" onClick={() => setShowDesigner(true)}>
+            <Palette size={15} />
+            Contact Designer
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -44,9 +62,12 @@ export default function MenuPage() {
           {activeTab === "items" && <MenuItemsTab />}
           {activeTab === "categories" && <CategoriesTab />}
           {activeTab === "combos" && <CombosTab />}
-          {activeTab === "design" && <MenuDesignTab />}
         </div>
       </div>
+
+      {/* Modals — available from anywhere on the page */}
+      <AIPromptGenerator isOpen={showAIPrompt} onClose={() => setShowAIPrompt(false)} />
+      <ContactDesignerModal isOpen={showDesigner} onClose={() => setShowDesigner(false)} />
     </div>
   );
 }
