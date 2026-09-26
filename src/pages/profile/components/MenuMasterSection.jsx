@@ -213,16 +213,6 @@ export default function MenuMasterSection() {
                     {on && <Check size={12} strokeWidth={3} />}
                   </span>
 
-                  {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => setModal({ mode: "category", entry: cat })}
-                      aria-label={`Edit ${cat.name}`}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border border-theme flex items-center justify-center text-secondary hover:text-theme transition-colors"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                  )}
                 </div>
               );
             })}
@@ -288,16 +278,6 @@ export default function MenuMasterSection() {
                               </div>
                             </label>
                             {item.source === "menu" && <FromMenuBadge />}
-                            {item.editable !== false && (
-                              <button
-                                type="button"
-                                onClick={() => setModal({ mode: "item", entry: item, categoryId: cat.id })}
-                                aria-label={`Edit ${item.name}`}
-                                className="text-secondary hover:text-theme transition-colors flex-shrink-0"
-                              >
-                                <Pencil size={14} />
-                              </button>
-                            )}
                           </li>
                         ))}
                       </ul>

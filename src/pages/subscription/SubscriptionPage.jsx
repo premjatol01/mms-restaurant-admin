@@ -43,12 +43,6 @@ export default function SubscriptionPage() {
 
   return (
     <div className="space-y-5">
-      {/* Page header */}
-      <div>
-        <h1 className="text-xl font-bold text-theme">Subscription</h1>
-        <p className="text-sm text-secondary">Manage your current plan, explore available plans, and track your renewal history.</p>
-      </div>
-
       {/* Loading state */}
       {(status === "idle" || status === "loading") && <SubscriptionSkeleton />}
 

@@ -21,12 +21,7 @@ export default function MenuPage() {
   return (
     <div className="space-y-5">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Menu</h1>
-          <p className="text-sm text-secondary">Manage your restaurant menu, categories, items and combos.</p>
-        </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-start justify-end gap-4">
         {/* Header action buttons */}
         <div className="flex items-center gap-2 shrink-0">
           <Button variant="secondary" onClick={() => setShowAIPrompt(true)}>

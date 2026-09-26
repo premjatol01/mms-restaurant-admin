@@ -132,13 +132,6 @@ export default function ReviewsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-theme">Reviews</h1>
-        <p className="text-sm text-secondary">
-          See what customers say about your restaurant and choose which reviews are shown publicly.
-        </p>
-      </div>
-
       <div className="flex items-start gap-2 px-4 py-3 bg-surface border border-theme rounded-lg text-sm text-secondary">
         <Eye size={16} className="mt-0.5 flex-shrink-0" />
         <p>

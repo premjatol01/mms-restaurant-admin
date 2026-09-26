@@ -69,11 +69,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Orders</h1>
-          <p className="text-sm text-secondary">Manage customer orders, table sessions and payments.</p>
-        </div>
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-end gap-4">
         <ExportControls />
       </div>
 

@@ -241,13 +241,7 @@ export default function OffersPromosPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-theme">Offers & Promotions</h1>
-          <p className="text-sm text-secondary">
-            Create and manage offers that customers can automatically discover and avail.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
         <Button onClick={() => setShowCreate(true)}>
           + Create Offer
         </Button>

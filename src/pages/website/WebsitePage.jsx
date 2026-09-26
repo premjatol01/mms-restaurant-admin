@@ -32,11 +32,6 @@ export default function WebsitePage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-theme">Website</h1>
-        <p className="text-sm text-secondary">Configure and manage your restaurant website</p>
-      </div>
-
       {/* Status Card */}
       <div className="bg-surface border border-theme rounded-xl p-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

@@ -95,12 +95,10 @@ export default function RestaurantProfilePage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-theme">{profile?.name || "Restaurant Profile"}</h1>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
                 {profile?.status === "active" ? "Active" : "Inactive"}
               </span>
             </div>
-            {profile?.tagline && <p className="text-sm text-secondary">{profile.tagline}</p>}
           </div>
         </div>
         {isDirty && (
