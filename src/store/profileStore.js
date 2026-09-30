@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { profileApi } from "../api/profileApi";
-import { DUMMY_MASTER_CATEGORIES, DUMMY_MENU_SELECTION } from "../pages/profile/data/menuMasterData";
 import { DUMMY_TABLES, createDummyQr, createDummyTable } from "../pages/profile/data/tablesData";
 import { getDummySubscription } from "../pages/profile/data/subscriptionData";
 
@@ -88,9 +87,9 @@ export const useProfileStore = create((set, get) => ({
       const { data } = await profileApi.get();
       const profile = data.data || defaultProfile;
       set({ profile, originalProfile: profile, loading: false });
-    } catch {
-      // Use mock data for development
-      set({ profile: { ...defaultProfile, name: "Spice Garden Restaurant", tagline: "Authentic Indian Flavors", status: "active" }, originalProfile: { ...defaultProfile, name: "Spice Garden Restaurant", tagline: "Authentic Indian Flavors", status: "active" }, loading: false });
+    } catch (err) {
+      const message = err?.response?.data?.message || "Failed to load profile.";
+      set({ loading: false, error: message });
     }
   },
 
@@ -140,20 +139,27 @@ export const useProfileStore = create((set, get) => ({
     formData.append("logo", file);
     try {
       const { data } = await profileApi.uploadLogo(formData);
-      set((state) => ({ profile: { ...state.profile, logo: data.url }, originalProfile: { ...state.originalProfile, logo: data.url } }));
+      const logo = data.data?.logo ?? null;
+      set((state) => ({
+        profile: { ...state.profile, logo },
+        originalProfile: { ...state.originalProfile, logo },
+      }));
       return { success: true };
-    } catch {
-      return { success: false, message: "Failed to upload logo." };
+    } catch (err) {
+      return { success: false, message: err?.response?.data?.message || "Failed to upload logo." };
     }
   },
 
   removeLogo: async () => {
     try {
       await profileApi.removeLogo();
-      set((state) => ({ profile: { ...state.profile, logo: null }, originalProfile: { ...state.originalProfile, logo: null } }));
+      set((state) => ({
+        profile: { ...state.profile, logo: null },
+        originalProfile: { ...state.originalProfile, logo: null },
+      }));
       return { success: true };
-    } catch {
-      return { success: false, message: "Failed to remove logo." };
+    } catch (err) {
+      return { success: false, message: err?.response?.data?.message || "Failed to remove logo." };
     }
   },
 
@@ -162,20 +168,27 @@ export const useProfileStore = create((set, get) => ({
     formData.append("cover", file);
     try {
       const { data } = await profileApi.uploadCover(formData);
-      set((state) => ({ profile: { ...state.profile, coverImage: data.url }, originalProfile: { ...state.originalProfile, coverImage: data.url } }));
+      const coverImage = data.data?.coverImage ?? null;
+      set((state) => ({
+        profile: { ...state.profile, coverImage },
+        originalProfile: { ...state.originalProfile, coverImage },
+      }));
       return { success: true };
-    } catch {
-      return { success: false, message: "Failed to upload cover image." };
+    } catch (err) {
+      return { success: false, message: err?.response?.data?.message || "Failed to upload cover image." };
     }
   },
 
   removeCover: async () => {
     try {
       await profileApi.removeCover();
-      set((state) => ({ profile: { ...state.profile, coverImage: null }, originalProfile: { ...state.originalProfile, coverImage: null } }));
+      set((state) => ({
+        profile: { ...state.profile, coverImage: null },
+        originalProfile: { ...state.originalProfile, coverImage: null },
+      }));
       return { success: true };
-    } catch {
-      return { success: false, message: "Failed to remove cover image." };
+    } catch (err) {
+      return { success: false, message: err?.response?.data?.message || "Failed to remove cover image." };
     }
   },
 
@@ -195,14 +208,62 @@ export const useProfileStore = create((set, get) => ({
 
   fetchMenuMaster: async () => {
     if (get().menuLoaded) return;
-    // TODO: const { data } = await profileApi.getMenuMaster();
-    set({ menuCategories: DUMMY_MASTER_CATEGORIES, menuSelection: DUMMY_MENU_SELECTION, menuLoaded: true });
+    try {
+      const [catRes, itemRes] = await Promise.all([
+        profileApi.getMasterCategories(),
+        profileApi.getMasterItems()
+      ]);
+
+      const rawCategories = catRes.data.data || [];
+      const rawItems = itemRes.data.data || [];
+
+      const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace('/api', '');
+      const getImageUrl = (path) => (path && !path.startsWith('http') ? `${baseUrl}${path}` : path);
+
+      const itemsByCat = {};
+      rawItems.forEach(item => {
+        const catId = item.categoryId?._id || item.categoryId;
+        if (!itemsByCat[catId]) itemsByCat[catId] = [];
+        
+        itemsByCat[catId].push({
+          id: item._id,
+          categoryId: catId,
+          name: item.name,
+          description: "", 
+          image: getImageUrl(item.image),
+          source: "master",
+          editable: false,
+        });
+      });
+
+      const menuCategories = rawCategories.map(cat => ({
+        id: cat._id,
+        name: cat.name,
+        description: cat.description || "",
+        image: null,
+        source: "master",
+        editable: false,
+        items: itemsByCat[cat._id] || []
+      }));
+
+      const savedSelection = get().profile?.masterMenuSelection || { categoryIds: [], itemIds: [] };
+      set({ menuCategories, menuSelection: savedSelection, menuLoaded: true });
+    } catch (err) {
+      console.error("Failed to fetch master menu:", err);
+      // Fallback to empty if error
+      set({ menuCategories: [], menuSelection: { categoryIds: [], itemIds: [] }, menuLoaded: true });
+    }
   },
 
   saveMenuSelection: async (selection) => {
-    // TODO: await profileApi.saveMenuSelection(selection);
-    set({ menuSelection: selection });
-    return { success: true };
+    try {
+      await profileApi.saveMenuSelection(selection);
+      set({ menuSelection: selection });
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to save menu selection:", err);
+      return { success: false, message: err?.response?.data?.message || "Failed to save menu selection." };
+    }
   },
 
   // image: optional File. In the real API send multipart/form-data with `image`.
@@ -313,24 +374,51 @@ export const useProfileStore = create((set, get) => ({
     });
   },
 
+  // ---------- Templates ----------
+  qrTemplates: [],
+  templatesLoaded: false,
+
+  fetchQrTemplates: async () => {
+    if (get().templatesLoaded) return;
+    try {
+      const { data } = await profileApi.getTemplates();
+      set({ qrTemplates: data, templatesLoaded: true });
+    } catch (error) {
+      console.error("Failed to load templates", error);
+      set({ qrTemplates: [], templatesLoaded: true });
+    }
+  },
+
   // ---------- Tables ----------
-  tables: [], // [{ id, number, label, qrCode: { code, url } | null }]
+  tables: [], 
   tablesLoaded: false,
 
   fetchTables: async () => {
     if (get().tablesLoaded) return;
-    // TODO: const { data } = await profileApi.getTables();
-    set({ tables: DUMMY_TABLES, tablesLoaded: true });
+    try {
+      const { data } = await profileApi.getTables();
+      set({ tables: data.data || [], tablesLoaded: true });
+    } catch (error) {
+      console.error("Failed to load tables", error);
+      set({ tables: [], tablesLoaded: true });
+    }
   },
 
-  // First-time setup and "add more tables" are the same call: it only ever appends.
-  createTables: async ({ count, assignQr, qrType = "tpl-1" }) => {
-    // TODO: await profileApi.createTables({ count, assignQr, qrType }) — the backend must only append
-    // tables (numbered after the current highest) and return the newly created ones.
-    const start = get().tables.reduce((max, t) => Math.max(max, t.number), 0);
-    const created = Array.from({ length: count }, (_, i) => createDummyTable(start + i + 1, assignQr, qrType));
-    set((s) => ({ tables: appendNewTables(s.tables, created) }));
-    return { success: true, created: count };
+  createTables: async ({ count, assignQr, qrType }) => {
+    try {
+      // In backend, qrType translates to templateId (if assigned).
+      const payload = { count, templateId: assignQr ? qrType : null };
+      const { data } = await profileApi.createTables(payload);
+      
+      const newTables = data.data || [];
+      // Replace existing code that appended manually, since backend returns created ones
+      // and we just append them to the current list
+      set((s) => ({ tables: [...s.tables, ...newTables].sort((a, b) => a.number - b.number) }));
+      return { success: true, created: count };
+    } catch (error) {
+      console.error("Failed to create tables", error);
+      return { success: false, message: error?.response?.data?.message || "Failed to create tables." };
+    }
   },
 
   assignTableQr: async (tableId, qrType = "tpl-1") => {

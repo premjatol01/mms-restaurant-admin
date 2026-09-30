@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Layers, Pencil, Plus, RotateCcw, Search, UtensilsCrossed } from "lucide-react";
+import { Check, ChevronDown, Layers, Plus, RotateCcw, Search, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../../store/profileStore";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
-import MasterEntryModal from "../modals/MasterEntryModal";
 
 const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
 
@@ -46,19 +45,13 @@ export default function MenuMasterSection() {
     menuLoaded,
     fetchMenuMaster,
     saveMenuSelection,
-    createMasterCategory,
-    updateMasterCategory,
-    createMasterItem,
-    updateMasterItem,
   } = useProfileStore();
 
   const [saving, setSaving] = useState(false);
 
-  // `draft` holds unsaved selection changes. null = nothing changed, show the saved selection.
   const [draft, setDraft] = useState(null);
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState({});
-  const [modal, setModal] = useState(null); // { mode, entry?, categoryId? }
 
   useEffect(() => { fetchMenuMaster(); }, [fetchMenuMaster]);
 
@@ -119,29 +112,11 @@ export default function MenuMasterSection() {
     }
   };
 
-  // Add / edit a master entry from the modal.
-  const handleEntrySubmit = async (values) => {
-    const { mode, entry, categoryId } = modal;
-    if (mode === "category") {
-      if (entry) return updateMasterCategory(entry.id, values);
-      const result = await createMasterCategory(values);
-      // Newly added entries are selected for this restaurant (still needs Save selection).
-      if (result.success) patch((cur) => ({ ...cur, categoryIds: [...cur.categoryIds, result.category.id] }));
-      return result;
-    }
-    if (entry) return updateMasterItem(entry.id, values);
-    const result = await createMasterItem({ ...values, categoryId });
-    if (result.success) patch((cur) => ({ ...cur, itemIds: [...cur.itemIds, result.item.id] }));
-    return result;
-  };
-
   const query = search.trim().toLowerCase();
   const visibleCategories = query
     ? categories.filter((c) => c.name.toLowerCase().includes(query) || c.items.some((i) => i.name.toLowerCase().includes(query)))
     : categories;
   const selectedCategories = categories.filter((c) => catSet.has(c.id));
-
-  const modalParent = modal?.mode === "item" ? categories.find((c) => c.id === modal.categoryId) : null;
 
   if (!menuLoaded) return <SkeletonLoader />;
 
@@ -167,9 +142,6 @@ export default function MenuMasterSection() {
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={selectAllCategories} disabled={categories.length === 0}>Select All</Button>
             <Button type="button" variant="ghost" size="sm" onClick={clearCategories} disabled={catSet.size === 0}>Clear</Button>
-            <Button type="button" variant="secondary" size="sm" onClick={() => setModal({ mode: "category" })}>
-              <Plus size={14} /> Add Category
-            </Button>
           </div>
         </div>
 
@@ -252,9 +224,6 @@ export default function MenuMasterSection() {
                         {allOn ? "Clear" : "Select All"}
                       </Button>
                     )}
-                    <Button type="button" variant="secondary" size="sm" onClick={() => setModal({ mode: "item", categoryId: cat.id })}>
-                      <Plus size={14} /> Add Item
-                    </Button>
                   </div>
 
                   {!isCollapsed && (
@@ -307,15 +276,6 @@ export default function MenuMasterSection() {
         </div>
       </div>
 
-      {modal && (
-        <MasterEntryModal
-          mode={modal.mode}
-          entry={modal.entry}
-          parentName={modalParent?.name}
-          onSubmit={handleEntrySubmit}
-          onClose={() => setModal(null)}
-        />
-      )}
     </div>
   );
 }

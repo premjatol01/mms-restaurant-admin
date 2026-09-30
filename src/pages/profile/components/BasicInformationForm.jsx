@@ -21,7 +21,6 @@ const schema = z.object({
   restaurantType: z.string().min(1, "Restaurant type is required"),
   cuisineTypes: z.array(z.string()).min(1, "Select at least one cuisine"),
   establishmentYear: z.string().optional(),
-  status: z.enum(["active", "inactive"]),
 });
 
 export default function BasicInformationForm() {
@@ -37,7 +36,6 @@ export default function BasicInformationForm() {
       restaurantType: profile?.restaurantType || "",
       cuisineTypes: profile?.cuisineTypes || [],
       establishmentYear: profile?.establishmentYear || "",
-      status: profile?.status || "active",
     },
   });
 
@@ -50,7 +48,6 @@ export default function BasicInformationForm() {
       setValue("restaurantType", profile.restaurantType || "");
       setValue("cuisineTypes", profile.cuisineTypes || []);
       setValue("establishmentYear", profile.establishmentYear || "");
-      setValue("status", profile.status || "active");
     }
   }, [profile, setValue]);
 
@@ -101,18 +98,6 @@ export default function BasicInformationForm() {
             error={errors.cuisineTypes?.message}
             placeholder="Select cuisines..."
           />
-        </div>
-
-        <div className="mt-4">
-          <label className="text-sm font-medium text-theme block mb-1">Restaurant Status</label>
-          <div className="flex gap-4">
-            {["active", "inactive"].map((s) => (
-              <label key={s} className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value={s} {...register("status")} className="accent-[var(--color-primary)]" />
-                <span className="text-sm text-theme capitalize">{s}</span>
-              </label>
-            ))}
-          </div>
         </div>
       </FormSection>
 

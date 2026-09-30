@@ -16,7 +16,7 @@ import TableConfigSection from "./components/TableConfigSection";
 import GoogleReviewForm from "./components/GoogleReviewForm";
 import SubscriptionSection from "./components/SubscriptionSection";
 import RestaurantSettingsForm from "./components/RestaurantSettingsForm";
-import ProfileCompletion from "./components/ProfileCompletion";
+
 import UnsavedChangesModal from "./modals/UnsavedChangesModal";
 import Button from "../../components/ui/Button";
 
@@ -49,7 +49,7 @@ function SkeletonLoader() {
 }
 
 export default function RestaurantProfilePage() {
-  const { profile, loading, isDirty, fetchProfile, discardChanges } = useProfileStore();
+  const { profile, loading, error, isDirty, fetchProfile, discardChanges } = useProfileStore();
   const [activeTab, setActiveTab] = useState("basic");
   const [pendingTab, setPendingTab] = useState(null);
   const [showUnsaved, setShowUnsaved] = useState(false);
@@ -80,6 +80,20 @@ export default function RestaurantProfilePage() {
   };
 
   if (loading) return <SkeletonLoader />;
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+        <p className="text-red-500 font-medium text-sm">{error}</p>
+        <button
+          onClick={() => fetchProfile()}
+          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const statusColor = profile?.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500";
 
@@ -120,9 +134,7 @@ export default function RestaurantProfilePage() {
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Sidebar nav */}
         <aside className="lg:w-56 flex-shrink-0">
-          <div className="space-y-3">
-            <ProfileCompletion onTabChange={handleTabChange} />
-            <nav className="bg-surface rounded-xl border border-theme overflow-hidden">
+          <nav className="bg-surface rounded-xl border border-theme overflow-hidden">
               {TABS.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -137,8 +149,7 @@ export default function RestaurantProfilePage() {
                   {label}
                 </button>
               ))}
-            </nav>
-          </div>
+          </nav>
         </aside>
 
         {/* Content */}

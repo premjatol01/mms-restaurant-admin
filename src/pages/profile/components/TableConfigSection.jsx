@@ -6,7 +6,6 @@ import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 import Input from "../../../components/ui/Input";
 import ConfirmModal from "../modals/ConfirmModal";
-import { DUMMY_QR_TEMPLATES } from "../data/tablesData";
 
 const MAX_PER_BATCH = 100;
 
@@ -37,17 +36,30 @@ function SkeletonLoader() {
 }
 
 export default function TableConfigSection() {
-  const { tables, tablesLoaded, fetchTables, createTables, assignTableQr, assignAllTableQr } = useProfileStore();
+  const { 
+    tables, tablesLoaded, fetchTables, createTables, assignTableQr, assignAllTableQr,
+    qrTemplates, templatesLoaded, fetchQrTemplates 
+  } = useProfileStore();
 
   const [saving, setSaving] = useState(false);
   const [count, setCount] = useState("");
   const [assignNow, setAssignNow] = useState(true);
-  const [qrType, setQrType] = useState("tpl-1");
+  const [qrType, setQrType] = useState("");
   const [filter, setFilter] = useState("all");
   const [confirm, setConfirm] = useState(null); // { type: "create", count } | { type: "assignAll" }
   const [assigningId, setAssigningId] = useState(null);
 
-  useEffect(() => { fetchTables(); }, [fetchTables]);
+  useEffect(() => { 
+    fetchTables(); 
+    fetchQrTemplates();
+  }, [fetchTables, fetchQrTemplates]);
+
+  // Set default qrType when templates load if not set
+  useEffect(() => {
+    if (qrTemplates.length > 0 && !qrType) {
+      setQrType(qrTemplates[0]._id);
+    }
+  }, [qrTemplates, qrType]);
 
   const hasTables = tables.length > 0;
   const withQr = tables.filter((t) => t.qrCode);
@@ -85,7 +97,7 @@ export default function TableConfigSection() {
     setAssigningId(table.id);
     const result = await assignTableQr(table.id, qrType);
     setAssigningId(null);
-    if (result.success) toast.success(`QR code assigned to ${table.label}.`);
+    if (result.success) toast.success(`QR code assigned to ${table.tableId}.`);
     else toast.error(result.message);
   };
 
@@ -109,21 +121,31 @@ export default function TableConfigSection() {
       )}
 
       <FormSection title="Default QR Template" description="Select the default QR code design that will be assigned to your tables.">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {DUMMY_QR_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => setQrType(tpl.id)}
-              className={`border-2 rounded-lg p-3 text-left transition-all ${
-                qrType === tpl.id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/10" : "border-theme hover:border-[var(--color-primary)]/50"
-              }`}
-            >
-              <img src={tpl.image} alt={tpl.name} className="w-full aspect-square object-cover rounded mb-2 bg-white" />
-              <p className="text-sm font-medium text-theme">{tpl.name}</p>
-            </button>
-          ))}
-        </div>
+        {qrTemplates.length === 0 ? (
+          <p className="text-sm text-secondary py-4">No templates available.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {qrTemplates.map((tpl) => (
+              <button
+                key={tpl._id}
+                type="button"
+                onClick={() => setQrType(tpl._id)}
+                className={`border-2 rounded-lg p-3 text-left transition-all ${
+                  qrType === tpl._id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/10" : "border-theme hover:border-[var(--color-primary)]/50"
+                }`}
+              >
+                <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded mb-2 overflow-hidden flex items-center justify-center">
+                  {tpl.imagePath ? (
+                    <img src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${tpl.imagePath}`} alt={tpl.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <QrCode className="text-gray-400" size={32} />
+                  )}
+                </div>
+                <p className="text-sm font-medium text-theme">{tpl.name}</p>
+              </button>
+            ))}
+          </div>
+        )}
       </FormSection>
 
       <FormSection
@@ -201,7 +223,7 @@ export default function TableConfigSection() {
               {visibleTables.map((table) => (
                 <div key={table.id} className="rounded-lg border border-theme bg-theme p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-theme">{table.label}</span>
+                    <span className="text-sm font-medium text-theme">{table.tableId}</span>
                     {table.qrCode && (
                       <span title="QR code is locked to this table" className="text-secondary">
                         <Lock size={13} />
@@ -213,17 +235,17 @@ export default function TableConfigSection() {
                     <div className="flex items-center gap-1.5">
                       <QrCode size={14} className="text-green-600 flex-shrink-0" />
                       <span className="text-xs text-secondary truncate flex-1">
-                        {table.qrCode.code}
+                        {table.qrCode.name || "QR"}
                         <span className="ml-1.5 text-[10px] uppercase font-semibold text-primary bg-primary-light px-1.5 py-0.5 rounded">
-                          {DUMMY_QR_TEMPLATES.find((t) => t.id === table.qrCode.type)?.name || table.qrCode.type}
+                          Template
                         </span>
                       </span>
-                      {table.qrCode.url && (
+                      {table.qrCode.imageUrl && (
                         <>
-                          <button type="button" onClick={() => copyLink(table.qrCode.url)} title="Copy QR link" aria-label={`Copy QR link for ${table.label}`} className="text-secondary hover:text-theme transition-colors">
+                          <a href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${table.qrCode.imageUrl}`} download title="Download QR image" aria-label={`Download QR image for ${table.number}`} className="text-secondary hover:text-theme transition-colors">
                             <Copy size={14} />
-                          </button>
-                          <a href={table.qrCode.url} target="_blank" rel="noopener noreferrer" title="Open QR link" aria-label={`Open QR link for ${table.label}`} className="text-secondary hover:text-theme transition-colors">
+                          </a>
+                          <a href={table.qrCode.scanUrl} target="_blank" rel="noopener noreferrer" title="Open QR link" aria-label={`Open QR link for ${table.number}`} className="text-secondary hover:text-theme transition-colors">
                             <ExternalLink size={14} />
                           </a>
                         </>
