@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { profileApi } from "../api/profileApi";
+import { profileApi } from "../api/profile.api";
 import { DUMMY_TABLES, createDummyQr, createDummyTable } from "../pages/profile/data/tablesData";
 import { getDummySubscription } from "../pages/profile/data/subscriptionData";
 

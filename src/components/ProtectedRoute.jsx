@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 export default function ProtectedRoute() {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const { isAuthenticated, login } = useAuth();
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,24 +15,16 @@ export default function ProtectedRoute() {
     const urlToken = params.get("token");
 
     if (urlToken) {
-      localStorage.setItem("restaurant_admin_token", urlToken);
+      // Set the token using context action
+      login(urlToken, null);
       // Remove token from URL for security
       navigate(location.pathname, { replace: true });
-      setIsAuthenticated(true);
-      return;
     }
-
-    // 2. Check if token exists in localStorage
-    const token = localStorage.getItem("restaurant_admin_token");
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, [location, navigate]);
+    setIsChecking(false);
+  }, [location, navigate, login]);
 
   // Still checking
-  if (isAuthenticated === null) {
+  if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>

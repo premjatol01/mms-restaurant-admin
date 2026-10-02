@@ -11,10 +11,13 @@ import OffersPromosPage from "./pages/offers-promos/OffersPromosPage";
 import WebsitePage from "./pages/website/WebsitePage";
 import ReviewsPage from "./pages/reviews/ReviewsPage";
 import SubscriptionPage from "./pages/subscription/SubscriptionPage";
+import { AuthProvider } from "./context/AuthContext";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+
       <Toaster position="top-right" richColors />
       <Routes>
         <Route element={<ProtectedRoute />}>
@@ -34,5 +37,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
