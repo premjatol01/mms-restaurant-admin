@@ -7,6 +7,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import ComboForm from "./ComboForm";
 import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import ActionsMenu from "./ActionsMenu";
+import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function CombosTab() {
   const { combos, menuItems, updateCombo, deleteCombo } = useMenuStore();
@@ -23,16 +24,24 @@ export default function CombosTab() {
     }, 0);
   };
 
-  const handleToggleStatus = (combo) => {
+  const handleToggleStatus = async (combo) => {
     const newStatus = combo.status === "available" ? "unavailable" : "available";
-    updateCombo(combo.id, { status: newStatus });
-    toast.success(`Combo marked as ${newStatus}.`);
+    try {
+      await updateCombo(combo.id, { status: newStatus });
+      toast.success(`Combo marked as ${newStatus}.`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
   };
 
-  const handleDelete = () => {
-    deleteCombo(deleteComboData.id);
-    toast.success("Combo deleted successfully.");
-    setDeleteComboData(null);
+  const handleDelete = async () => {
+    try {
+      await deleteCombo(deleteComboData.id);
+      toast.success("Combo deleted successfully.");
+      setDeleteComboData(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete combo");
+    }
   };
 
   return (
@@ -74,7 +83,7 @@ export default function CombosTab() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary flex-shrink-0 overflow-hidden">
-                          {combo.image ? <img src={combo.image} alt={combo.name} className="w-full h-full object-cover rounded-lg" /> : <Package size={18} />}
+                          {combo.image ? <img src={getImageUrl(combo.image)} alt={combo.name} className="w-full h-full object-cover rounded-lg" /> : <Package size={18} />}
                         </div>
                         <div>
                           <p className="font-medium text-theme">{combo.name}</p>

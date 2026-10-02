@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { Plus, Folder, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { useMenuStore } from "../../../store/menuStore";
 import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import CategoryForm from "./CategoryForm";
 import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import ActionsMenu from "./ActionsMenu";
+import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function CategoriesTab() {
+  const navigate = useNavigate();
   const { categories, menuItems, deleteCategory, updateCategory } = useMenuStore();
   const [showForm, setShowForm] = useState(false);
   const [editCategory, setEditCategory] = useState(null);
@@ -16,16 +19,24 @@ export default function CategoriesTab() {
 
   const getItemCount = (catId) => menuItems.filter((i) => i.categoryId === catId).length;
 
-  const handleDelete = () => {
-    deleteCategory(deleteCategoryData.id);
-    toast.success("Category deleted successfully.");
-    setDeleteCategoryData(null);
+  const handleDelete = async () => {
+    try {
+      await deleteCategory(deleteCategoryData.id);
+      toast.success("Category deleted successfully.");
+      setDeleteCategoryData(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete category");
+    }
   };
 
-  const handleToggleStatus = (category) => {
+  const handleToggleStatus = async (category) => {
     const newStatus = category.status === "active" ? "inactive" : "active";
-    updateCategory(category.id, { status: newStatus });
-    toast.success(`Category marked as ${newStatus}.`);
+    try {
+      await updateCategory(category.id, { status: newStatus });
+      toast.success(`Category marked as ${newStatus}.`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
   };
 
   return (
@@ -41,10 +52,10 @@ export default function CategoriesTab() {
 
       {!categories.length ? (
         <EmptyState
-          title="No categories yet"
-          description="Create categories to organize your menu items."
-          actionLabel="+ Add Category"
-          onAction={() => setShowForm(true)}
+          title="No categories selected"
+          description="You haven't selected any categories from the Restaurant Profile, or created custom ones."
+          actionLabel="Go to Profile"
+          onAction={() => navigate("/profile")}
         />
       ) : (
         <div className="overflow-x-auto border border-theme rounded-lg">
@@ -63,7 +74,7 @@ export default function CategoriesTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary flex-shrink-0 overflow-hidden">
-                        {category.image ? <img src={category.image} alt={category.name} className="w-full h-full object-cover" /> : <Folder size={18} />}
+                        {category.image ? <img src={getImageUrl(category.image)} alt={category.name} className="w-full h-full object-cover" /> : <Folder size={18} />}
                       </div>
                       <div>
                         <p className="font-medium text-theme">{category.name}</p>

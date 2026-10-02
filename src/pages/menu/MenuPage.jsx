@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Palette } from "lucide-react";
 import MenuItemsTab from "./components/MenuItemsTab";
 import CategoriesTab from "./components/CategoriesTab";
@@ -6,6 +6,7 @@ import CombosTab from "./components/CombosTab";
 import AIPromptGenerator from "./components/AIPromptGenerator";
 import ContactDesignerModal from "./modals/ContactDesignerModal";
 import Button from "../../components/ui/Button";
+import { useMenuStore } from "../../store/menuStore";
 
 const TABS = [
   { id: "items", label: "Menu Items" },
@@ -18,25 +19,28 @@ export default function MenuPage() {
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [showDesigner, setShowDesigner] = useState(false);
 
+  const { fetchMenuData, loading, error } = useMenuStore();
+
+  useEffect(() => {
+    fetchMenuData();
+  }, [fetchMenuData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500 bg-red-50 rounded-lg">{error}</div>;
+  }
+
   return (
     <div className="space-y-5">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-end gap-4">
-        {/* Header action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="secondary" onClick={() => setShowAIPrompt(true)}>
-            <Sparkles size={15} />
-            AI Menu Prompt
-          </Button>
-          <Button variant="secondary" onClick={() => setShowDesigner(true)}>
-            <Palette size={15} />
-            Contact Designer
-          </Button>
-        </div>
-      </div>
-
       {/* Tabs */}
-      <div className="bg-surface rounded-xl border border-theme overflow-hidden">
+      <div className="bg-surface rounded-xl border border-theme overflow-hidden mt-4">
         <div className="flex border-b border-theme overflow-x-auto">
           {TABS.map((tab) => (
             <button
@@ -54,7 +58,12 @@ export default function MenuPage() {
         </div>
 
         <div className="p-6">
-          {activeTab === "items" && <MenuItemsTab />}
+          {activeTab === "items" && (
+            <MenuItemsTab 
+              onShowAIPrompt={() => setShowAIPrompt(true)}
+              onShowDesigner={() => setShowDesigner(true)}
+            />
+          )}
           {activeTab === "categories" && <CategoriesTab />}
           {activeTab === "combos" && <CombosTab />}
         </div>

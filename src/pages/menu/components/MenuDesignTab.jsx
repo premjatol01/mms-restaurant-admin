@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Palette, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import { useDesignRequestStore } from "../../../store/designRequestStore";
@@ -10,8 +10,12 @@ import { DESIGN_REQUEST_STATUS } from "../data/designRequests";
 const MAX_VISIBLE_REQUESTS = 5;
 
 function ContactDesignerSection() {
-  const requests = useDesignRequestStore((s) => s.requests);
+  const { requests, fetchRequests } = useDesignRequestStore();
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   return (
     <div className="border border-theme rounded-xl p-5">

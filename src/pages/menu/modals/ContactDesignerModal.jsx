@@ -60,15 +60,25 @@ export default function ContactDesignerModal({ isOpen, onClose }) {
     setFile(selected);
   };
 
-  const handleSubmit = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
     const trimmed = description.trim();
     if (trimmed.length < MIN_DESCRIPTION) {
       setDescriptionError(`Please describe your design requirement (at least ${MIN_DESCRIPTION} characters).`);
       return;
     }
-    addRequest({ description: trimmed, file });
-    toast.success("Design request submitted successfully. Our designer will get in touch.");
-    onClose();
+    
+    setIsSubmitting(true);
+    try {
+      await addRequest({ description: trimmed, file });
+      toast.success("Design request submitted successfully. Our designer will get in touch.");
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit design request");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -80,8 +90,8 @@ export default function ContactDesignerModal({ isOpen, onClose }) {
       subtitle="Tell us what you need. Your request goes to our design team."
       footer={
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={handleSubmit}>
+          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+          <Button className="flex-1" onClick={handleSubmit} loading={isSubmitting}>
             <Send size={16} /> Submit Request
           </Button>
         </div>

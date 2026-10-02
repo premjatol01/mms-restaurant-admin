@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useMenuStore } from "../../../store/menuStore";
+import { menuApi } from "../../../api/menu.api";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
@@ -83,17 +84,28 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    const payload = { ...form, price: Number(form.price) };
-    if (editCombo) {
-      updateCombo(editCombo.id, payload);
-      toast.success("Combo updated successfully.");
-    } else {
-      addCombo(payload);
-      toast.success("Combo created successfully.");
+    try {
+      let imageUrl = form.image;
+      if (form.image instanceof File) {
+        const uploadRes = await menuApi.uploadImage(form.image);
+        imageUrl = uploadRes.data.data.url;
+      }
+      
+      const payload = { ...form, price: Number(form.price), image: imageUrl };
+
+      if (editCombo) {
+        await updateCombo(editCombo.id, payload);
+        toast.success("Combo updated successfully.");
+      } else {
+        await addCombo(payload);
+        toast.success("Combo created successfully.");
+      }
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save combo");
     }
-    onClose();
   };
 
   return (

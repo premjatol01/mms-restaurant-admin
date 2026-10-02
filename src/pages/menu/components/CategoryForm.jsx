@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useMenuStore } from "../../../store/menuStore";
+import { menuApi } from "../../../api/menu.api";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Textarea from "../../../components/ui/Textarea";
@@ -29,16 +30,28 @@ export default function CategoryForm({ isOpen, onClose, editCategory }) {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    if (editCategory) {
-      updateCategory(editCategory.id, form);
-      toast.success("Category updated successfully.");
-    } else {
-      addCategory(form);
-      toast.success("Category added successfully.");
+    try {
+      let imageUrl = form.image;
+      if (form.image instanceof File) {
+        const uploadRes = await menuApi.uploadImage(form.image);
+        imageUrl = uploadRes.data.data.url;
+      }
+      
+      const payload = { ...form, image: imageUrl };
+
+      if (editCategory) {
+        await updateCategory(editCategory.id, payload);
+        toast.success("Category updated successfully.");
+      } else {
+        await addCategory(payload);
+        toast.success("Category added successfully.");
+      }
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save category");
     }
-    onClose();
   };
 
   return (

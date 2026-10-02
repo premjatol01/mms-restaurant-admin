@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import Button from "./Button";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function ImageUploader({ value, onChange, label }) {
   const [preview, setPreview] = useState(value || null);
@@ -10,7 +11,7 @@ export default function ImageUploader({ value, onChange, label }) {
     if (!file) return;
     const url = URL.createObjectURL(file);
     setPreview(url);
-    onChange?.(url);
+    onChange?.(file);
   };
 
   const handleChange = (e) => {
@@ -39,7 +40,7 @@ export default function ImageUploader({ value, onChange, label }) {
         </div>
       ) : (
         <div className="relative rounded-lg overflow-hidden border border-theme">
-          <img src={preview} alt="Preview" className="w-full h-40 object-cover" />
+          <img src={getImageUrl(preview)} alt="Preview" className="w-full h-40 object-cover" />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 hover:opacity-100 transition-opacity">
             <Button size="sm" variant="secondary" onClick={() => inputRef.current?.click()}>Replace</Button>
             <Button size="sm" variant="danger" onClick={handleRemove}>Remove</Button>
