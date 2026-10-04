@@ -13,7 +13,7 @@ const QR_TYPE_COLORS = { default: "bg-blue-100 text-blue-700", premium: "bg-purp
 const QR_STATUS_COLORS = { available: "bg-green-100 text-green-700", assigned: "bg-purple-100 text-purple-700", inactive: "bg-gray-100 text-gray-500" };
 
 export default function QRCodesTab() {
-  const { qrCodes, tables, subscription } = useTablesQRStore();
+  const { qrCodes, tables } = useTablesQRStore();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -55,24 +55,9 @@ export default function QRCodesTab() {
           <p className="text-2xl font-bold text-theme">{availableQRs}</p>
         </div>
         <div className="bg-surface border border-theme rounded-lg p-4">
-          <p className="text-sm text-secondary">Premium Available</p>
-          <p className="text-2xl font-bold text-theme">{subscription.premiumQR.available}</p>
+          <p className="text-sm text-secondary">Template QRs</p>
+          <p className="text-2xl font-bold text-theme">{qrCodes.filter((qr) => qr.type === "template").length}</p>
         </div>
-      </div>
-
-      {/* Subscription Info */}
-      <div className="bg-primary-light/20 rounded-lg p-4">
-        <h4 className="font-medium text-theme mb-2">QR Availability</h4>
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
-          <div><span className="text-secondary">Default QR:</span> <span className="text-theme font-medium">Unlimited</span></div>
-          <div><span className="text-secondary">Premium QR:</span> <span className="text-theme font-medium">{subscription.premiumQR.used}/{subscription.premiumQR.total} used</span></div>
-          <div><span className="text-secondary">Additional QR:</span> <span className="text-theme font-medium">₹{subscription.paidQR.price} each</span></div>
-        </div>
-        {subscription.premiumQR.available > 0 && (
-          <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${(subscription.premiumQR.used / subscription.premiumQR.total) * 100}%` }} />
-          </div>
-        )}
       </div>
 
       {/* Toolbar */}

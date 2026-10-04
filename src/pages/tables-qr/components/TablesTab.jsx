@@ -31,15 +31,23 @@ export default function TablesTab() {
     return matchSearch && matchStatus;
   });
 
-  const getQRInfo = (qrId) => qrCodes.find((qr) => qr.id === qrId);
+  const getQRInfo = (qrCodeId) => {
+    if (!qrCodeId) return null;
+    if (typeof qrCodeId === 'object') return qrCodeId; // Already populated
+    return qrCodes.find((qr) => qr.id === qrCodeId || qr._id === qrCodeId);
+  };
 
   // Every table that currently has a QR - this is what "Download All" exports
   const assignedPairs = getAssignedPairs(tables, qrCodes);
 
-  const handleToggleStatus = (table) => {
+  const handleToggleStatus = async (table) => {
     const newStatus = table.status === "active" ? "inactive" : "active";
-    updateTable(table.id, { status: newStatus });
-    toast.success(`Table marked as ${newStatus}.`);
+    try {
+      await updateTable(table.id, { status: newStatus });
+      toast.success(`Table marked as ${newStatus}.`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update table status.");
+    }
   };
 
   const handleDownloadOne = async (table, qr) => {
@@ -147,7 +155,7 @@ export default function TablesTab() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {qr ? <QRTypeBadge layout={qr.layout} /> : <span className="text-secondary">—</span>}
+                      {qr ? <QRTypeBadge templateId={qr.templateId} type={qr.type} /> : <span className="text-secondary">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">Inactive</span>
@@ -187,10 +195,15 @@ export default function TablesTab() {
         <DeleteConfirmDialog
           title="Delete Table?"
           message={`Are you sure you want to delete "${deleteTable.tableId}"? Its QR code will be released and can be assigned to another table.`}
-          onConfirm={() => {
-            useTablesQRStore.getState().deleteTable(deleteTable.id);
-            toast.success("Table deleted successfully.");
-            setDeleteTable(null);
+          onConfirm={async () => {
+            try {
+              await useTablesQRStore.getState().deleteTable(deleteTable.id);
+              toast.success("Table deleted successfully.");
+            } catch (err) {
+              toast.error(err.response?.data?.message || "Failed to delete table");
+            } finally {
+              setDeleteTable(null);
+            }
           }}
           onCancel={() => setDeleteTable(null)}
         />
@@ -207,10 +220,14 @@ export default function TablesTab() {
   );
 }
 
-function QRTypeBadge({ layout }) {
-  const layoutObj = defaultQRLayouts.find((l) => l.id === layout);
-  const name = layoutObj ? layoutObj.name : layout;
-  return <span className="text-xs px-2 py-1 rounded-full font-medium bg-primary-light text-primary uppercase">{name}</span>;
+function QRTypeBadge({ templateId, type }) {
+  if (type === "standard" || !templateId) {
+    return <span className="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-600 uppercase">Plain QR</span>;
+  }
+  const templates = useTablesQRStore.getState().qrTemplates || [];
+  const layoutObj = templates.find((l) => l.id === templateId || l._id === templateId);
+  const name = layoutObj ? layoutObj.name : "Template";
+  return <span className="text-xs px-2 py-1 rounded-full font-medium bg-primary-light text-primary uppercase truncate max-w-[120px] inline-block">{name}</span>;
 }
 
 function TableActions({ table, qr, downloading, onEdit, onAssign, onDownload, onToggle, onDelete }) {

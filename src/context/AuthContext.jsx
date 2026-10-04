@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
+import { apiClient } from "../api/client";
 
 export const AuthContext = createContext();
 
@@ -28,7 +29,13 @@ export const AuthProvider = ({ children }) => {
     setUser(newUser);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
+    
     localStorage.removeItem("restaurant_admin_token");
     setToken(null);
     setUser(null);
