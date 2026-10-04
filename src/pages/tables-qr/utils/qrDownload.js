@@ -1,15 +1,14 @@
-// Client-side QR download: renders each QR as a printable PNG and (for bulk) zips them.
-// Requires:  npm i qrcode jszip
-// Both libraries are loaded lazily, so they don't weigh down the initial bundle.
+// QR download utilities.
+// Priority: if the QR has a backend-generated imageUrl (with template overlay), fetch & download that directly.
+// Fallback: render a plain canvas QR for QRs without a stored image.
 
 const CARD = { width: 900, height: 1100, qrArea: 620 };
 const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 const SERIF = 'Georgia, "Times New Roman", serif';
 
-// One look per QR layout (classic / modern / elegant)
 const LAYOUT_STYLES = {
   classic: { bg: "#ffffff", plate: "#ffffff", module: "#000000", text: "#111111", muted: "#555555", font: SANS },
-  modern: { bg: "#ffffff", plate: "#ffffff", module: "#1f2937", text: "#1f2937", muted: "#6b7280", font: SANS, accent: "#f29191" },
+  modern:  { bg: "#ffffff", plate: "#ffffff", module: "#1f2937", text: "#1f2937", muted: "#6b7280", font: SANS, accent: "#f29191" },
   elegant: { bg: "#faf6ee", plate: "#ffffff", module: "#3b2f1e", text: "#3b2f1e", muted: "#8a7756", font: SERIF, gold: "#b8964f" },
 };
 
@@ -26,7 +25,16 @@ function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.fill();
 }
 
-/** Draws the QR card and resolves with a PNG Blob. */
+/** Fetches the backend-stored QR image (with template overlay) and returns a Blob. */
+async function fetchRemoteImage(imageUrl) {
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${imageUrl}`;
+  const res = await fetch(fullUrl);
+  if (!res.ok) throw new Error(`Failed to fetch QR image: ${res.status}`);
+  return res.blob();
+}
+
+/** Draws a plain canvas QR card and returns a PNG Blob (fallback when no imageUrl). */
 export async function renderQRImage({ url, label, sublabel, layout = "classic" }) {
   const { default: QRCode } = await import("qrcode");
   const style = LAYOUT_STYLES[layout] || LAYOUT_STYLES.classic;
@@ -34,8 +42,8 @@ export async function renderQRImage({ url, label, sublabel, layout = "classic" }
 
   const qr = QRCode.create(url, { errorCorrectionLevel: "M" });
   const count = qr.modules.size;
-  const quiet = 4; // quiet zone (in modules) required for reliable scanning
-  const px = Math.floor(qrArea / (count + quiet * 2)); // whole pixels per module = crisp edges
+  const quiet = 4;
+  const px = Math.floor(qrArea / (count + quiet * 2));
   const plateSize = (count + quiet * 2) * px;
 
   const canvas = document.createElement("canvas");
@@ -110,7 +118,29 @@ export async function renderQRImage({ url, label, sublabel, layout = "classic" }
   });
 }
 
-/** items: [{ qr, table, url }] -> ZIP Blob (one PNG per item, unique file names). */
+/**
+ * Resolves the final image blob for a QR:
+ * - If the QR has a backend imageUrl (template-overlaid image) → fetch it directly.
+ * - Otherwise → render a plain canvas QR as fallback.
+ */
+async function resolveQRBlob({ qr, table, url }) {
+  if (qr.imageUrl) {
+    try {
+      return await fetchRemoteImage(qr.imageUrl);
+    } catch (err) {
+      console.warn("Could not fetch QR image from server, falling back to canvas render.", err);
+    }
+  }
+  return renderQRImage({ url, label: table?.tableId, sublabel: qr.name, layout: qr.layout });
+}
+
+/** Individual download: one PNG. */
+export async function downloadQRCode({ qr, table, url }) {
+  const blob = await resolveQRBlob({ qr, table, url });
+  saveBlob(blob, buildQRFilename({ table, qr }));
+}
+
+/** items: [{ qr, table, url }] → ZIP Blob */
 export async function createQRZip(items, onProgress) {
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
@@ -118,7 +148,7 @@ export async function createQRZip(items, onProgress) {
 
   for (let i = 0; i < items.length; i++) {
     const { qr, table, url } = items[i];
-    const blob = await renderQRImage({ url, label: table?.tableId, sublabel: qr.name, layout: qr.layout });
+    const blob = await resolveQRBlob({ qr, table, url });
 
     const base = buildQRFilename({ table, qr }).replace(/\.png$/i, "");
     let name = `${base}.png`;
@@ -128,7 +158,6 @@ export async function createQRZip(items, onProgress) {
     zip.file(name, blob);
     onProgress?.(i + 1, items.length);
   }
-  // PNGs are already compressed, so store them as-is (faster, same size)
   return zip.generateAsync({ type: "blob", compression: "STORE" });
 }
 
@@ -141,12 +170,6 @@ export function saveBlob(blob, filename) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(href), 1000);
-}
-
-/** Individual download: one PNG. */
-export async function downloadQRCode({ qr, table, url }) {
-  const blob = await renderQRImage({ url, label: table?.tableId, sublabel: qr.name, layout: qr.layout });
-  saveBlob(blob, buildQRFilename({ table, qr }));
 }
 
 /** Bulk download: one ZIP with every item. Returns the number of files. */

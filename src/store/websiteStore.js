@@ -1,7 +1,5 @@
 import { create } from "zustand";
-
-// Dummy data lives in the website module's data folder.
-// NOTE: adjust "pages" below if your website folder is not at src/pages/website.
+import { apiClient } from "../api/client";
 import { mockInquiries } from "../pages/website/data/inquiries";
 import { defaultSections } from "../pages/website/data/sections";
 import { DEFAULT_WEBSITE_COLORS, BASE_DOMAIN } from "../pages/website/utils/constants";
@@ -9,13 +7,13 @@ import { DEFAULT_WEBSITE_COLORS, BASE_DOMAIN } from "../pages/website/utils/cons
 export const useWebsiteStore = create((set, get) => ({
   // Website config
   websiteStatus: "draft",
-  restaurantName: "Tasty Bites",
-  restaurantSlug: "tasty-bites", // subdomain: https://<restaurantSlug>.<baseDomain>
+  restaurantName: "",
+  restaurantSlug: "",
   baseDomain: BASE_DOMAIN,
-  description: "Fresh and delicious food made with quality ingredients.",
-  phone: "+91 98765 43210",
-  email: "info@tastybites.com",
-  address: "123 Food Street, Mumbai, Maharashtra",
+  description: "",
+  phone: "",
+  email: "",
+  address: "",
   websiteColors: { ...DEFAULT_WEBSITE_COLORS },
   sections: [...defaultSections],
   loading: false,
@@ -23,6 +21,26 @@ export const useWebsiteStore = create((set, get) => ({
   // Inquiries
   inquiries: [...mockInquiries],
   inquiriesLoading: false,
+
+  // Load real profile data from API
+  loadProfile: async () => {
+    try {
+      const res = await apiClient.get("/restaurant/profile");
+      const r = res.data?.data;
+      if (!r) return;
+      set({
+        restaurantName: r.name || "",
+        restaurantSlug: r.website?.subdomain || "",
+        websiteStatus: r.website?.status || "draft",
+        description: r.shortDescription || "",
+        phone: r.contact?.primaryPhone || "",
+        email: r.contact?.email || "",
+        address: r.address?.line1 || "",
+      });
+    } catch {
+      // silently fail — store keeps defaults
+    }
+  },
 
   // Actions
   setWebsiteStatus: (status) => set({ websiteStatus: status }),

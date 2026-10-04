@@ -83,11 +83,13 @@ export const useTablesQRStore = create((set, get) => ({
 
   assignQRToTable: async (tableId, qrCodeId) => {
     try {
-      await tablesApi.updateTable(tableId, { qrCodeId });
+      // Uses the dedicated /qr/assign endpoint which regenerates the QR image
+      // with the correct subdomain-based menu URL for the table
+      await tablesApi.assignQRToTable(tableId, qrCodeId);
       await get().refreshData();
       return true;
     } catch (err) {
-      return false;
+      throw err;
     }
   },
 
@@ -112,6 +114,16 @@ export const useTablesQRStore = create((set, get) => ({
       const res = await tablesApi.generateQRCodes(count, templateId);
       await get().refreshData();
       return (res.data?.data || []).map(norm);
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  regenerateAllQRCodes: async () => {
+    try {
+      const res = await tablesApi.regenerateAllQRCodes();
+      await get().refreshData();
+      return res.data?.data?.regenerated || 0;
     } catch (err) {
       throw err;
     }

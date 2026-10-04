@@ -13,7 +13,8 @@ const QR_TYPE_COLORS = { default: "bg-blue-100 text-blue-700", premium: "bg-purp
 const QR_STATUS_COLORS = { available: "bg-green-100 text-green-700", assigned: "bg-purple-100 text-purple-700", inactive: "bg-gray-100 text-gray-500" };
 
 export default function QRCodesTab() {
-  const { qrCodes, tables } = useTablesQRStore();
+  const { qrCodes, tables, regenerateAllQRCodes } = useTablesQRStore();
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -37,6 +38,18 @@ export default function QRCodesTab() {
 
   const clearFilters = () => { setSearch(""); setTypeFilter(""); setStatusFilter(""); setLayoutFilter(""); };
   const hasFilters = search || typeFilter || statusFilter || layoutFilter;
+
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    try {
+      const count = await regenerateAllQRCodes();
+      toast.success(`Regenerated ${count} QR image(s) with correct URLs.`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to regenerate QR URLs.");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -66,6 +79,9 @@ export default function QRCodesTab() {
         <Select value={typeFilter} onChange={setTypeFilter} options={[{ value: "", label: "All Types" }, { value: "default", label: "Default" }, { value: "premium", label: "Premium" }, { value: "paid", label: "Paid" }]} className="w-full sm:w-32" />
         <Select value={statusFilter} onChange={setStatusFilter} options={[{ value: "", label: "All Status" }, { value: "available", label: "Available" }, { value: "assigned", label: "Assigned" }, { value: "inactive", label: "Inactive" }]} className="w-full sm:w-32" />
         <Select value={layoutFilter} onChange={setLayoutFilter} options={[{ value: "", label: "All Layouts" }, { value: "classic", label: "Classic" }, { value: "modern", label: "Modern" }, { value: "elegant", label: "Elegant" }]} className="w-full sm:w-32" />
+        <Button variant="secondary" onClick={handleRegenerate} disabled={isRegenerating}>
+          {isRegenerating ? "Regenerating..." : "Regenerate URLs"}
+        </Button>
         <Button onClick={() => setShowGenerate(true)}><Plus size={16} /> Generate QR</Button>
       </div>
 

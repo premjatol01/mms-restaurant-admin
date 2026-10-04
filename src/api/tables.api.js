@@ -10,6 +10,8 @@ export const tablesApi = {
   // QR Code Routes
   getQRCodes: () => apiClient.get("/restaurant/tables/qr"),
   generateQRCodes: (count, templateId) => apiClient.post("/restaurant/tables/qr", { count, templateId }),
+  assignQRToTable: (tableId, qrCodeId) => apiClient.post("/restaurant/tables/qr/assign", { tableId, qrCodeId }),
+  regenerateAllQRCodes: () => apiClient.post("/restaurant/tables/qr/regenerate-all"),
   deleteQRCode: (id) => apiClient.delete(`/restaurant/tables/qr/${id}`),
 
   // QR Templates (created by super-admin)

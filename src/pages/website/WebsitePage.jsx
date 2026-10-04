@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Globe, MessageSquare, Copy, ExternalLink, Check } from "lucide-react";
 import { useWebsiteStore } from "../../store/websiteStore";
 import Button from "../../components/ui/Button";
@@ -9,11 +9,16 @@ import InquiryList from "./components/InquiryList";
 
 export default function WebsitePage() {
   const [activeTab, setActiveTab] = useState("builder");
-  const { websiteStatus, restaurantSlug, publishWebsite, unpublishWebsite } = useWebsiteStore();
+  const { websiteStatus, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile } = useWebsiteStore();
   const [copied, setCopied] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-  const websiteUrl = `https://${restaurantSlug}.${BASE_DOMAIN}`;
+  useEffect(() => { loadProfile(); }, []);
+
+  const protocol = import.meta.env.DEV ? "http" : "https";
+  const websiteUrl = restaurantSlug
+    ? `${protocol}://${restaurantSlug}.${BASE_DOMAIN}`
+    : "(no subdomain set)";
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(websiteUrl);
