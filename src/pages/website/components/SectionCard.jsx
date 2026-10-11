@@ -49,7 +49,7 @@ function getSectionMeta(section, popularCount) {
   }
 }
 
-export default function SectionCard({ section, onEdit, onMoveUp, onMoveDown, isFirst, isLast }) {
+export default function SectionCard({ section, onEdit }) {
   const toggleSection = useWebsiteStore((s) => s.toggleSection);
   const popularCount = usePopularMenuItems().length;
   const Icon = SECTION_ICONS[section.type] ?? Info;

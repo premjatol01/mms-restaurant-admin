@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CircleCheck, CircleX, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../../store/websiteStore";
@@ -16,10 +16,14 @@ const toUrl = (slug) => `http://${slug || "your-restaurant"}.${BASE_DOMAIN}`;
 
 export default function SubdomainSettings() {
   const { restaurantSlug, websiteStatus, updateSubdomain } = useWebsiteStore();
-  const [slug, setSlug] = useState(restaurantSlug);
+  const [slug, setSlug] = useState(restaurantSlug || "");
   const [touched, setTouched] = useState(false);
   const [availability, setAvailability] = useState("idle"); // idle | checking | available | taken
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    setSlug(restaurantSlug || "");
+  }, [restaurantSlug]);
 
   const isChanged = slug !== restaurantSlug;
   const error = touched ? validateSubdomain(slug) : "";

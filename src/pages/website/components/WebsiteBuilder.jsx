@@ -24,7 +24,7 @@ const EDITORS = {
 };
 
 export default function WebsiteBuilder() {
-  const { sections, updateSection, moveSection } = useWebsiteStore();
+  const { sections, updateSection } = useWebsiteStore();
   const [editingId, setEditingId] = useState(null);
 
   const sortedSections = useMemo(() => [...sections].sort((a, b) => a.order - b.order), [sections]);
@@ -59,13 +59,11 @@ export default function WebsiteBuilder() {
           <h2 className="font-semibold text-theme">Website Sections</h2>
           <p className="text-xs text-secondary">Turn sections on or off and edit their content</p>
         </div>
-        {sortedSections.map((section, index) => (
+        {sortedSections.map((section) => (
           <SectionCard
             key={section.id}
             section={section}
             onEdit={(s) => setEditingId(s.id)}
-            isFirst={index === 0}
-            isLast={index === sortedSections.length - 1}
           />
         ))}
       </div>

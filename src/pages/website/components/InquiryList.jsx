@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import SearchInput from "../../../components/ui/SearchInput";
@@ -26,11 +26,15 @@ function PurposeTag({ purpose }) {
 }
 
 export default function InquiryList() {
-  const { inquiries, updateInquiryStatus, getInquiryStats } = useWebsiteStore();
+  const { inquiries, updateInquiryStatus, getInquiryStats, loadInquiries } = useWebsiteStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [purposeFilter, setPurposeFilter] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    loadInquiries();
+  }, [loadInquiries]);
 
   const stats = getInquiryStats();
 

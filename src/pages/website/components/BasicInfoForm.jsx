@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import Input from "../../../components/ui/Input";
@@ -9,11 +9,26 @@ export default function BasicInfoForm() {
   const { restaurantName, description, phone, email, address, updateBasicInfo } = useWebsiteStore();
   const [basicInfo, setBasicInfo] = useState({ restaurantName, description, phone, email, address });
 
+  // Sync local state whenever store values are loaded/updated from API
+  useEffect(() => {
+    setBasicInfo({
+      restaurantName: restaurantName || "",
+      description: description || "",
+      phone: phone || "",
+      email: email || "",
+      address: address || "",
+    });
+  }, [restaurantName, description, phone, email, address]);
+
   const setField = (key) => (e) => setBasicInfo((info) => ({ ...info, [key]: e.target.value }));
 
-  const handleSave = () => {
-    updateBasicInfo(basicInfo);
-    toast.success("Basic information saved");
+  const handleSave = async () => {
+    try {
+      await updateBasicInfo(basicInfo);
+      toast.success("Basic information saved");
+    } catch {
+      toast.error("Failed to save basic information");
+    }
   };
 
   return (

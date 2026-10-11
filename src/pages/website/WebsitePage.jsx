@@ -67,7 +67,7 @@ export default function WebsitePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => window.open(websiteUrl, "_blank")}>
+            <Button variant="secondary" size="sm" disabled title="Preview is currently disabled">
               <ExternalLink size={14} />
               Preview Website
             </Button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../../store/websiteStore";
@@ -41,6 +41,12 @@ function ColorPreview({ colors, name }) {
 export default function WebsiteColorSettings() {
   const { websiteColors, updateWebsiteColors, restaurantName } = useWebsiteStore();
   const [draft, setDraft] = useState(websiteColors);
+
+  useEffect(() => {
+    if (websiteColors) {
+      setDraft(websiteColors);
+    }
+  }, [websiteColors]);
 
   const isDirty = !sameColors(draft, websiteColors);
   const activePreset = COLOR_PRESETS.find((preset) => sameColors(preset.colors, draft));

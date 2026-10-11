@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { apiClient } from "../api/client";
-import { mockInquiries } from "../pages/website/data/inquiries";
+import { websiteApi } from "../api/website.api";
 import { defaultSections } from "../pages/website/data/sections";
 import { DEFAULT_WEBSITE_COLORS, BASE_DOMAIN } from "../pages/website/utils/constants";
 
@@ -19,93 +18,185 @@ export const useWebsiteStore = create((set, get) => ({
   loading: false,
 
   // Inquiries
-  inquiries: [...mockInquiries],
+  inquiries: [],
+  inquiryStats: { total: 0, new: 0, inProgress: 0, resolved: 0 },
   inquiriesLoading: false,
 
-  // Load real profile data from API
+  // Load real website config & sections from backend API
   loadProfile: async () => {
+    set({ loading: true });
     try {
-      const res = await apiClient.get("/restaurant/profile");
-      const r = res.data?.data;
-      if (!r) return;
-      set({
-        restaurantName: r.name || "",
-        restaurantSlug: r.website?.subdomain || "",
-        websiteStatus: r.website?.status || "draft",
-        description: r.shortDescription || "",
-        phone: r.contact?.primaryPhone || "",
-        email: r.contact?.email || "",
-        address: r.address?.line1 || "",
-      });
-    } catch {
-      // silently fail — store keeps defaults
+      const res = await websiteApi.getConfig();
+      const payload = res.data?.data;
+      if (payload) {
+        const { config, sections } = payload;
+        set({
+          websiteStatus: config?.websiteStatus || "draft",
+          restaurantName: config?.restaurantName || "",
+          restaurantSlug: config?.restaurantSlug || "",
+          baseDomain: config?.baseDomain || BASE_DOMAIN,
+          description: config?.description || "",
+          phone: config?.phone || "",
+          email: config?.email || "",
+          address: config?.address || "",
+          websiteColors: config?.websiteColors
+            ? { ...DEFAULT_WEBSITE_COLORS, ...config.websiteColors }
+            : { ...DEFAULT_WEBSITE_COLORS },
+          sections: sections && sections.length > 0 ? sections : [...defaultSections],
+        });
+      }
+    } catch (err) {
+      console.warn("Could not load website config, using defaults:", err);
+    } finally {
+      set({ loading: false });
     }
   },
 
-  // Actions
-  setWebsiteStatus: (status) => set({ websiteStatus: status }),
+  // Save Basic Information to backend
+  updateBasicInfo: async (data) => {
+    // Optimistic local update
+    set((state) => ({
+      restaurantName: data.restaurantName ?? state.restaurantName,
+      description: data.description ?? state.description,
+      phone: data.phone ?? state.phone,
+      email: data.email ?? state.email,
+      address: data.address ?? state.address,
+    }));
 
-  updateBasicInfo: (data) => set((state) => ({
-    restaurantName: data.restaurantName ?? state.restaurantName,
-    description: data.description ?? state.description,
-    phone: data.phone ?? state.phone,
-    email: data.email ?? state.email,
-    address: data.address ?? state.address
-  })),
+    try {
+      await websiteApi.updateConfig(data);
+    } catch (err) {
+      console.error("Failed to save basic info:", err);
+      throw err;
+    }
+  },
 
   updateSubdomain: (slug) => set({ restaurantSlug: slug }),
 
-  updateWebsiteColors: (colors) => set((state) => ({
-    websiteColors: { ...state.websiteColors, ...colors }
-  })),
+  // Save Website Colors to backend
+  updateWebsiteColors: async (colors) => {
+    const updated = { ...get().websiteColors, ...colors };
+    set({ websiteColors: updated });
+
+    try {
+      await websiteApi.updateConfig({ websiteColors: updated });
+    } catch (err) {
+      console.error("Failed to save website colors:", err);
+      throw err;
+    }
+  },
 
   getWebsiteUrl: () => {
     const { restaurantSlug, baseDomain } = get();
-    return `https://${restaurantSlug}.${baseDomain}`;
+    return `http://${restaurantSlug}.${baseDomain}`;
   },
 
-  updateSection: (sectionId, content) => set((state) => ({
-    sections: state.sections.map((s) =>
-      s.id === sectionId ? { ...s, content: { ...s.content, ...content } } : s
-    )
-  })),
+  // Update Section Content in backend
+  updateSection: async (sectionId, content) => {
+    // Optimistic local update
+    set((state) => ({
+      sections: state.sections.map((s) =>
+        s.id === sectionId ? { ...s, content: { ...s.content, ...content } } : s
+      ),
+    }));
 
-  toggleSection: (sectionId) => set((state) => ({
-    sections: state.sections.map((s) =>
-      s.id === sectionId ? { ...s, enabled: !s.enabled } : s
-    )
-  })),
-
-  moveSection: (sectionId, direction) => set((state) => {
-    const sorted = [...state.sections].sort((a, b) => a.order - b.order);
-    const index = sorted.findIndex((s) => s.id === sectionId);
-    if (index === -1) return state;
-
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= sorted.length) return state;
-
-    [sorted[index], sorted[newIndex]] = [sorted[newIndex], sorted[index]];
-    // Create new objects instead of mutating the ones already in state.
-    return { sections: sorted.map((s, i) => ({ ...s, order: i + 1 })) };
-  }),
-
-  publishWebsite: () => set({ websiteStatus: "published" }),
-  unpublishWebsite: () => set({ websiteStatus: "draft" }),
-
-  // Inquiry actions
-  updateInquiryStatus: (id, status) => set((state) => ({
-    inquiries: state.inquiries.map((i) => i.id === id ? { ...i, status } : i)
-  })),
-
-  getInquiryStats: () => {
-    const { inquiries } = get();
-    return {
-      total: inquiries.length,
-      new: inquiries.filter((i) => i.status === "new").length,
-      inProgress: inquiries.filter((i) => i.status === "in_progress").length,
-      resolved: inquiries.filter((i) => i.status === "resolved").length
-    };
+    try {
+      await websiteApi.updateSection(sectionId, { content });
+    } catch (err) {
+      console.error("Failed to update section content:", err);
+      throw err;
+    }
   },
 
-  getInquiryById: (id) => get().inquiries.find((i) => i.id === id)
+  // Toggle Section Enabled state in backend
+  toggleSection: async (sectionId) => {
+    const section = get().sections.find((s) => s.id === sectionId);
+    if (!section) return;
+
+    const newEnabled = !section.enabled;
+
+    // Optimistic local update
+    set((state) => ({
+      sections: state.sections.map((s) =>
+        s.id === sectionId ? { ...s, enabled: newEnabled } : s
+      ),
+    }));
+
+    try {
+      await websiteApi.toggleSection(sectionId, newEnabled);
+    } catch (err) {
+      console.error("Failed to toggle section:", err);
+      // Revert if error
+      set((state) => ({
+        sections: state.sections.map((s) =>
+          s.id === sectionId ? { ...s, enabled: !newEnabled } : s
+        ),
+      }));
+    }
+  },
+
+  // Publish / Unpublish website
+  publishWebsite: async () => {
+    set({ websiteStatus: "published" });
+    try {
+      await websiteApi.publishWebsite();
+    } catch (err) {
+      console.error("Failed to publish website:", err);
+      set({ websiteStatus: "draft" });
+      throw err;
+    }
+  },
+
+  unpublishWebsite: async () => {
+    set({ websiteStatus: "draft" });
+    try {
+      await websiteApi.unpublishWebsite();
+    } catch (err) {
+      console.error("Failed to unpublish website:", err);
+      set({ websiteStatus: "published" });
+      throw err;
+    }
+  },
+
+  // Inquiries Actions
+  loadInquiries: async (params = {}) => {
+    set({ inquiriesLoading: true });
+    try {
+      const [resList, resStats] = await Promise.all([
+        websiteApi.getInquiries(params),
+        websiteApi.getInquiryStats(),
+      ]);
+
+      set({
+        inquiries: resList.data?.data || [],
+        inquiryStats: resStats.data?.data || { total: 0, new: 0, inProgress: 0, resolved: 0 },
+      });
+    } catch (err) {
+      console.warn("Could not load inquiries:", err);
+    } finally {
+      set({ inquiriesLoading: false });
+    }
+  },
+
+  updateInquiryStatus: async (id, status) => {
+    // Optimistic local update
+    set((state) => ({
+      inquiries: state.inquiries.map((i) => (i.id === id ? { ...i, status } : i)),
+    }));
+
+    try {
+      await websiteApi.updateInquiryStatus(id, status);
+      // Refresh statistics
+      const statsRes = await websiteApi.getInquiryStats();
+      if (statsRes.data?.data) {
+        set({ inquiryStats: statsRes.data.data });
+      }
+    } catch (err) {
+      console.error("Failed to update inquiry status:", err);
+    }
+  },
+
+  getInquiryStats: () => get().inquiryStats,
+
+  getInquiryById: (id) => get().inquiries.find((i) => i.id === id),
 }));
