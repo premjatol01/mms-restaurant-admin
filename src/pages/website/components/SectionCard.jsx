@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Images,
   Info,
@@ -9,7 +10,7 @@ import {
   UtensilsCrossed
 } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
-import { usePopularMenuItems } from "../hooks/useMenuItems";
+import { useMenuItems } from "../hooks/useMenuItems";
 import { normalizeField } from "../utils/validation";
 import { checkboxClass } from "./shared/fieldStyles";
 
@@ -51,7 +52,16 @@ function getSectionMeta(section, popularCount) {
 
 export default function SectionCard({ section, onEdit }) {
   const toggleSection = useWebsiteStore((s) => s.toggleSection);
-  const popularCount = usePopularMenuItems().length;
+  const { items } = useMenuItems();
+  const availableItems = useMemo(() => items.filter((i) => i.isAvailable), [items]);
+
+  const popularCount = useMemo(() => {
+    if (section.content?.popularItemIds && Array.isArray(section.content.popularItemIds) && section.content.popularItemIds.length > 0) {
+      return section.content.popularItemIds.filter((id) => availableItems.some((i) => i.id === id)).length;
+    }
+    return availableItems.filter((i) => i.isPopular).length;
+  }, [section.content?.popularItemIds, availableItems]);
+
   const Icon = SECTION_ICONS[section.type] ?? Info;
   const meta = getSectionMeta(section, popularCount);
 

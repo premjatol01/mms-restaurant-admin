@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { websiteApi } from "../api/website.api";
 import { defaultSections } from "../pages/website/data/sections";
 import { DEFAULT_WEBSITE_COLORS, BASE_DOMAIN } from "../pages/website/utils/constants";
+import { useProfileStore } from "./profileStore";
 
 export const useWebsiteStore = create((set, get) => ({
   // Website config
@@ -33,7 +34,11 @@ export const useWebsiteStore = create((set, get) => ({
         set({
           websiteStatus: config?.websiteStatus || "draft",
           restaurantName: config?.restaurantName || "",
-          restaurantSlug: config?.restaurantSlug || "",
+          restaurantSlug:
+            config?.restaurantSlug ||
+            payload?.subdomain ||
+            useProfileStore.getState().profile?.website?.subdomain ||
+            "",
           baseDomain: config?.baseDomain || BASE_DOMAIN,
           description: config?.description || "",
           phone: config?.phone || "",

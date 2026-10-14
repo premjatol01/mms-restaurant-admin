@@ -11,6 +11,7 @@ import { validateSubdomain } from "../utils/validation";
 import { BASE_DOMAIN, SUBDOMAIN_MAX } from "../utils/constants";
 import { websiteApi } from "../../../api/website.api";
 import { tablesApi } from "../../../api/tables.api";
+import { useProfileStore } from "../../../store/profileStore";
 
 const toUrl = (slug) => `http://${slug || "your-restaurant"}.${BASE_DOMAIN}`;
 
@@ -53,6 +54,12 @@ export default function SubdomainSettings() {
       // Regenerate all assigned QR codes with the new subdomain URL
       await tablesApi.regenerateAllQRCodes().catch(() => {});
       updateSubdomain(slug);
+      try {
+        const profileState = useProfileStore.getState();
+        if (profileState?.profile) {
+          profileState.updateField("website", "subdomain", slug);
+        }
+      } catch {}
       setConfirmOpen(false);
       setAvailability("idle");
       toast.success("Website address updated and QR codes regenerated");

@@ -1,16 +1,47 @@
-import { useMemo } from "react";
-import { menuCategories, menuItems } from "../data/menu";
+import { useEffect, useMemo } from "react";
+import { useMenuStore } from "../../../store/menuStore";
 
-// The Website module reads menu data ONLY through these hooks.
-// TODO: replace the dummy import above with the Menu module store, for example:
-//   const { categories, items } = useMenuStore();
-// Each item is expected to have: id, name, description, price, categoryId, isVeg, isPopular, isAvailable.
+// The Website module reads menu data from the Menu store (DB).
+// Each item has: id, name, description, price, categoryId, isVeg, isPopular, isAvailable, image, etc.
 export function useMenuItems() {
-  return { categories: menuCategories, items: menuItems };
+  const categories = useMenuStore((state) => state.categories);
+  const menuItems = useMenuStore((state) => state.menuItems);
+  const loading = useMenuStore((state) => state.loading);
+  const loaded = useMenuStore((state) => state.loaded);
+  const fetchMenuData = useMenuStore((state) => state.fetchMenuData);
+
+  useEffect(() => {
+    if (!loaded && !loading) {
+      fetchMenuData();
+    }
+  }, [loaded, loading, fetchMenuData]);
+
+  // Normalize items to ensure consistent isAvailable and isVeg flags
+  const items = useMemo(() => {
+    return (menuItems || []).map((item) => {
+      const isAvailable = item.status === "available" || item.isAvailable === true;
+      const isVeg = item.isVeg !== undefined ? item.isVeg : (item.foodType === "veg");
+      return {
+        ...item,
+        id: item.id || item._id,
+        isAvailable,
+        isVeg,
+      };
+    });
+  }, [menuItems]);
+
+  return {
+    categories: categories || [],
+    items,
+    loading,
+    loaded,
+  };
 }
 
-// Items marked Popular in the Menu module. Unavailable items are left out automatically.
+// Items marked Popular in the Menu module that are currently available
 export function usePopularMenuItems() {
   const { items } = useMenuItems();
-  return useMemo(() => items.filter((item) => item.isPopular && item.isAvailable), [items]);
+  return useMemo(() => {
+    return items.filter((item) => item.isPopular && item.isAvailable);
+  }, [items]);
 }

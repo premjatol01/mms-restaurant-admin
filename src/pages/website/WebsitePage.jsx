@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Globe, MessageSquare, Copy, ExternalLink, Check } from "lucide-react";
+import { toast } from "sonner";
 import { useWebsiteStore } from "../../store/websiteStore";
+import { useMenuStore } from "../../store/menuStore";
 import Button from "../../components/ui/Button";
 import PublishConfirmModal from "./modals/PublishConfirmModal";
 import { BASE_DOMAIN } from "./utils/constants";
@@ -13,7 +15,10 @@ export default function WebsitePage() {
   const [copied, setCopied] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-  useEffect(() => { loadProfile(); }, []);
+  useEffect(() => {
+    loadProfile();
+    useMenuStore.getState().fetchMenuData();
+  }, [loadProfile]);
 
   const protocol = import.meta.env.DEV ? "http" : "https";
   const websiteUrl = restaurantSlug
@@ -26,13 +31,23 @@ export default function WebsitePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePublish = () => {
-    publishWebsite();
+  const handlePublish = async () => {
+    try {
+      await publishWebsite();
+      toast.success("Website published successfully! It is now live.");
+    } catch {
+      toast.error("Failed to publish website. Please try again.");
+    }
     setShowPublishConfirm(false);
   };
 
-  const handleUnpublish = () => {
-    unpublishWebsite();
+  const handleUnpublish = async () => {
+    try {
+      await unpublishWebsite();
+      toast.success("Website unpublished. It is no longer accessible publicly.");
+    } catch {
+      toast.error("Failed to unpublish website. Please try again.");
+    }
   };
 
   return (

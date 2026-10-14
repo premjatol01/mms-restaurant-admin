@@ -6,7 +6,10 @@ export const websiteApi = {
     apiClient.get("/restaurant/subdomain/check", { params: { slug } }),
 
   saveSubdomain: (subdomain) =>
-    apiClient.put("/restaurant/profile", { website: { subdomain } }),
+    Promise.all([
+      apiClient.put("/restaurant/profile", { website: { subdomain } }),
+      apiClient.put("/restaurant/website/config", { restaurantSlug: subdomain })
+    ]),
 
   // Website Config & Status
   getConfig: () => apiClient.get("/restaurant/website/config"),
