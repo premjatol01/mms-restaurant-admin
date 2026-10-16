@@ -15,7 +15,8 @@ const LAYOUT_STYLES = {
 const sanitize = (text) => String(text).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
 
 export function buildQRFilename({ table, qr }) {
-  const parts = [table?.tableId && sanitize(table.tableId), sanitize(qr.name)].filter(Boolean);
+  const tableLabel = table?.tableNo || table?.tableId;
+  const parts = [tableLabel && sanitize(tableLabel), sanitize(qr.name)].filter(Boolean);
   return `${parts.join("_")}.png`;
 }
 
@@ -131,7 +132,7 @@ async function resolveQRBlob({ qr, table, url }) {
       console.warn("Could not fetch QR image from server, falling back to canvas render.", err);
     }
   }
-  return renderQRImage({ url, label: table?.tableId, sublabel: qr.name, layout: qr.layout });
+  return renderQRImage({ url: qr.scanUrl || url, label: table?.tableNo || table?.tableId, sublabel: qr.name, layout: qr.layout });
 }
 
 /** Individual download: one PNG. */

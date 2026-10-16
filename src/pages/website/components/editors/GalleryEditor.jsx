@@ -9,6 +9,7 @@ import FieldError from "../shared/FieldError";
 import { compactInputClass } from "../shared/fieldStyles";
 import { readImageFile, makeId } from "../../utils/image";
 import { MAX_GALLERY_IMAGES } from "../../utils/constants";
+import { getImageUrl } from "../../../../utils/getImageUrl";
 
 export default function GalleryEditor({ section, onSave, onCancel }) {
   const [content, setContent] = useState(section.content);
@@ -134,7 +135,7 @@ export default function GalleryEditor({ section, onSave, onCancel }) {
             {images.map((img, index) => (
               <li key={img.id} className="space-y-2">
                 <div className="relative aspect-square rounded-lg overflow-hidden border border-theme bg-secondary-soft">
-                  <img src={img.url} alt={img.caption || `Gallery image ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={getImageUrl(img.url)} alt={img.caption || `Gallery image ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(img.id)}

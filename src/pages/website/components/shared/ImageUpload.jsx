@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ImagePlus, LoaderCircle, RefreshCw, Trash2 } from "lucide-react";
 import { readImageFile } from "../../utils/image";
 import { IMAGE_MAX_MB } from "../../utils/constants";
+import { getImageUrl } from "../../../../utils/getImageUrl";
 import FieldError from "./FieldError";
 import { labelClass } from "./fieldStyles";
 
@@ -59,7 +60,7 @@ export default function ImageUpload({
 
       {value ? (
         <div className={`relative ${aspectClass} w-full max-w-md rounded-lg overflow-hidden border border-theme bg-secondary-soft`}>
-          <img src={value} alt={label ?? "Uploaded image"} className="w-full h-full object-cover" />
+          <img src={getImageUrl(value)} alt={label ?? "Uploaded image"} className="w-full h-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 p-2 bg-black/40">
             <button
               type="button"

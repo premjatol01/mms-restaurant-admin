@@ -1,75 +1,12 @@
 import { create } from "zustand";
+import { offersApi } from "../api/offers.api";
 
-const mockOffers = [
-  {
-    id: "OFF-001",
-    name: "Repeat Customer Special",
-    type: "repeat_order",
-    benefit: { type: "percentage", value: 10 },
-    previousOrderAmount: 1000,
-    repeatWithinDays: 7,
-    validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
-    terms: "Valid on eligible repeat orders only. Cannot be combined with other offers.",
-    status: "active",
-    performance: { timesAvailed: 42, totalDiscountGiven: 18650 },
-    createdAt: "2026-09-01T10:00:00"
-  },
-  {
-    id: "OFF-002",
-    name: "Big Order Bonus",
-    type: "order_value",
-    minimumOrderAmount: 1500,
-    benefit: { type: "percentage", value: 15 },
-    validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
-    terms: "Applicable when the order value reaches ₹1,500 or more.",
-    status: "active",
-    performance: { timesAvailed: 27, totalDiscountGiven: 31200 },
-    createdAt: "2026-09-01T10:00:00"
-  },
-  {
-    id: "OFF-003",
-    name: "Tuesday Special",
-    type: "low_traffic",
-    promotionMode: "order_value",
-    dayType: "day_of_week",
-    dayOfWeek: "Tuesday",
-    minimumOrderAmount: 1000,
-    benefit: { type: "percentage", value: 20 },
-    validity: { startDate: "2026-09-01", endDate: "2026-09-30" },
-    terms: "Valid every Tuesday during the offer period. Minimum order ₹1,000.",
-    status: "active",
-    performance: { timesAvailed: 64, totalDiscountGiven: 47800 },
-    createdAt: "2026-09-01T10:00:00"
-  },
-  {
-    id: "OFF-004",
-    name: "Pizza Wednesday",
-    type: "low_traffic",
-    promotionMode: "menu_item",
-    dayType: "day_of_week",
-    dayOfWeek: "Wednesday",
-    menuItemId: "item-1",
-    menuItemName: "Margherita Pizza",
-    benefit: { type: "percentage", value: 20 },
-    validity: { startDate: "2026-10-01", endDate: "2026-10-31" },
-    terms: "Valid on Margherita Pizza every Wednesday in October.",
-    status: "active",
-    performance: { timesAvailed: 0, totalDiscountGiven: 0 },
-    createdAt: "2026-09-10T10:00:00"
-  },
-  {
-    id: "OFF-005",
-    name: "Weekend Treat",
-    type: "order_value",
-    minimumOrderAmount: 800,
-    benefit: { type: "percentage", value: 12 },
-    validity: { startDate: "2026-08-01", endDate: "2026-08-31" },
-    terms: "Valid on weekends only.",
-    status: "inactive",
-    performance: { timesAvailed: 89, totalDiscountGiven: 21340 },
-    createdAt: "2026-08-01T10:00:00"
-  }
-];
+// Normalizes MongoDB _id to id so components consistently use `id`
+const norm = (doc) => {
+  if (!doc) return doc;
+  const { _id, __v, ...rest } = doc;
+  return { ...rest, id: ((_id?._id ?? _id)?.toString?.() || _id || rest.id) };
+};
 
 const designerContact = {
   phone: "+91 98765 43210",
@@ -77,34 +14,83 @@ const designerContact = {
 };
 
 export const useOffersStore = create((set, get) => ({
-  offers: [...mockOffers],
+  offers: [],
   loading: false,
   error: null,
+  loaded: false,
   designerContact,
 
-  addOffer: (offer) => set((state) => ({
-    offers: [
-      ...state.offers,
-      {
-        ...offer,
-        id: `OFF-${Date.now()}`,
-        performance: { timesAvailed: 0, totalDiscountGiven: 0 },
-        createdAt: new Date().toISOString()
-      }
-    ]
-  })),
+  fetchOffers: async (force = false) => {
+    if (get().loaded && !force) return;
+    set({ loading: true, error: null });
+    try {
+      const res = await offersApi.getOffers();
+      const serverOffers = (res.data?.data || []).map(norm);
+      set({
+        offers: serverOffers,
+        loading: false,
+        loaded: true,
+        error: null
+      });
+    } catch (err) {
+      set({
+        loading: false,
+        error: err.response?.data?.message || err.message || "Failed to load offers from server."
+      });
+    }
+  },
 
-  updateOffer: (id, data) => set((state) => ({
-    offers: state.offers.map((o) => o.id === id ? { ...o, ...data } : o)
-  })),
+  addOffer: async (offerData) => {
+    try {
+      const res = await offersApi.createOffer(offerData);
+      const newOffer = norm(res.data?.data);
+      set((state) => ({ offers: [newOffer, ...state.offers] }));
+      return newOffer;
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to create offer";
+      throw new Error(message);
+    }
+  },
 
-  updateOfferStatus: (id, status) => set((state) => ({
-    offers: state.offers.map((o) => o.id === id ? { ...o, status } : o)
-  })),
+  updateOffer: async (id, data) => {
+    try {
+      const res = await offersApi.updateOffer(id, data);
+      const updated = norm(res.data?.data);
+      set((state) => ({
+        offers: state.offers.map((o) => (o.id === id ? { ...o, ...updated } : o))
+      }));
+      return updated;
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to update offer";
+      throw new Error(message);
+    }
+  },
 
-  deleteOffer: (id) => set((state) => ({
-    offers: state.offers.filter((o) => o.id !== id)
-  })),
+  updateOfferStatus: async (id, status) => {
+    try {
+      const res = await offersApi.updateOfferStatus(id, status);
+      const updated = norm(res.data?.data);
+      set((state) => ({
+        offers: state.offers.map((o) => (o.id === id ? { ...o, status: updated?.status || status } : o))
+      }));
+      return updated;
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to update offer status";
+      throw new Error(message);
+    }
+  },
+
+  deleteOffer: async (id) => {
+    try {
+      await offersApi.deleteOffer(id);
+      set((state) => ({
+        offers: state.offers.filter((o) => o.id !== id)
+      }));
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || "Failed to delete offer";
+      throw new Error(message);
+    }
+  },
 
   getOfferById: (id) => get().offers.find((o) => o.id === id),
 

@@ -5,7 +5,6 @@ import {
   RESERVED_SUBDOMAINS,
   MAX_PURPOSE_OPTIONS
 } from "./constants";
-import { extractEmbedSrc } from "./maps";
 
 const isBlank = (v) => !String(v ?? "").trim();
 
@@ -47,7 +46,7 @@ const inRange = (value, min, max) => {
 // Returns { fieldName: message }. An empty object means the content is valid.
 export function validateMap(content) {
   const errors = {};
-  const { location = {}, mapSource, embedUrl } = content;
+  const { location = {} } = content;
 
   if (isBlank(content.title)) errors.title = "Enter a section title";
 
@@ -55,17 +54,9 @@ export function validateMap(content) {
   const hasLng = !isBlank(location.longitude);
   if (hasLat && !inRange(location.latitude, -90, 90)) errors.latitude = "Latitude must be between -90 and 90";
   if (hasLng && !inRange(location.longitude, -180, 180)) errors.longitude = "Longitude must be between -180 and 180";
-  if (hasLat && !hasLng && !errors.longitude) errors.longitude = "Enter longitude too";
-  if (hasLng && !hasLat && !errors.latitude) errors.latitude = "Enter latitude too";
 
-  if (mapSource === "embed") {
-    if (isBlank(embedUrl)) {
-      errors.embedUrl = "Paste the embed code or link from Google Maps";
-    } else if (!extractEmbedSrc(embedUrl)) {
-      errors.embedUrl = "This isn't a Google Maps embed. In Google Maps, use Share > Embed a map";
-    }
-  } else if (isBlank(location.addressLine) && !(hasLat && hasLng)) {
-    errors.addressLine = "Enter the street address or the coordinates";
+  if (isBlank(location.addressLine) && !(hasLat && hasLng)) {
+    errors.addressLine = "Enter street address or search on map";
   }
 
   return errors;

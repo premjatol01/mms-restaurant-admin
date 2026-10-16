@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
@@ -26,7 +27,10 @@ export default function TablesTab() {
   const [downloadingId, setDownloadingId] = useState(null);
 
   const filteredTables = tables.filter((table) => {
-    const matchSearch = !search || table.tableId.toLowerCase().includes(search.toLowerCase());
+    const label = (table.tableNo || table.tableId || "").toLowerCase();
+    const id = (table.tableId || "").toLowerCase();
+    const q = search.toLowerCase();
+    const matchSearch = !search || label.includes(q) || id.includes(q);
     const matchStatus = !statusFilter || table.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -53,7 +57,7 @@ export default function TablesTab() {
   const handleDownloadOne = async (table, qr) => {
     setDownloadingId(table.id);
     try {
-      await downloadQRCode({ qr, table, url: buildTableQRUrl({ table, qr }) });
+      await downloadQRCode({ qr, table, url: qr.scanUrl || buildTableQRUrl({ table, qr }) });
       toast.success(`${qr.name} downloaded.`);
     } catch (error) {
       console.error(error);
@@ -67,7 +71,7 @@ export default function TablesTab() {
     if (!assignedPairs.length) return;
     setDownloadingAll(true);
     try {
-      const items = assignedPairs.map(({ table, qr }) => ({ table, qr, url: buildTableQRUrl({ table, qr }) }));
+      const items = assignedPairs.map(({ table, qr }) => ({ table, qr, url: qr.scanUrl || buildTableQRUrl({ table, qr }) }));
       const count = await downloadAllQRCodes(items);
       toast.success(`Downloaded ${count} QR ${count === 1 ? "code" : "codes"} as a ZIP file.`);
     } catch (error) {
@@ -136,7 +140,7 @@ export default function TablesTab() {
                 <th className="text-left px-4 py-3 font-medium text-theme">QR Type</th>
                 <th className="text-left px-4 py-3 font-medium text-theme">Session</th>
                 <th className="text-left px-4 py-3 font-medium text-theme">Status</th>
-                <th className="text-right px-4 py-3 font-medium text-theme">Actions</th>
+                <th className="text-right px-4 py-3 font-medium text-theme whitespace-nowrap min-w-[120px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -144,7 +148,9 @@ export default function TablesTab() {
                 const qr = getQRInfo(table.qrCodeId);
                 return (
                   <tr key={table.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10">
-                    <td className="px-4 py-3 font-medium text-theme">{table.tableId}</td>
+                    <td className="px-4 py-3 font-medium text-theme">
+                      <span>{table.tableNo || table.tableId}</span>
+                    </td>
                     <td className="px-4 py-3">
                       {qr ? (
                         <span className="inline-flex items-center gap-1 text-theme">
@@ -165,7 +171,7 @@ export default function TablesTab() {
                         {table.status === "active" ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap min-w-[120px]">
                       <TableActions
                         table={table}
                         qr={qr}
@@ -232,40 +238,168 @@ function QRTypeBadge({ templateId, type }) {
 
 function TableActions({ table, qr, downloading, onEdit, onAssign, onDownload, onToggle, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
-  const itemClass = "w-full flex items-center gap-2 px-3 py-2 text-sm text-theme hover:bg-primary-light";
-  const run = (action) => () => { action(); setIsOpen(false); };
+  const [menuStyle, setMenuStyle] = useState({});
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menuHeight = 220;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placeAbove = spaceBelow < menuHeight && rect.top > menuHeight;
+    const right = Math.max(8, window.innerWidth - rect.right);
+
+    setMenuStyle({
+      position: "fixed",
+      ...(placeAbove
+        ? { bottom: `${window.innerHeight - rect.top + 6}px` }
+        : { top: `${rect.bottom + 6}px` }),
+      right: `${right}px`,
+      zIndex: 9999,
+    });
+  };
+
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    if (!isOpen) {
+      updatePosition();
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScrollOrResize = () => {
+      setIsOpen(false);
+    };
+
+    const handleClickOutside = (e) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const itemClass =
+    "w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-theme hover:bg-primary-light/40 transition-colors cursor-pointer text-left";
+
+  const run = (action) => (e) => {
+    e?.stopPropagation();
+    action();
+    setIsOpen(false);
+  };
 
   return (
-    <div className="relative">
-      <button
-        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        aria-label={`Actions for ${table.tableId}`}
-        className="p-1.5 text-secondary hover:text-theme rounded hover:bg-primary-light"
-      >
-        <MoreVertical size={18} />
-      </button>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-theme rounded-lg shadow-xl z-20 py-1">
-            <button onClick={run(onEdit)} className={itemClass}><Pencil size={14} /> Edit</button>
-            {table.status === "active" && (
-              <button onClick={run(onAssign)} className={itemClass}><QrCode size={14} /> {qr ? "Change QR" : "Assign QR"}</button>
-            )}
-            {qr && (
-              <button disabled={downloading} onClick={run(onDownload)} className={`${itemClass} disabled:opacity-50`}>
-                <Download size={14} /> Download QR
-              </button>
-            )}
-            <button onClick={run(onToggle)} className={itemClass}>
-              <ToggleRight size={14} /> {table.status === "active" ? "Mark Inactive" : "Mark Active"}
-            </button>
-            <button onClick={run(onDelete)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50">
-              <Trash2 size={14} /> Delete
-            </button>
-          </div>
-        </>
+    <div className="flex items-center justify-end gap-1">
+      {qr && (
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={downloading}
+          title="Download QR code"
+          className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light/30 rounded transition-colors disabled:opacity-50"
+        >
+          {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+        </button>
       )}
+
+      <button
+        type="button"
+        onClick={onEdit}
+        title="Edit table"
+        className="p-1.5 text-secondary hover:text-theme hover:bg-primary-light/30 rounded transition-colors"
+      >
+        <Pencil size={16} />
+      </button>
+
+      <div className="relative inline-block">
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleToggle}
+          title="More actions"
+          aria-label={`Actions for ${table.tableNo || table.tableId}`}
+          className={`p-1.5 rounded transition-colors ${
+            isOpen
+              ? "text-theme bg-primary-light/40"
+              : "text-secondary hover:text-theme hover:bg-primary-light/30"
+          }`}
+        >
+          <MoreVertical size={16} />
+        </button>
+
+        {isOpen &&
+          createPortal(
+            <div
+              ref={menuRef}
+              style={menuStyle}
+              onClick={(e) => e.stopPropagation()}
+              className="w-48 bg-surface border border-theme rounded-lg shadow-2xl py-1 text-left ring-1 ring-black/5"
+            >
+              <button type="button" onClick={run(onEdit)} className={itemClass}>
+                <Pencil size={14} className="text-secondary" /> Edit Table
+              </button>
+
+              {table.status === "active" && (
+                <button type="button" onClick={run(onAssign)} className={itemClass}>
+                  <QrCode size={14} className="text-secondary" /> {qr ? "Change QR" : "Assign QR"}
+                </button>
+              )}
+
+              {qr && (
+                <button
+                  type="button"
+                  disabled={downloading}
+                  onClick={run(onDownload)}
+                  className={`${itemClass} disabled:opacity-50`}
+                >
+                  <Download size={14} className="text-secondary" /> Download QR
+                </button>
+              )}
+
+              <button type="button" onClick={run(onToggle)} className={itemClass}>
+                <ToggleRight size={14} className="text-secondary" />{" "}
+                {table.status === "active" ? "Mark Inactive" : "Mark Active"}
+              </button>
+
+              <div className="my-1 border-t border-theme" />
+
+              <button
+                type="button"
+                onClick={run(onDelete)}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer text-left"
+              >
+                <Trash2 size={14} /> Delete Table
+              </button>
+            </div>,
+            document.body
+          )}
+      </div>
     </div>
   );
 }

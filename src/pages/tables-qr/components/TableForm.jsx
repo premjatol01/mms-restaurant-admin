@@ -26,7 +26,7 @@ export default function TableForm({ isOpen, onClose, editTable }) {
   useEffect(() => {
     setForm(
       editTable
-        ? { tableId: editTable.tableId, status: editTable.status, selectedTemplateId: null }
+        ? { tableId: editTable.tableNo || editTable.tableId, status: editTable.status, selectedTemplateId: null }
         : { tableId: "", status: "active", selectedTemplateId: null }
     );
     setErrors({});
@@ -42,7 +42,7 @@ export default function TableForm({ isOpen, onClose, editTable }) {
     const errs = {};
     const tableNo = form.tableId.trim();
     if (!tableNo) errs.tableId = "Table No. is required";
-    else if (tables.some((t) => t.tableId.trim().toLowerCase() === tableNo.toLowerCase() && t.id !== editTable?.id)) {
+    else if (tables.some((t) => (t.tableNo || t.tableId).trim().toLowerCase() === tableNo.toLowerCase() && t.id !== editTable?.id)) {
       errs.tableId = "Table No. already exists";
     }
     setErrors(errs);
@@ -67,10 +67,10 @@ export default function TableForm({ isOpen, onClose, editTable }) {
       }
 
       if (editTable) {
-        await updateTable(editTable.id, { tableId: tableNo, status: form.status, qrCodeId: finalQrCodeId });
+        await updateTable(editTable.id, { tableNo, tableId: editTable.tableId, status: form.status, qrCodeId: finalQrCodeId });
         toast.success("Table updated successfully.");
       } else {
-        await addTable({ tableId: tableNo, status: form.status, qrCodeId: finalQrCodeId });
+        await addTable({ tableNo, status: form.status, qrCodeId: finalQrCodeId });
         toast.success("Table added successfully.");
       }
       onClose();

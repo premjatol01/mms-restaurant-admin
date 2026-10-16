@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useOffersStore } from "../../../store/offersStore";
@@ -23,28 +23,72 @@ const DAYS_OF_WEEK = [
   { value: "Sunday", label: "Sunday" }
 ];
 
+const toDateInputString = (dateVal) => {
+  if (!dateVal) return "";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
+
 export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
   const { addOffer, updateOffer } = useOffersStore();
-  const { menuItems } = useMenuStore();
+  const { menuItems, fetchMenuData } = useMenuStore();
   
   const [step, setStep] = useState(editOffer ? 2 : 1);
   const [offerType, setOfferType] = useState(editOffer?.type || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: editOffer?.name || "",
-    benefitValue: editOffer?.benefit?.value || "",
-    previousOrderAmount: editOffer?.previousOrderAmount || "",
-    repeatWithinDays: editOffer?.repeatWithinDays || "",
-    minimumOrderAmount: editOffer?.minimumOrderAmount || "",
+    benefitType: editOffer?.benefit?.type || "percentage",
+    benefitValue: editOffer?.benefit?.value !== undefined ? String(editOffer.benefit.value) : "",
+    previousOrderAmount: editOffer?.previousOrderAmount !== undefined ? String(editOffer.previousOrderAmount) : "",
+    repeatWithinDays: editOffer?.repeatWithinDays !== undefined ? String(editOffer.repeatWithinDays) : "",
+    minimumOrderAmount: editOffer?.minimumOrderAmount !== undefined ? String(editOffer.minimumOrderAmount) : "",
     promotionMode: editOffer?.promotionMode || "order_value",
     dayType: editOffer?.dayType || "day_of_week",
-    dayOfWeek: editOffer?.dayOfWeek || "",
-    specificDate: editOffer?.specificDate || "",
+    dayOfWeek: editOffer?.dayOfWeek || "Tuesday",
+    specificDate: toDateInputString(editOffer?.specificDate),
     menuItemId: editOffer?.menuItemId || "",
-    startDate: editOffer?.validity?.startDate || "",
-    endDate: editOffer?.validity?.endDate || "",
+    startDate: toDateInputString(editOffer?.validity?.startDate),
+    endDate: toDateInputString(editOffer?.validity?.endDate),
     terms: editOffer?.terms || "",
     status: editOffer?.status === "inactive" ? "inactive" : "active"
   });
+
+  useEffect(() => {
+    if (menuItems.length === 0 && fetchMenuData) {
+      fetchMenuData();
+    }
+  }, [menuItems.length, fetchMenuData]);
+
+  // Sync state if editOffer changes
+  useEffect(() => {
+    if (editOffer) {
+      setOfferType(editOffer.type || "order_value");
+      setStep(2);
+      setFormData({
+        name: editOffer.name || "",
+        benefitType: editOffer.benefit?.type || "percentage",
+        benefitValue: editOffer.benefit?.value !== undefined ? String(editOffer.benefit.value) : "",
+        previousOrderAmount: editOffer.previousOrderAmount !== undefined ? String(editOffer.previousOrderAmount) : "",
+        repeatWithinDays: editOffer.repeatWithinDays !== undefined ? String(editOffer.repeatWithinDays) : "",
+        minimumOrderAmount: editOffer.minimumOrderAmount !== undefined ? String(editOffer.minimumOrderAmount) : "",
+        promotionMode: editOffer.promotionMode || "order_value",
+        dayType: editOffer.dayType || "day_of_week",
+        dayOfWeek: editOffer.dayOfWeek || "Tuesday",
+        specificDate: toDateInputString(editOffer.specificDate),
+        menuItemId: editOffer.menuItemId || "",
+        startDate: toDateInputString(editOffer.validity?.startDate),
+        endDate: toDateInputString(editOffer.validity?.endDate),
+        terms: editOffer.terms || "",
+        status: editOffer.status === "inactive" ? "inactive" : "active"
+      });
+    }
+  }, [editOffer]);
 
   const menuItemOptions = menuItems.map((item) => ({ value: item.id, label: item.name }));
 
@@ -52,68 +96,120 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    if (!formData.name.trim()) { toast.error("Please enter an offer name."); return; }
-    if (!formData.benefitValue) { toast.error("Please enter a discount value."); return; }
-    if (!formData.startDate || !formData.endDate) { toast.error("Please select validity dates."); return; }
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast.error("Please enter an offer name.");
+      return;
+    }
+
+    const discountVal = parseFloat(formData.benefitValue);
+    if (isNaN(discountVal) || discountVal <= 0) {
+      toast.error("Please enter a valid discount value greater than 0.");
+      return;
+    }
+
+    if (formData.benefitType === "percentage" && (discountVal < 1 || discountVal > 100)) {
+      toast.error("Percentage discount must be between 1% and 100%.");
+      return;
+    }
+
+    if (!formData.startDate || !formData.endDate) {
+      toast.error("Please select both start and end validity dates.");
+      return;
+    }
+
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      toast.error("End date cannot be earlier than start date.");
+      return;
+    }
 
     const offerData = {
-      name: formData.name,
-      benefit: { type: "percentage", value: parseInt(formData.benefitValue) },
-      validity: { startDate: formData.startDate, endDate: formData.endDate },
-      terms: formData.terms,
+      name: formData.name.trim(),
+      type: offerType,
+      benefit: {
+        type: formData.benefitType,
+        value: discountVal
+      },
+      validity: {
+        startDate: formData.startDate,
+        endDate: formData.endDate
+      },
+      terms: formData.terms.trim(),
       status: formData.status
     };
 
     if (offerType === "repeat_order") {
-      if (!formData.previousOrderAmount || !formData.repeatWithinDays) {
-        toast.error("Please fill all required fields."); return;
+      const prevOrder = parseFloat(formData.previousOrderAmount);
+      const repeatDays = parseInt(formData.repeatWithinDays, 10);
+
+      if (isNaN(prevOrder) || prevOrder <= 0) {
+        toast.error("Previous order amount must be a positive number.");
+        return;
       }
+      if (isNaN(repeatDays) || repeatDays <= 0) {
+        toast.error("Repeat within days must be at least 1 day.");
+        return;
+      }
+
       Object.assign(offerData, {
-        type: "repeat_order",
-        previousOrderAmount: parseInt(formData.previousOrderAmount),
-        repeatWithinDays: parseInt(formData.repeatWithinDays)
+        previousOrderAmount: prevOrder,
+        repeatWithinDays: repeatDays
       });
     } else if (offerType === "order_value") {
-      if (!formData.minimumOrderAmount) { toast.error("Please enter minimum order amount."); return; }
+      const minAmount = parseFloat(formData.minimumOrderAmount);
+      if (isNaN(minAmount) || minAmount <= 0) {
+        toast.error("Minimum order amount must be a positive number.");
+        return;
+      }
       Object.assign(offerData, {
-        type: "order_value",
-        minimumOrderAmount: parseInt(formData.minimumOrderAmount)
+        minimumOrderAmount: minAmount
       });
     } else if (offerType === "low_traffic") {
       if (formData.promotionMode === "order_value") {
-        if (!formData.minimumOrderAmount) { toast.error("Please enter minimum order amount."); return; }
+        const minAmount = parseFloat(formData.minimumOrderAmount);
+        if (isNaN(minAmount) || minAmount <= 0) {
+          toast.error("Minimum order amount must be a positive number.");
+          return;
+        }
         Object.assign(offerData, {
-          type: "low_traffic",
           promotionMode: "order_value",
           dayType: formData.dayType,
-          dayOfWeek: formData.dayType === "day_of_week" ? formData.dayOfWeek : "",
-          specificDate: formData.dayType === "specific_date" ? formData.specificDate : "",
-          minimumOrderAmount: parseInt(formData.minimumOrderAmount)
+          dayOfWeek: formData.dayType === "day_of_week" ? formData.dayOfWeek : undefined,
+          specificDate: formData.dayType === "specific_date" ? formData.specificDate : undefined,
+          minimumOrderAmount: minAmount
         });
       } else {
-        if (!formData.menuItemId) { toast.error("Please select a menu item."); return; }
-        const menuItem = menuItems.find((m) => m.id === formData.menuItemId);
+        if (!formData.menuItemId) {
+          toast.error("Please select a target menu item.");
+          return;
+        }
+        const selectedMenuItem = menuItems.find((m) => m.id === formData.menuItemId);
         Object.assign(offerData, {
-          type: "low_traffic",
           promotionMode: "menu_item",
           dayType: formData.dayType,
-          dayOfWeek: formData.dayType === "day_of_week" ? formData.dayOfWeek : "",
-          specificDate: formData.dayType === "specific_date" ? formData.specificDate : "",
+          dayOfWeek: formData.dayType === "day_of_week" ? formData.dayOfWeek : undefined,
+          specificDate: formData.dayType === "specific_date" ? formData.specificDate : undefined,
           menuItemId: formData.menuItemId,
-          menuItemName: menuItem?.name || ""
+          menuItemName: selectedMenuItem?.name || ""
         });
       }
     }
 
-    if (editOffer) {
-      updateOffer(editOffer.id, offerData);
-      toast.success("Offer updated successfully.");
-    } else {
-      addOffer(offerData);
-      toast.success("Offer created successfully.");
+    setIsSubmitting(true);
+    try {
+      if (editOffer) {
+        await updateOffer(editOffer.id, offerData);
+        toast.success("Offer updated successfully.");
+      } else {
+        await addOffer(offerData);
+        toast.success("Offer created successfully.");
+      }
+      onClose();
+    } catch (err) {
+      toast.error(err.message || "Failed to save offer.");
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -125,7 +221,11 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
         {OFFER_TYPES.map((type) => (
           <button
             key={type.id}
-            onClick={() => { setOfferType(type.id); setStep(2); }}
+            type="button"
+            onClick={() => {
+              setOfferType(type.id);
+              setStep(2);
+            }}
             className={`w-full p-4 text-left border rounded-lg transition-colors ${
               offerType === type.id ? "border-primary bg-primary-light/20" : "border-theme hover:border-primary"
             }`}
@@ -142,55 +242,72 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-theme">Configure Offer</h3>
-        <button onClick={() => setStep(1)} className="text-sm text-primary hover:underline">Change Type</button>
+        {!editOffer && (
+          <button type="button" onClick={() => setStep(1)} className="text-sm text-primary hover:underline">
+            Change Type
+          </button>
+        )}
       </div>
 
       <Input
         label="Offer Name"
         value={formData.name}
         onChange={(e) => handleChange("name", e.target.value)}
-        placeholder="e.g., Tuesday Special"
+        placeholder="e.g., Tuesday Special, Big Order Bonus"
       />
 
+      {/* Discount Type and Value */}
       <div className="grid grid-cols-2 gap-4">
+        <Select
+          label="Discount Type"
+          value={formData.benefitType}
+          onChange={(v) => handleChange("benefitType", v)}
+          options={[
+            { value: "percentage", label: "Percentage (%)" },
+            { value: "flat", label: "Flat Amount (₹)" }
+          ]}
+        />
         <Input
-          label={offerType === "repeat_order" ? "Discount (%)" : "Discount (%)"}
+          label={formData.benefitType === "percentage" ? "Discount (%)" : "Flat Discount (₹)"}
           type="number"
+          min="1"
+          max={formData.benefitType === "percentage" ? "100" : undefined}
           value={formData.benefitValue}
           onChange={(e) => handleChange("benefitValue", e.target.value)}
-          placeholder="10"
-        />
-        <Select
-          label="Status"
-          value={formData.status}
-          onChange={(v) => handleChange("status", v)}
-          options={[
-            { value: "active", label: "Active" },
-            { value: "inactive", label: "Inactive" }
-          ]}
+          placeholder={formData.benefitType === "percentage" ? "e.g., 15" : "e.g., 150"}
         />
       </div>
 
+      <Select
+        label="Status"
+        value={formData.status}
+        onChange={(v) => handleChange("status", v)}
+        options={[
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" }
+        ]}
+      />
+
       {/* Repeat Order Fields */}
       {offerType === "repeat_order" && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Previous Order Amount (₹)"
-              type="number"
-              value={formData.previousOrderAmount}
-              onChange={(e) => handleChange("previousOrderAmount", e.target.value)}
-              placeholder="1000"
-            />
-            <Input
-              label="Repeat Within (Days)"
-              type="number"
-              value={formData.repeatWithinDays}
-              onChange={(e) => handleChange("repeatWithinDays", e.target.value)}
-              placeholder="7"
-            />
-          </div>
-        </>
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Previous Order Min Amount (₹)"
+            type="number"
+            min="1"
+            value={formData.previousOrderAmount}
+            onChange={(e) => handleChange("previousOrderAmount", e.target.value)}
+            placeholder="1000"
+          />
+          <Input
+            label="Repeat Within (Days)"
+            type="number"
+            min="1"
+            value={formData.repeatWithinDays}
+            onChange={(e) => handleChange("repeatWithinDays", e.target.value)}
+            placeholder="7"
+          />
+        </div>
       )}
 
       {/* Order Value Fields */}
@@ -198,6 +315,7 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
         <Input
           label="Minimum Order Amount (₹)"
           type="number"
+          min="1"
           value={formData.minimumOrderAmount}
           onChange={(e) => handleChange("minimumOrderAmount", e.target.value)}
           placeholder="1500"
@@ -210,17 +328,19 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
           <div>
             <label className="text-sm font-medium text-theme block mb-2">Promotion Based On</label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  name="promotionMode"
                   checked={formData.promotionMode === "order_value"}
                   onChange={() => handleChange("promotionMode", "order_value")}
                 />
                 <span className="text-sm text-theme">Order Value</span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  name="promotionMode"
                   checked={formData.promotionMode === "menu_item"}
                   onChange={() => handleChange("promotionMode", "menu_item")}
                 />
@@ -232,17 +352,19 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
           <div>
             <label className="text-sm font-medium text-theme block mb-2">Apply On</label>
             <div className="flex gap-4 mb-3">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  name="dayType"
                   checked={formData.dayType === "day_of_week"}
                   onChange={() => handleChange("dayType", "day_of_week")}
                 />
                 <span className="text-sm text-theme">Day of Week</span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
+                  name="dayType"
                   checked={formData.dayType === "specific_date"}
                   onChange={() => handleChange("dayType", "specific_date")}
                 />
@@ -269,6 +391,7 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
             <Input
               label="Minimum Order Amount (₹)"
               type="number"
+              min="1"
               value={formData.minimumOrderAmount}
               onChange={(e) => handleChange("minimumOrderAmount", e.target.value)}
               placeholder="1000"
@@ -285,7 +408,7 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
         </>
       )}
 
-      {/* Common Fields */}
+      {/* Common Validity Dates */}
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="Start Date"
@@ -296,6 +419,7 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
         <Input
           label="End Date"
           type="date"
+          min={formData.startDate || undefined}
           value={formData.endDate}
           onChange={(e) => handleChange("endDate", e.target.value)}
         />
@@ -332,17 +456,23 @@ export default function CreateOfferDrawer({ isOpen, onClose, editOffer }) {
         </div>
 
         <div className="px-6 py-4 border-t border-theme flex gap-3">
-          {step === 2 && (
-            <Button variant="secondary" className="flex-1" onClick={() => setStep(1)}>
+          {step === 2 && !editOffer && (
+            <Button variant="secondary" className="flex-1" onClick={() => setStep(1)} disabled={isSubmitting}>
               Back
             </Button>
           )}
           {step === 2 ? (
-            <Button className="flex-1" onClick={handleSave}>
-              {editOffer ? "Update Offer" : "Save Offer"}
+            <Button className="flex-1" onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : editOffer ? "Update Offer" : "Save Offer"}
             </Button>
           ) : (
-            <Button className="flex-1" onClick={() => { if (offerType) setStep(2); else toast.error("Please select an offer type."); }}>
+            <Button
+              className="flex-1"
+              onClick={() => {
+                if (offerType) setStep(2);
+                else toast.error("Please select an offer type.");
+              }}
+            >
               Continue
             </Button>
           )}
