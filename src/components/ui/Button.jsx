@@ -8,8 +8,10 @@ export default function Button({ children, variant = "primary", size = "md", loa
     ghost: "text-theme hover:bg-primary-light",
   };
 
+  const buttonType = props.type || "button";
+
   return (
-    <button className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} disabled={loading || props.disabled} {...props}>
+    <button type={buttonType} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} disabled={loading || props.disabled} {...props}>
       {loading && (
         <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

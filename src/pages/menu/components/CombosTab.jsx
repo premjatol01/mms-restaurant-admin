@@ -63,7 +63,7 @@ export default function CombosTab() {
           onAction={() => setShowForm(true)}
         />
       ) : (
-        <div className="overflow-x-auto border border-theme rounded-lg">
+        <div className="overflow-x-auto border border-theme rounded-lg min-h-[220px]">
           <table className="w-full text-sm">
             <thead className="bg-primary-light/30 border-b border-theme">
               <tr>
@@ -83,7 +83,7 @@ export default function CombosTab() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary flex-shrink-0 overflow-hidden">
-                          {combo.image ? <img src={getImageUrl(combo.image)} alt={combo.name} className="w-full h-full object-cover rounded-lg" /> : <Package size={18} />}
+                          {combo.image || combo.imageUrl ? <img src={getImageUrl(combo.image || combo.imageUrl)} alt={combo.name} className="w-full h-full object-cover rounded-lg" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : <Package size={18} />}
                         </div>
                         <div>
                           <p className="font-medium text-theme">{combo.name}</p>

@@ -36,26 +36,26 @@ export default function MarkPaidModal({ sessionId, onClose }) {
   const cancelledAmount = sessionOrders.reduce((sum, order) => sum + getCancelledAmount(order), 0);
   const hasBill = total > 0;
 
-  const handleConfirm = () => {
-    const result = markSessionPaid(sessionId);
+  const handleConfirm = async () => {
+    const result = await markSessionPaid(sessionId);
     if (!result.ok) {
       toast.error(
         result.reason === "unresolved"
           ? "Some items are still Pending or Under Process."
-          : "This session is no longer active."
+          : (result.message || "This session is no longer active.")
       );
       return;
     }
     toast.success(
       hasBill
-        ? `Payment of ${formatCurrency(result.total)} recorded for ${tableName}.`
-        : `Session closed for ${tableName}.`
+        ? `Payment of ${formatCurrency(result.total)} recorded for ${tableName}. Table is now free.`
+        : `Session closed for ${tableName}. Table is now free.`
     );
     onClose();
   };
 
-  const handleServeAll = () => {
-    serveAllInSession(sessionId);
+  const handleServeAll = async () => {
+    await serveAllInSession(sessionId);
     toast.success("All remaining items marked as Served.");
   };
 

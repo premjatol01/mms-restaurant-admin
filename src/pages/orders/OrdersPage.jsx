@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChefHat, ClipboardList, IndianRupee, Users } from "lucide-react";
 import { isToday } from "date-fns";
 import { useOrdersStore } from "../../store/ordersStore";
+import { useTablesQRStore } from "../../store/tablesQRStore";
+import { useMenuStore } from "../../store/menuStore";
 import PendingOrdersTab from "./components/PendingOrdersTab";
 import ActiveSessionsTab from "./components/ActiveSessionsTab";
 import CompletedTab from "./components/CompletedTab";
@@ -61,11 +63,63 @@ function SummaryCards() {
   );
 }
 
+import { toast } from "sonner";
+import { connectAdminSocket, disconnectAdminSocket } from "../../services/socket";
+import { useProfileStore } from "../../store/profileStore";
+
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("pending");
   const [viewOrderId, setViewOrderId] = useState(null);
   const [cancelOrderId, setCancelOrderId] = useState(null);
   const pendingCount = useOrdersStore((state) => state.orders.filter((o) => o.status === "pending").length);
+  const fetchData = useOrdersStore((state) => state.fetchData);
+
+  useEffect(() => {
+    fetchData();
+    useTablesQRStore.getState().fetchData();
+    useMenuStore.getState().fetchMenuData();
+
+    let isMounted = true;
+
+    // Connect real-time WebSocket for instant order alerts & session updates
+    const setupSocket = async () => {
+      let rId = useProfileStore.getState().profile?._id;
+      if (!rId) {
+        await useProfileStore.getState().fetchProfile();
+        rId = useProfileStore.getState().profile?._id;
+      }
+
+      if (!isMounted) return;
+
+      connectAdminSocket(rId, {
+        onOrderCreated: (data) => {
+          const orderNum = data?.order?.orderNumber || "New";
+          const tableNum = data?.table?.tableNo ? ` (Table ${data.table.tableNo})` : "";
+          toast.success(`⚡ New QR Order ${orderNum}${tableNum} placed!`, {
+            duration: 6000,
+          });
+          fetchData();
+        },
+        onOrderUpdated: () => {
+          fetchData();
+        },
+        onSessionUpdated: () => {
+          fetchData();
+        },
+        onSessionCompleted: () => {
+          toast.info("A table session was paid & marked completed. Table freed.");
+          fetchData();
+        },
+      });
+    };
+
+    setupSocket();
+
+    return () => {
+      isMounted = false;
+      disconnectAdminSocket();
+    };
+  }, [fetchData]);
 
   return (
     <div className="space-y-5">

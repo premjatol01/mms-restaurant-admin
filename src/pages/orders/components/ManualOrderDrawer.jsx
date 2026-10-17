@@ -2,26 +2,25 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import { useMenuStore } from "../../../store/menuStore";
+import { useTablesQRStore } from "../../../store/tablesQRStore";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 import SearchInput from "../../../components/ui/SearchInput";
 
-const tables = [
-  { value: "table-1", label: "Table 01" },
-  { value: "table-2", label: "Table 02" },
-  { value: "table-3", label: "Table 03" },
-  { value: "table-4", label: "Table 04" },
-  { value: "table-5", label: "Table 05" },
-  { value: "table-6", label: "Table 06" },
-  { value: "table-7", label: "Table 07" },
-  { value: "table-8", label: "Table 08" },
-];
-
 export default function ManualOrderDrawer({ isOpen, onClose }) {
   const { addOrder, sessions, getTableName } = useOrdersStore();
   const { menuItems } = useMenuStore();
+  const tablesList = useTablesQRStore((state) => state.tables);
+
+  const tables = useMemo(() => {
+    return tablesList.map((t) => ({
+      value: t.id,
+      label: t.tableNo || t.tableId || (t.number ? `Table ${t.number}` : "Table"),
+    }));
+  }, [tablesList]);
+
   const [selectedTable, setSelectedTable] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
   const [cart, setCart] = useState({});
@@ -56,7 +55,7 @@ export default function ManualOrderDrawer({ isOpen, onClose }) {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedTable) {
       toast.error("Please select a table");
       return;
@@ -66,7 +65,7 @@ export default function ManualOrderDrawer({ isOpen, onClose }) {
       return;
     }
 
-    addOrder({
+    const res = await addOrder({
       tableId: selectedTable,
       sessionId: activeSession?.id,
       source: "manual",
@@ -82,8 +81,12 @@ export default function ManualOrderDrawer({ isOpen, onClose }) {
       total: cartTotal,
     });
 
-    toast.success("Manual order added successfully.");
-    handleClose();
+    if (res?.ok) {
+      toast.success("Manual order added successfully.");
+      handleClose();
+    } else {
+      toast.error(res?.error || "Failed to add manual order");
+    }
   };
 
   const handleClose = () => {

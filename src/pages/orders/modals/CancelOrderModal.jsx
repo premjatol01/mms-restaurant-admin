@@ -59,9 +59,9 @@ function CancelForm({ order, onClose }) {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) return;
-    cancelOrderItems(order.id, selections, { reason, comment });
+    await cancelOrderItems(order.id, selections, { reason, comment });
     toast.success(
       mode === "full"
         ? `Order ${order.orderNumber} cancelled.`

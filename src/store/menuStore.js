@@ -74,6 +74,17 @@ export const useMenuStore = create((set, get) => ({
     }
   },
 
+  setTopCategories: async (categoryIds) => {
+    try {
+      const { data } = await menuApi.setTopCategories(categoryIds);
+      const updated = (data?.data || []).map(norm);
+      set({ categories: updated });
+      return updated;
+    } catch (err) {
+      throw err;
+    }
+  },
+
   deleteCategory: async (id) => {
     try {
       await menuApi.deleteCategory(id);

@@ -26,12 +26,12 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
   useEffect(() => {
     if (editCombo) {
       setForm({
-        name: editCombo.name,
+        name: editCombo.name || "",
         description: editCombo.description || "",
-        image: editCombo.image,
+        image: editCombo.image || editCombo.imageUrl || null,
         itemIds: editCombo.itemIds || [],
-        price: editCombo.price?.toString() || "",
-        status: editCombo.status,
+        price: editCombo.price !== undefined ? editCombo.price.toString() : "",
+        status: editCombo.status || "available",
       });
     } else {
       setForm({ name: "", description: "", image: null, itemIds: [], price: "", status: "available" });
@@ -90,7 +90,7 @@ export default function ComboForm({ isOpen, onClose, editCombo }) {
       let imageUrl = form.image;
       if (form.image instanceof File) {
         const uploadRes = await menuApi.uploadImage(form.image);
-        imageUrl = uploadRes.data.data.url;
+        imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url || imageUrl;
       }
       
       const payload = { ...form, price: Number(form.price), image: imageUrl };

@@ -26,9 +26,9 @@ function RemoveForm({ order, item, onClose }) {
   const needsComment = reason === "other";
   const isValid = reason !== "" && (!needsComment || comment.trim().length > 0);
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (!isValid) return;
-    removeItem(order.id, item.id, { reason, comment });
+    await removeItem(order.id, item.id, { reason, comment });
     toast.success(`${item.name} removed from ${order.orderNumber}.`);
     onClose();
   };

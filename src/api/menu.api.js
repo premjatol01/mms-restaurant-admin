@@ -5,6 +5,7 @@ export const menuApi = {
   getCategories: () => apiClient.get("/menu/categories"),
   createCategory: (data) => apiClient.post("/menu/categories", data),
   updateCategory: (id, data) => apiClient.put(`/menu/categories/${id}`, data),
+  setTopCategories: (categoryIds) => apiClient.put("/menu/categories/top-categories", { categoryIds }),
   deleteCategory: (id) => apiClient.delete(`/menu/categories/${id}`),
 
   // Image Upload

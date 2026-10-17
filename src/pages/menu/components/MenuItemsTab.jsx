@@ -126,7 +126,7 @@ export default function MenuItemsTab({ onShowAIPrompt, onShowDesigner }) {
       ) : filteredItems.length === 0 ? (
         <div className="p-8 text-center text-secondary">No items match your filters.</div>
       ) : (
-        <div className="overflow-x-auto border border-theme rounded-lg">
+        <div className="overflow-x-auto border border-theme rounded-lg min-h-[220px]">
           <table className="w-full text-sm">
             <thead className="bg-primary-light/30 border-b border-theme">
               <tr>
@@ -144,8 +144,19 @@ export default function MenuItemsTab({ onShowAIPrompt, onShowDesigner }) {
                 <tr key={item.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary font-medium flex-shrink-0 overflow-hidden">
-                        {item.image ? <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" /> : <UtensilsCrossed size={18} />}
+                      <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary font-medium flex-shrink-0 overflow-hidden border border-theme/40">
+                        {item.image || item.imageUrl ? (
+                          <img
+                            src={getImageUrl(item.image || item.imageUrl)}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <UtensilsCrossed size={18} />
+                        )}
                       </div>
                       <span className="font-medium text-theme">{item.name}</span>
                     </div>

@@ -45,16 +45,24 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
   useEffect(() => {
     if (editItem && isOpen) {
       reset({
-        name: editItem.name,
-        categoryId: editItem.categoryId || "",
+        name: editItem.name || "",
+        categoryId: editItem.categoryId?._id || editItem.categoryId || "",
         description: editItem.description || "",
-        price: editItem.price?.toString() || "",
-        image: editItem.image || null,
+        price: editItem.price !== undefined ? editItem.price.toString() : "",
+        image: editItem.image || editItem.imageUrl || null,
         isPopular: !!editItem.isPopular,
         status: editItem.status || "available",
       });
     } else if (isOpen) {
-      reset({ name: "", categoryId: "", description: "", price: "", image: null, isPopular: false, status: "available" });
+      reset({
+        name: "",
+        categoryId: "",
+        description: "",
+        price: "",
+        image: null,
+        isPopular: false,
+        status: "available",
+      });
     }
     setShowNewCategory(false);
     setNewCategory("");
@@ -78,7 +86,7 @@ export default function MenuItemForm({ isOpen, onClose, editItem }) {
       let imageUrl = data.image;
       if (data.image instanceof File) {
         const uploadRes = await menuApi.uploadImage(data.image);
-        imageUrl = uploadRes.data.data.url;
+        imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url || imageUrl;
       }
 
       const payload = { ...data, price: Number(data.price), image: imageUrl };

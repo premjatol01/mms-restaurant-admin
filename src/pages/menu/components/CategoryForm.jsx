@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { useMenuStore } from "../../../store/menuStore";
 import { menuApi } from "../../../api/menu.api";
@@ -11,14 +12,20 @@ import FormSection from "../../../components/ui/FormSection";
 
 export default function CategoryForm({ isOpen, onClose, editCategory }) {
   const { addCategory, updateCategory } = useMenuStore();
-  const [form, setForm] = useState({ name: "", description: "", image: null, status: "active" });
+  const [form, setForm] = useState({ name: "", description: "", image: null, status: "active", isTopCategory: false });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (editCategory) {
-      setForm({ name: editCategory.name, description: editCategory.description || "", image: editCategory.image || null, status: editCategory.status });
+      setForm({
+        name: editCategory.name || "",
+        description: editCategory.description || "",
+        image: editCategory.image || editCategory.imageUrl || null,
+        status: editCategory.status || "active",
+        isTopCategory: Boolean(editCategory.isTopCategory),
+      });
     } else {
-      setForm({ name: "", description: "", image: null, status: "active" });
+      setForm({ name: "", description: "", image: null, status: "active", isTopCategory: false });
     }
     setErrors({});
   }, [editCategory, isOpen]);
@@ -107,6 +114,25 @@ export default function CategoryForm({ isOpen, onClose, editCategory }) {
               <span className="text-sm text-theme">Inactive</span>
             </label>
           </div>
+        </FormSection>
+
+        <FormSection title="Top 5 Categories Feature">
+          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-theme bg-primary-light/10 hover:bg-primary-light/20 transition-colors">
+            <input
+              type="checkbox"
+              checked={form.isTopCategory}
+              onChange={(e) => setForm({ ...form, isTopCategory: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded text-primary focus:ring-primary border-theme"
+            />
+            <div>
+              <span className="text-sm font-medium text-theme flex items-center gap-1.5">
+                <Star size={14} className="fill-amber-400 text-amber-500" /> Feature in Top 5 Categories
+              </span>
+              <p className="text-xs text-secondary mt-0.5">
+                Display this category in the top 5 featured categories on the customer order portal.
+              </p>
+            </div>
+          </label>
         </FormSection>
 
         <div className="flex gap-3 pt-4 border-t border-theme">
