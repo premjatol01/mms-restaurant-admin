@@ -109,8 +109,31 @@ export const getSessionOrders = (session, orders) =>
     .filter(Boolean)
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-export const getSessionTotal = (sessionOrders) =>
-  sessionOrders.reduce((sum, order) => sum + order.total, 0);
+export const getSessionSubtotal = (sessionOrders) =>
+  sessionOrders
+    .filter((order) => order.status !== "cancelled")
+    .reduce((sum, order) => sum + (order.subtotal ?? order.total ?? 0), 0);
+
+export const getSessionDiscount = (sessionOrders) =>
+  sessionOrders
+    .filter((order) => order.status !== "cancelled")
+    .reduce((sum, order) => sum + (order.discount || 0), 0);
+
+export const getSessionGst = (sessionOrders, session = null) => {
+  if (session && typeof session.gst === "number") return session.gst;
+  const subtotal = getSessionSubtotal(sessionOrders);
+  return Math.round(subtotal * 0.05);
+};
+
+export const getSessionTotal = (sessionOrders, session = null) => {
+  if (session && typeof session.total === "number") {
+    return session.total;
+  }
+  const subtotal = getSessionSubtotal(sessionOrders);
+  const discount = getSessionDiscount(sessionOrders);
+  const gst = Math.round(subtotal * 0.05);
+  return Math.max(0, subtotal + gst - discount);
+};
 
 // Every pending / under-process item across the session's orders.
 export function getUnresolvedItems(sessionOrders) {

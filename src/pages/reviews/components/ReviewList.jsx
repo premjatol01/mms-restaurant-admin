@@ -11,14 +11,23 @@ const formatDate = (iso) =>
 const formatTime = (iso) =>
   new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 
-function CustomerName({ name }) {
+function CustomerName({ name, mobile, tableName }) {
   const display = name?.trim() || "Anonymous";
   return (
     <div className="flex items-center gap-2.5 min-w-0">
       <span className="w-8 h-8 rounded-full bg-primary-light/40 text-theme text-xs font-semibold flex items-center justify-center flex-shrink-0">
         {display[0].toUpperCase()}
       </span>
-      <span className={`font-medium truncate ${name?.trim() ? "text-theme" : "text-secondary italic"}`}>{display}</span>
+      <div className="min-w-0">
+        <span className={`font-medium block truncate ${name?.trim() ? "text-theme" : "text-secondary italic"}`}>{display}</span>
+        {(mobile || tableName) && (
+          <span className="text-[11px] text-secondary flex items-center gap-1.5">
+            {mobile && <span>+91 {mobile}</span>}
+            {mobile && tableName && <span>•</span>}
+            {tableName && <span>{tableName}</span>}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -69,8 +78,8 @@ function ReviewTable({ reviews, onAccept, onReject }) {
         </thead>
         <tbody>
           {reviews.map((review) => (
-            <tr key={review.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top">
-              <td className="px-4 py-3"><CustomerName name={review.customerName} /></td>
+            <tr key={review.id || review._id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top">
+              <td className="px-4 py-3"><CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} /></td>
               <td className="px-4 py-3"><StarRating rating={review.rating} /></td>
               <td className="px-4 py-3 max-w-md"><Comment text={review.comment} /></td>
               <td className="px-4 py-3 whitespace-nowrap">
@@ -91,7 +100,7 @@ function ReviewCard({ review, onAccept, onReject }) {
   return (
     <div className="bg-surface border border-theme rounded-lg p-4 space-y-3">
       <div className="flex justify-between items-start gap-3">
-        <CustomerName name={review.customerName} />
+        <CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} />
         <ReviewStatusBadge status={review.status} />
       </div>
 

@@ -4,7 +4,10 @@ import { useTablesQRStore } from "./tablesQRStore";
 import { TABLE_NAMES } from "../pages/orders/data/ordersData";
 import {
   applyCancellation,
+  getSessionDiscount,
+  getSessionGst,
   getSessionOrders,
+  getSessionSubtotal,
   getSessionTotal,
   getUnresolvedItems,
   isItemCancellable,
@@ -48,12 +51,22 @@ const normSession = (session) => {
   return { ...rest, id, _id: id, tableId, orderIds };
 };
 
-// Keeps each open session's total in step with its orders.
+// Keeps each open session's total in step with its orders including 5% GST
 const syncSessionTotals = (sessions, orders) =>
-  sessions.map((session) => ({
-    ...session,
-    total: getSessionTotal(getSessionOrders(session, orders)),
-  }));
+  sessions.map((session) => {
+    const sOrders = getSessionOrders(session, orders);
+    const subtotal = session.subtotal ?? getSessionSubtotal(sOrders);
+    const discount = session.discount ?? getSessionDiscount(sOrders);
+    const gst = session.gst ?? Math.round(subtotal * 0.05);
+    const total = session.total ?? Math.max(0, subtotal + gst - discount);
+    return {
+      ...session,
+      subtotal,
+      discount,
+      gst,
+      total,
+    };
+  });
 
 // Applies `fn` to a single order and re-derives its totals / status.
 const mapOrder = (orders, orderId, fn) =>

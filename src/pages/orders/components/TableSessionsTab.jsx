@@ -1,19 +1,17 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
 import EmptyState from "../../../components/ui/EmptyState";
 import SessionDetailsDrawer from "./SessionDetailsDrawer";
-import ConfirmDialog from "../../tables-qr/components/ConfirmDialog";
+import MarkPaidModal from "../modals/MarkPaidModal";
 
 export default function TableSessionsTab() {
   const { sessions, getTableName } = useOrdersStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [viewSession, setViewSession] = useState(null);
-  const [confirmPayment, setConfirmPayment] = useState(null);
-  const [confirmClose, setConfirmClose] = useState(null);
+  const [payTarget, setPayTarget] = useState(null);
 
   const activeSessions = sessions.filter((s) => s.status === "active");
 
@@ -25,20 +23,6 @@ export default function TableSessionsTab() {
 
   const clearFilters = () => { setSearch(""); setStatusFilter(""); };
   const hasFilters = search || statusFilter;
-
-  const handleMarkPayment = () => {
-    useOrdersStore.getState().markPaymentSuccessful(confirmPayment.id);
-    toast.success("Payment marked as successful.");
-    setConfirmPayment(null);
-    if (viewSession) setViewSession(null);
-  };
-
-  const handleCloseSession = () => {
-    useOrdersStore.getState().closeSession(confirmClose.id);
-    toast.success("Table session closed successfully.");
-    setConfirmClose(null);
-    if (viewSession) setViewSession(null);
-  };
 
   return (
     <div className="space-y-4">
@@ -78,8 +62,13 @@ export default function TableSessionsTab() {
                       {session.paymentStatus === "pending" ? "Payment Pending" : "Payment Successful"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => setViewSession(session)} className="text-primary hover:underline text-sm">View Session</button>
+                  <td className="px-4 py-3 text-right space-x-3">
+                    <button onClick={() => setViewSession(session)} className="text-secondary hover:text-theme text-sm">
+                      View
+                    </button>
+                    <button onClick={() => setPayTarget(session.id)} className="text-primary font-medium hover:underline text-sm">
+                      Mark as Paid
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -92,28 +81,15 @@ export default function TableSessionsTab() {
         <SessionDetailsDrawer
           session={viewSession}
           onClose={() => setViewSession(null)}
-          onMarkPayment={() => { setConfirmPayment(viewSession); setViewSession(null); }}
-          onCloseSession={() => { setConfirmClose(viewSession); setViewSession(null); }}
+          onMarkPayment={() => { setPayTarget(viewSession.id); setViewSession(null); }}
+          onCloseSession={() => { setPayTarget(viewSession.id); setViewSession(null); }}
         />
       )}
 
-      {confirmPayment && (
-        <ConfirmDialog
-          title="Mark Payment Successful?"
-          message={`Confirm that the consolidated bill of ₹${confirmPayment.total} has been collected manually.`}
-          onConfirm={handleMarkPayment}
-          onCancel={() => setConfirmPayment(null)}
-          confirmLabel="Confirm Payment"
-        />
-      )}
-
-      {confirmClose && (
-        <ConfirmDialog
-          title="Close Table Session?"
-          message="The payment for this session has been marked as successful. Closing this session will make the table available for a new session."
-          onConfirm={handleCloseSession}
-          onCancel={() => setConfirmClose(null)}
-          confirmLabel="Close Session"
+      {payTarget && (
+        <MarkPaidModal
+          sessionId={payTarget}
+          onClose={() => setPayTarget(null)}
         />
       )}
     </div>

@@ -11,7 +11,7 @@
 export const STATUS_LABELS = {
   pending: "Pending",
   processing: "Under Process",
-  served: "Served",
+  served: "Delivered",
   cancelled: "Cancelled",
 };
 
@@ -26,7 +26,7 @@ export const STATUS_COLORS = {
 export const ITEM_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "processing", label: "Under Process" },
-  { value: "served", label: "Served" },
+  { value: "served", label: "Delivered" },
 ];
 
 // ---------------------------------------------------------------------------

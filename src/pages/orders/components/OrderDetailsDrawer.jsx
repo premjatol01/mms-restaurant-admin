@@ -167,7 +167,7 @@ export default function OrderDetailsDrawer({ orderId, onClose, onCancel }) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Session Total</span>
-                  <span className="text-theme font-medium">{formatCurrency(getSessionTotal(sessionOrders))}</span>
+                  <span className="text-theme font-medium">{formatCurrency(session.total ?? getSessionTotal(sessionOrders, session))}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Payment</span>

@@ -1,5 +1,6 @@
 import { Ban, Eye, IndianRupee, Trash2, TriangleAlert } from "lucide-react";
 import { formatDistanceToNowStrict } from "date-fns";
+import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import StatusChip from "./StatusChip";
 import { ICON_BTN, ITEM_STATUS_OPTIONS, SELECT_SM, TINT_SOFT, btn } from "../constants";
@@ -124,7 +125,7 @@ function OrderBlock({ order, onViewOrder, onCancelOrder, onRemoveItem }) {
 export default function SessionCard({ session, orders, onMarkPaid, onRemoveItem, onViewOrder, onCancelOrder }) {
   const getTableName = useOrdersStore((state) => state.getTableName);
 
-  const total = getSessionTotal(orders);
+  const total = session.total ?? getSessionTotal(orders, session);
   const cancelledAmount = orders.reduce((sum, order) => sum + getCancelledAmount(order), 0);
   const unresolved = getUnresolvedItems(orders);
   const pendingCount = unresolved.filter(({ item }) => item.status === "pending").length;
@@ -166,7 +167,7 @@ export default function SessionCard({ session, orders, onMarkPaid, onRemoveItem,
 
       <div className="flex flex-wrap items-end justify-between gap-3 border-t border-theme pt-3">
         <div>
-          <p className="text-xs text-secondary">Session total</p>
+          <p className="text-xs text-secondary">Session total (incl. 5% GST)</p>
           <p className="text-xl font-bold text-theme">{formatCurrency(total)}</p>
           {cancelledAmount > 0 && (
             <p className="text-xs text-red-600">−{formatCurrency(cancelledAmount)} cancelled / removed</p>
@@ -175,11 +176,20 @@ export default function SessionCard({ session, orders, onMarkPaid, onRemoveItem,
 
         <div className="flex flex-col items-end gap-2">
           {unresolved.length > 0 && (
-            <p className="flex items-center gap-1.5 text-xs text-amber-600">
-              <TriangleAlert size={14} /> {unresolvedSummary}
+            <p className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+              <TriangleAlert size={14} /> {unresolvedSummary} · Delivery verification required
             </p>
           )}
-          <button onClick={() => onMarkPaid(session.id)} className={btn("success", "lg")}>
+          <button
+            onClick={() => {
+              if (unresolved.length > 0) {
+                toast.warning(`${unresolved.length} item(s) pending delivery. Please verify items before payment.`);
+              }
+              onMarkPaid(session.id);
+            }}
+            className={btn(unresolved.length > 0 ? "outline" : "success", "lg")}
+            title={unresolved.length > 0 ? "Verify delivery status of remaining items before payment" : "Collect payment and free table"}
+          >
             <IndianRupee size={16} /> {total > 0 ? "Mark as Paid" : "Close Session"}
           </button>
         </div>

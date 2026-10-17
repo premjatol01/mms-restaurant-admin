@@ -130,8 +130,22 @@ export default function CompletedSessionDetails({ session, onClose }) {
                   </tbody>
                 </table>
               </div>
-              <div className="px-3 py-2 bg-primary-light/20 border-t border-theme">
-                <div className="flex justify-between font-medium">
+              <div className="px-3 py-2 bg-primary-light/20 border-t border-theme space-y-1">
+                <div className="flex justify-between text-xs text-secondary">
+                  <span>Items Subtotal</span>
+                  <span>₹{session.subtotal ?? Math.max(0, session.total - (session.gst || 0))}</span>
+                </div>
+                <div className="flex justify-between text-xs text-secondary">
+                  <span>Taxes (GST 5%)</span>
+                  <span>₹{session.gst ?? Math.round((session.subtotal || 0) * 0.05)}</span>
+                </div>
+                {session.discount > 0 && (
+                  <div className="flex justify-between text-xs text-green-600">
+                    <span>Discount</span>
+                    <span>−₹{session.discount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold pt-1 border-t border-theme/40">
                   <span className="text-theme">Total</span>
                   <span className="text-theme">₹{session.total}</span>
                 </div>

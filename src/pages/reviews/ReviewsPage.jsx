@@ -87,7 +87,8 @@ export default function ReviewsPage() {
 
   const handleConfirm = async () => {
     setSubmitting(true);
-    const result = await moderateReview(confirm.review.id, confirm.action);
+    const reviewId = confirm.review.id || confirm.review._id;
+    const result = await moderateReview(reviewId, confirm.action);
     setSubmitting(false);
     if (result.success) {
       toast.success(SUCCESS_MESSAGES[confirm.action]);

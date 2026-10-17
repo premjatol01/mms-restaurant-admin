@@ -26,13 +26,11 @@ export default function SessionDetailsDrawer({ session, onClose, onMarkPayment, 
   });
 
   const handleMarkPaymentClick = () => {
-    onMarkPayment();
-    toast.success("Payment marked as successful.");
+    onMarkPayment?.();
   };
 
   const handleCloseSessionClick = () => {
-    onCloseSession();
-    toast.success("Table session closed successfully.");
+    onCloseSession?.();
   };
 
   return (
@@ -122,8 +120,22 @@ export default function SessionDetailsDrawer({ session, onClose, onMarkPayment, 
                   </tbody>
                 </table>
               </div>
-              <div className="px-3 py-2 bg-primary-light/20 border-t border-theme">
-                <div className="flex justify-between font-medium">
+              <div className="px-3 py-2 bg-primary-light/20 border-t border-theme space-y-1">
+                <div className="flex justify-between text-xs text-secondary">
+                  <span>Items Subtotal</span>
+                  <span>₹{session.subtotal ?? Math.max(0, session.total - (session.gst || 0))}</span>
+                </div>
+                <div className="flex justify-between text-xs text-secondary">
+                  <span>Taxes (GST 5%)</span>
+                  <span>₹{session.gst ?? Math.round((session.subtotal || 0) * 0.05)}</span>
+                </div>
+                {session.discount > 0 && (
+                  <div className="flex justify-between text-xs text-green-600">
+                    <span>Discount</span>
+                    <span>−₹{session.discount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold pt-1 border-t border-theme/40">
                   <span className="text-theme">Total</span>
                   <span className="text-theme">₹{session.total}</span>
                 </div>
@@ -148,16 +160,16 @@ export default function SessionDetailsDrawer({ session, onClose, onMarkPayment, 
           {session.paymentStatus === "pending" ? (
             <button
               onClick={handleMarkPaymentClick}
-              className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+              className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
-              Mark Payment Successful
+              <CheckCircle size={16} /> Mark as Paid
             </button>
           ) : (
             <button
               onClick={handleCloseSessionClick}
-              className="w-full py-2.5 bg-primary hover:bg-primary-light text-white rounded-lg font-medium transition-colors"
+              className="w-full py-2.5 bg-primary hover:bg-primary-light text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
-              Close Session
+              <CheckCircle size={16} /> Close Session
             </button>
           )}
           <button
