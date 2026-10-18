@@ -29,6 +29,10 @@ export const websiteApi = {
   toggleSection: (sectionId, enabled) =>
     apiClient.patch(`/restaurant/website/sections/${sectionId}/toggle`, { enabled }),
 
+  // Footer (Dedicated API)
+  getFooter: () => apiClient.get("/restaurant/website/footer"),
+  updateFooter: (data) => apiClient.put("/restaurant/website/footer", data),
+
   // File Upload
   uploadImage: (formData) =>
     apiClient.post("/restaurant/website/upload", formData, {

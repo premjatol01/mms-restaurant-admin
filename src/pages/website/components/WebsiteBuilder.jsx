@@ -12,6 +12,7 @@ import OffersEditor from "./editors/OffersEditor";
 import GalleryEditor from "./editors/GalleryEditor";
 import MapEditor from "./editors/MapEditor";
 import InquiryEditor from "./editors/InquiryEditor";
+import FooterEditor from "./editors/FooterEditor";
 
 const EDITORS = {
   hero: HeroEditor,
@@ -20,7 +21,8 @@ const EDITORS = {
   offers: OffersEditor,
   gallery: GalleryEditor,
   map: MapEditor,
-  inquiry: InquiryEditor
+  inquiry: InquiryEditor,
+  footer: FooterEditor
 };
 
 export default function WebsiteBuilder() {

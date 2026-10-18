@@ -7,7 +7,8 @@ import {
   MessageSquare,
   Pencil,
   Tag,
-  UtensilsCrossed
+  UtensilsCrossed,
+  PanelBottom
 } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import { useMenuItems } from "../hooks/useMenuItems";
@@ -21,7 +22,8 @@ const SECTION_ICONS = {
   offers: Tag,
   gallery: Images,
   map: MapPin,
-  inquiry: MessageSquare
+  inquiry: MessageSquare,
+  footer: PanelBottom
 };
 
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
@@ -44,6 +46,11 @@ function getSectionMeta(section, popularCount) {
     case "inquiry": {
       const shown = Object.values(c.fields ?? {}).filter((f) => normalizeField(f).enabled).length;
       return plural(shown, "field", "fields");
+    }
+    case "footer": {
+      const linkCount = (c.sectionLinks ?? []).filter((l) => l.enabled).length;
+      const socialCount = Object.values(c.socialLinks ?? {}).filter(Boolean).length;
+      return `${plural(linkCount, "link", "links")} · ${plural(socialCount, "social profile", "social profiles")}`;
     }
     default:
       return "";

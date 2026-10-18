@@ -118,5 +118,35 @@ export const defaultSections = [
       },
       purposeOptions: [...DEFAULT_PURPOSE_OPTIONS]
     }
+  },
+  {
+    id: "footer",
+    type: "footer",
+    title: "Footer",
+    description: "Footer info, section links, and social media",
+    enabled: true,
+    order: 8,
+    content: {
+      title: "Tasty Bites",
+      subtitle: "Authentic Indian Flavors",
+      description: "Serving delicious food crafted with passion and fresh ingredients.",
+      socialLinks: {
+        instagram: "",
+        facebook: "",
+        twitter: "",
+        youtube: "",
+        linkedin: "",
+        whatsapp: ""
+      },
+      sectionLinks: [
+        { id: "hero", label: "Home", href: "#hero", enabled: true },
+        { id: "about", label: "About Us", href: "#about", enabled: true },
+        { id: "menu", label: "Menu", href: "#menu", enabled: true },
+        { id: "offers", label: "Offers", href: "#offers", enabled: true },
+        { id: "gallery", label: "Gallery", href: "#gallery", enabled: true },
+        { id: "map", label: "Location", href: "#map", enabled: true },
+        { id: "inquiry", label: "Contact", href: "#inquiry", enabled: true }
+      ]
+    }
   }
 ];

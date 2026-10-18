@@ -113,6 +113,37 @@ export const useWebsiteStore = create((set, get) => ({
     }
   },
 
+  // Dedicated Footer Update
+  updateFooter: async (footerData) => {
+    // Optimistic local update
+    set((state) => ({
+      sections: state.sections.map((s) =>
+        s.id === "footer"
+          ? {
+              ...s,
+              enabled: footerData.enabled !== undefined ? footerData.enabled : s.enabled,
+              content: {
+                ...s.content,
+                ...(footerData.content || {}),
+                ...(footerData.title !== undefined ? { title: footerData.title } : {}),
+                ...(footerData.description !== undefined ? { description: footerData.description } : {}),
+                ...(footerData.socialLinks ? { socialLinks: footerData.socialLinks } : {}),
+                ...(footerData.sectionLinks ? { sectionLinks: footerData.sectionLinks } : {}),
+              },
+            }
+          : s
+      ),
+    }));
+
+    try {
+      const res = await websiteApi.updateFooter(footerData);
+      return res.data?.data;
+    } catch (err) {
+      console.error("Failed to update footer:", err);
+      throw err;
+    }
+  },
+
   // Toggle Section Enabled state in backend
   toggleSection: async (sectionId) => {
     const section = get().sections.find((s) => s.id === sectionId);
