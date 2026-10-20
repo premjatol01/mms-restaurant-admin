@@ -16,10 +16,10 @@ export const MAX_PURPOSE_OPTIONS = 10;
 /* ---------- Website colors ---------- */
 
 export const DEFAULT_WEBSITE_COLORS = {
-  primary: "#f29191",
-  secondary: "#b1e5e6",
-  background: "#ffffff",
-  text: "#1f2937"
+  primary: "#d9480f",
+  secondary: "#ffe8cc",
+  background: "#fffaf5",
+  text: "#2b2118"
 };
 
 export const WEBSITE_COLOR_FIELDS = [
@@ -30,8 +30,8 @@ export const WEBSITE_COLOR_FIELDS = [
 ];
 
 export const COLOR_PRESETS = [
-  { id: "blush", name: "Blush & mint", colors: DEFAULT_WEBSITE_COLORS },
-  { id: "spice", name: "Spice", colors: { primary: "#d9480f", secondary: "#ffe8cc", background: "#fffaf5", text: "#2b2118" } },
+  { id: "spice", name: "Spice (Default)", colors: DEFAULT_WEBSITE_COLORS },
+  { id: "blush", name: "Blush & mint", colors: { primary: "#f29191", secondary: "#b1e5e6", background: "#ffffff", text: "#1f2937" } },
   { id: "garden", name: "Garden", colors: { primary: "#2f9e44", secondary: "#d3f9d8", background: "#ffffff", text: "#1b2a1f" } },
   { id: "ocean", name: "Ocean", colors: { primary: "#1c7ed6", secondary: "#d0ebff", background: "#ffffff", text: "#12263a" } },
   { id: "midnight", name: "Midnight", colors: { primary: "#f59f00", secondary: "#2b2f3a", background: "#14161c", text: "#f1f3f5" } }
@@ -40,11 +40,11 @@ export const COLOR_PRESETS = [
 /* ---------- Menu colors ---------- */
 
 export const DEFAULT_MENU_COLORS = {
-  sectionBackground: "#fff5f5",
+  sectionBackground: "#fffaf5",
   cardBackground: "#ffffff",
-  headingText: "#1f2937",
-  priceText: "#e06b6b",
-  accent: "#f29191",
+  headingText: "#2b2118",
+  priceText: "#d9480f",
+  accent: "#d9480f",
   accentText: "#ffffff"
 };
 

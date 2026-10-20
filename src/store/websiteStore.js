@@ -96,17 +96,34 @@ export const useWebsiteStore = create((set, get) => ({
     return `http://${restaurantSlug}.${baseDomain}`;
   },
 
-  // Update Section Content in backend
-  updateSection: async (sectionId, content) => {
+  // Update Section Content and attributes (enabled, title, description) in backend
+  updateSection: async (sectionId, content, extra = {}) => {
+    const enabled = extra.enabled !== undefined ? extra.enabled : content?.enabled;
+    const title = extra.title !== undefined ? extra.title : content?.sectionTitle;
+    const description = extra.description !== undefined ? extra.description : content?.sectionDescription;
+
     // Optimistic local update
     set((state) => ({
       sections: state.sections.map((s) =>
-        s.id === sectionId ? { ...s, content: { ...s.content, ...content } } : s
+        s.id === sectionId
+          ? {
+              ...s,
+              ...(enabled !== undefined ? { enabled } : {}),
+              ...(title !== undefined ? { title } : {}),
+              ...(description !== undefined ? { description } : {}),
+              content: { ...s.content, ...content }
+            }
+          : s
       ),
     }));
 
     try {
-      await websiteApi.updateSection(sectionId, { content });
+      const payload = { content };
+      if (enabled !== undefined) payload.enabled = enabled;
+      if (title !== undefined) payload.title = title;
+      if (description !== undefined) payload.description = description;
+
+      await websiteApi.updateSection(sectionId, payload);
     } catch (err) {
       console.error("Failed to update section content:", err);
       throw err;

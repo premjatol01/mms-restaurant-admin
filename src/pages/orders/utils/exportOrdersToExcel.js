@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { MONTHS, STATUS_LABELS, getReasonLabel } from "../constants";
 import { getActiveQty, getCancelledAmount, getGrossAmount, isItemCancelled } from "./orderUtils";
 
-const HEADER_FILL = "FFF29191"; // brand primary (#f29191)
+const HEADER_FILL = "FFD9480F"; // brand primary (#d9480f)
 const CURRENCY_FORMAT = '"₹"#,##0';
 
 const joinUnique = (values) => [...new Set(values.filter(Boolean))].join("; ");

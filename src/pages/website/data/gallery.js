@@ -12,7 +12,7 @@ const placeholder = (label, from, to) => {
 };
 
 export const mockGalleryImages = [
-  { id: "g1", url: placeholder("Butter Chicken", "#f29191", "#e06b6b"), caption: "Our signature butter chicken" },
+  { id: "g1", url: placeholder("Butter Chicken", "#d9480f", "#c93b07"), caption: "Our signature butter chicken" },
   { id: "g2", url: placeholder("Dining Hall", "#7cc4c6", "#4a9ea1"), caption: "Main dining hall" },
   { id: "g3", url: placeholder("Tandoor", "#f4a261", "#e76f51"), caption: "Fresh from the tandoor" },
   { id: "g4", url: placeholder("Desserts", "#c9a7eb", "#9b72cf"), caption: "House-made desserts" }

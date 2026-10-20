@@ -13,6 +13,7 @@ import GalleryEditor from "./editors/GalleryEditor";
 import MapEditor from "./editors/MapEditor";
 import InquiryEditor from "./editors/InquiryEditor";
 import FooterEditor from "./editors/FooterEditor";
+import ReviewsEditor from "./editors/ReviewsEditor";
 
 const EDITORS = {
   hero: HeroEditor,
@@ -20,6 +21,7 @@ const EDITORS = {
   menu: MenuEditor,
   offers: OffersEditor,
   gallery: GalleryEditor,
+  reviews: ReviewsEditor,
   map: MapEditor,
   inquiry: InquiryEditor,
   footer: FooterEditor
@@ -32,8 +34,8 @@ export default function WebsiteBuilder() {
   const sortedSections = useMemo(() => [...sections].sort((a, b) => a.order - b.order), [sections]);
   const editingSection = sections.find((s) => s.id === editingId) ?? null;
 
-  const handleSaveSection = (content) => {
-    updateSection(editingSection.id, content);
+  const handleSaveSection = (content, extra) => {
+    updateSection(editingSection.id, content, extra);
     toast.success(`${editingSection.title} saved`);
     setEditingId(null);
   };

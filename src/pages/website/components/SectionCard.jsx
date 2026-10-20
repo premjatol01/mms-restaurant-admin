@@ -8,7 +8,8 @@ import {
   Pencil,
   Tag,
   UtensilsCrossed,
-  PanelBottom
+  PanelBottom,
+  Star
 } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import { useMenuItems } from "../hooks/useMenuItems";
@@ -21,6 +22,7 @@ const SECTION_ICONS = {
   menu: UtensilsCrossed,
   offers: Tag,
   gallery: Images,
+  reviews: Star,
   map: MapPin,
   inquiry: MessageSquare,
   footer: PanelBottom
@@ -39,6 +41,8 @@ function getSectionMeta(section, popularCount) {
       return `${plural(popularCount, "popular dish", "popular dishes")} from Menu`;
     case "gallery":
       return plural(c.images?.length ?? 0, "image", "images");
+    case "reviews":
+      return "Guest reviews & ratings";
     case "map": {
       const place = [c.location?.city, c.location?.state].filter(Boolean).join(", ");
       return place || "Location not set";

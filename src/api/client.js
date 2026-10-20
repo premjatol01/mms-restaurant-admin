@@ -27,9 +27,11 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("restaurant_admin_token");
+      localStorage.removeItem("restaurant_token");
+      localStorage.removeItem("restaurant_user");
       // Redirect to marketing website login page
       const marketingWebUrl = import.meta.env.VITE_MARKETING_WEBSITE_URL || "http://localhost:3000";
-      window.location.href = `${marketingWebUrl}/login`;
+      window.location.replace(`${marketingWebUrl}/login`);
     }
     return Promise.reject(error);
   }

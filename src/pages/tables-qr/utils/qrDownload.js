@@ -8,7 +8,7 @@ const SERIF = 'Georgia, "Times New Roman", serif';
 
 const LAYOUT_STYLES = {
   classic: { bg: "#ffffff", plate: "#ffffff", module: "#000000", text: "#111111", muted: "#555555", font: SANS },
-  modern:  { bg: "#ffffff", plate: "#ffffff", module: "#1f2937", text: "#1f2937", muted: "#6b7280", font: SANS, accent: "#f29191" },
+  modern:  { bg: "#ffffff", plate: "#ffffff", module: "#1f2937", text: "#1f2937", muted: "#6b7280", font: SANS, accent: "#d9480f" },
   elegant: { bg: "#faf6ee", plate: "#ffffff", module: "#3b2f1e", text: "#3b2f1e", muted: "#8a7756", font: SERIF, gold: "#b8964f" },
 };
 

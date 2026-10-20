@@ -47,7 +47,7 @@ export default function ColorField({ label, hint, value, onChange }) {
         />
       </div>
       {invalid ? (
-        <p className="mt-1 text-xs text-red-500">Enter a hex color like #f29191</p>
+        <p className="mt-1 text-xs text-red-500">Enter a hex color like #d9480f</p>
       ) : (
         hint && <p className="mt-1 text-xs text-secondary">{hint}</p>
       )}

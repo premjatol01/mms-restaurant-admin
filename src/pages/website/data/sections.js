@@ -75,12 +75,24 @@ export const defaultSections = [
     }
   },
   {
+    id: "reviews",
+    type: "reviews",
+    title: "Customer Reviews",
+    description: "Customer reviews and feedback ratings",
+    enabled: true,
+    order: 6,
+    content: {
+      title: "Customer Reviews",
+      description: "What our guests say about their dining experience"
+    }
+  },
+  {
     id: "map",
     type: "map",
     title: "Map & Location",
     description: "Google Maps and restaurant address",
     enabled: true,
-    order: 6,
+    order: 7,
     content: {
       title: "Find Us",
       description: "Visit us for lunch or dinner. We would love to see you.",
@@ -105,7 +117,7 @@ export const defaultSections = [
     title: "Contact / Inquiry",
     description: "Customer inquiry form",
     enabled: true,
-    order: 7,
+    order: 8,
     content: {
       title: "Contact Us",
       description: "Have a question? Send us an inquiry.",
@@ -125,7 +137,7 @@ export const defaultSections = [
     title: "Footer",
     description: "Footer info, section links, and social media",
     enabled: true,
-    order: 8,
+    order: 9,
     content: {
       title: "Tasty Bites",
       subtitle: "Authentic Indian Flavors",
@@ -144,6 +156,7 @@ export const defaultSections = [
         { id: "menu", label: "Menu", href: "#menu", enabled: true },
         { id: "offers", label: "Offers", href: "#offers", enabled: true },
         { id: "gallery", label: "Gallery", href: "#gallery", enabled: true },
+        { id: "reviews", label: "Reviews", href: "#reviews", enabled: true },
         { id: "map", label: "Location", href: "#map", enabled: true },
         { id: "inquiry", label: "Contact", href: "#inquiry", enabled: true }
       ]

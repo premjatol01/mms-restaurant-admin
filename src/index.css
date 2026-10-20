@@ -1,27 +1,45 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-light: var(--color-secondary-light);
+
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+
+  --color-text: var(--color-text);
+  --color-text-secondary: var(--color-text-secondary);
+
+  --color-border: var(--color-border);
+}
+
 /* ================================
    Theme Colors
 ================================ */
 
 :root {
   /* Brand Colors */
-  --color-primary: #f29191;
-  --color-primary-light: #f7adad;
+  --color-primary: #d9480f;
+  --color-primary-hover: #c93b07;
+  --color-primary-light: #ffe8cc;
 
-  --color-secondary: #b1e5e6;
-  --color-secondary-light: #ccfbfa;
+  --color-secondary: #ffe8cc;
+  --color-secondary-light: #fff4e6;
 
   /* Background */
-  --color-background: #ffffff;
+  --color-background: #fffaf5;
   --color-surface: #ffffff;
 
   /* Text */
-  --color-text: #1f2937;
-  --color-text-secondary: #6b7280;
+  --color-text: #2b2118;
+  --color-text-secondary: #786154;
 
   /* Border */
-  --color-border: #e5e7eb;
+  --color-border: #ede4dc;
 }
 
 /* ================================
@@ -30,22 +48,23 @@
 
 .dark {
   /* Brand Colors */
-  --color-primary: #f29191;
-  --color-primary-light: #f7adad;
+  --color-primary: #f76707;
+  --color-primary-hover: #e8590c;
+  --color-primary-light: #442617;
 
-  --color-secondary: #b1e5e6;
-  --color-secondary-light: #ccfbfa;
+  --color-secondary: #442617;
+  --color-secondary-light: #2d180d;
 
   /* Background */
-  --color-background: #111827;
-  --color-surface: #1f2937;
+  --color-background: #1c1511;
+  --color-surface: #271d18;
 
   /* Text */
-  --color-text: #f9fafb;
-  --color-text-secondary: #d1d5db;
+  --color-text: #fffaf5;
+  --color-text-secondary: #c2b3a9;
 
   /* Border */
-  --color-border: #374151;
+  --color-border: #3d2f26;
 }
 
 /* ================================
@@ -116,8 +135,16 @@ button {
   background-color: var(--color-secondary-light);
 }
 
+.bg-secondary-soft {
+  background-color: var(--color-secondary);
+}
+
 .text-theme {
   color: var(--color-text);
+}
+
+.text-primary {
+  color: var(--color-primary);
 }
 
 .text-secondary {
@@ -126,4 +153,8 @@ button {
 
 .border-theme {
   border-color: var(--color-border);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
 }
