@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useOrdersStore } from "../../../store/ordersStore";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
+import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import SessionDetailsDrawer from "./SessionDetailsDrawer";
 import MarkPaidModal from "../modals/MarkPaidModal";
@@ -10,6 +11,7 @@ export default function TableSessionsTab() {
   const { sessions, getTableName } = useOrdersStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [draftStatus, setDraftStatus] = useState("");
   const [viewSession, setViewSession] = useState(null);
   const [payTarget, setPayTarget] = useState(null);
 
@@ -21,17 +23,30 @@ export default function TableSessionsTab() {
     return matchSearch && matchStatus;
   });
 
-  const clearFilters = () => { setSearch(""); setStatusFilter(""); };
+  const handleApplyFilter = () => {
+    setStatusFilter(draftStatus);
+  };
+
+  const clearFilters = () => { 
+    setSearch(""); 
+    setDraftStatus(""); 
+    setStatusFilter(""); 
+  };
   const hasFilters = search || statusFilter;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1"><SearchInput value={search} onChange={setSearch} placeholder="Search table..." /></div>
-        <Select value={statusFilter} onChange={setStatusFilter} options={[{ value: "", label: "All Status" }, { value: "pending", label: "Payment Pending" }, { value: "successful", label: "Payment Successful" }]} className="w-full sm:w-44" />
+        <div className="flex items-center gap-2">
+          <Select value={draftStatus} onChange={setDraftStatus} options={[{ value: "", label: "All Status" }, { value: "pending", label: "Payment Pending" }, { value: "successful", label: "Payment Successful" }]} className="w-full sm:w-44" />
+          <Button variant="secondary" onClick={handleApplyFilter}>
+            Apply
+          </Button>
+        </div>
       </div>
 
-      {hasFilters && <button onClick={clearFilters} className="text-sm text-primary hover:underline">Clear filters</button>}
+      {hasFilters && <button onClick={clearFilters} className="text-sm text-primary hover:underline cursor-pointer">Clear filters</button>}
 
       {!activeSessions.length ? (
         <EmptyState title="No active table sessions" description="There are currently no active sessions." />

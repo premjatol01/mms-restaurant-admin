@@ -40,7 +40,7 @@ function Comment({ text }) {
     <div>
       <p className={`text-sm text-theme ${isLong && !expanded ? "line-clamp-2" : ""}`}>{text}</p>
       {isLong && (
-        <button type="button" onClick={() => setExpanded((v) => !v)} className="text-xs text-primary hover:underline mt-0.5">
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="text-xs text-primary hover:underline mt-0.5 cursor-pointer">
           {expanded ? "Show less" : "Read more"}
         </button>
       )}
@@ -64,30 +64,30 @@ function Actions({ review, onAccept, onReject }) {
 
 function ReviewTable({ reviews, onAccept, onReject }) {
   return (
-    <div className="overflow-x-auto border border-theme rounded-lg bg-surface">
-      <table className="w-full text-sm">
-        <thead className="bg-primary-light/30 border-b border-theme">
+    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
+      <table className="w-full text-sm border-collapse text-left">
+        <thead className="bg-primary-light/30 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-theme">Customer</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Rating</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Review</th>
-            <th className="text-left px-4 py-3 font-medium text-theme whitespace-nowrap">Submitted</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Status</th>
-            <th className="text-right px-4 py-3 font-medium text-theme">Actions</th>
+            <th className="text-left px-5 py-3.5 font-medium text-theme">Customer</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Rating</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Review</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme whitespace-nowrap">Submitted</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Status</th>
+            <th className="text-right px-5 py-3.5 font-medium text-theme">Actions</th>
           </tr>
         </thead>
         <tbody>
           {reviews.map((review) => (
-            <tr key={review.id || review._id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top">
-              <td className="px-4 py-3"><CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} /></td>
-              <td className="px-4 py-3"><StarRating rating={review.rating} /></td>
-              <td className="px-4 py-3 max-w-md"><Comment text={review.comment} /></td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <p className="text-theme">{formatDate(review.submittedAt)}</p>
+            <tr key={review.id || review._id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top transition-colors">
+              <td className="px-5 py-3.5"><CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} /></td>
+              <td className="px-4 py-3.5"><StarRating rating={review.rating} /></td>
+              <td className="px-4 py-3.5 max-w-md"><Comment text={review.comment} /></td>
+              <td className="px-4 py-3.5 whitespace-nowrap">
+                <p className="text-theme font-medium">{formatDate(review.submittedAt)}</p>
                 <p className="text-xs text-secondary">{formatTime(review.submittedAt)}</p>
               </td>
-              <td className="px-4 py-3"><ReviewStatusBadge status={review.status} /></td>
-              <td className="px-4 py-3 text-right whitespace-nowrap"><Actions review={review} onAccept={onAccept} onReject={onReject} /></td>
+              <td className="px-4 py-3.5"><ReviewStatusBadge status={review.status} /></td>
+              <td className="px-5 py-3.5 text-right whitespace-nowrap"><Actions review={review} onAccept={onAccept} onReject={onReject} /></td>
             </tr>
           ))}
         </tbody>
@@ -98,29 +98,17 @@ function ReviewTable({ reviews, onAccept, onReject }) {
 
 function ReviewCard({ review, onAccept, onReject }) {
   return (
-    <div className="bg-surface border border-theme rounded-lg p-4 space-y-3">
-      <div className="flex justify-between items-start gap-3">
+    <div className="bg-surface rounded-xl border border-theme p-4 space-y-3 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
         <CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} />
         <ReviewStatusBadge status={review.status} />
       </div>
-
-      <div className="flex items-center justify-between gap-3">
-        <StarRating rating={review.rating} />
-        <span className="text-xs text-secondary">{formatDate(review.submittedAt)}, {formatTime(review.submittedAt)}</span>
+      <StarRating rating={review.rating} />
+      {review.comment && <Comment text={review.comment} />}
+      <div className="pt-2 border-t border-theme/60 flex items-center justify-between text-xs text-secondary">
+        <span>{formatDate(review.submittedAt)}</span>
+        <Actions review={review} onAccept={onAccept} onReject={onReject} />
       </div>
-
-      <Comment text={review.comment} />
-
-      {review.status === "pending" && (
-        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-theme">
-          <Button size="sm" onClick={() => onAccept(review)} aria-label={`Accept review from ${review.customerName || "Anonymous"}`}>
-            <Check size={14} className="mr-1.5" /> Accept
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => onReject(review)} aria-label={`Reject review from ${review.customerName || "Anonymous"}`}>
-            <X size={14} className="mr-1.5" /> Reject
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
@@ -128,15 +116,15 @@ function ReviewCard({ review, onAccept, onReject }) {
 // Table on medium screens and up, cards below.
 export default function ReviewList({ reviews, onAccept, onReject }) {
   return (
-    <>
-      <div className="hidden md:block">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="hidden md:flex flex-1 min-h-0 flex-col overflow-hidden">
         <ReviewTable reviews={reviews} onAccept={onAccept} onReject={onReject} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden overflow-y-auto p-3">
         {reviews.map((review) => (
           <ReviewCard key={review.id} review={review} onAccept={onAccept} onReject={onReject} />
         ))}
       </div>
-    </>
+    </div>
   );
 }

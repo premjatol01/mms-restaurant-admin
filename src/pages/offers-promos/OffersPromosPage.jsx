@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Tag, CheckCircle, XCircle, Trash2, Eye, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useOffersStore } from "../../store/offersStore";
@@ -6,6 +6,7 @@ import SearchInput from "../../components/ui/SearchInput";
 import Select from "../../components/ui/Select";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
+import Pagination from "../../components/ui/Pagination";
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import CreateOfferDrawer from "./components/CreateOfferDrawer";
 
@@ -115,40 +116,40 @@ function OfferTable({ offers, onViewOffer, onRequestDelete }) {
   };
 
   return (
-    <div className="overflow-x-auto border border-theme rounded-lg bg-surface">
-      <table className="w-full text-sm">
-        <thead className="bg-primary-light/30 border-b border-theme">
+    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
+      <table className="w-full text-sm border-collapse text-left">
+        <thead className="bg-primary-light/30 border-b border-theme sticky top-0 z-10 backdrop-blur-sm bg-surface/95">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-theme">Offer Name</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Type</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Benefit</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Condition</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Validity</th>
-            <th className="text-right px-4 py-3 font-medium text-theme whitespace-nowrap">Times Availed</th>
-            <th className="text-right px-4 py-3 font-medium text-theme whitespace-nowrap">Total Discount (INR)</th>
-            <th className="text-left px-4 py-3 font-medium text-theme">Status</th>
-            <th className="text-right px-4 py-3 font-medium text-theme">Actions</th>
+            <th className="text-left px-5 py-3.5 font-medium text-theme">Offer Name</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Type</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Benefit</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Condition</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Validity</th>
+            <th className="text-right px-4 py-3.5 font-medium text-theme whitespace-nowrap">Times Availed</th>
+            <th className="text-right px-4 py-3.5 font-medium text-theme whitespace-nowrap">Total Discount (INR)</th>
+            <th className="text-left px-4 py-3.5 font-medium text-theme">Status</th>
+            <th className="text-right px-5 py-3.5 font-medium text-theme">Actions</th>
           </tr>
         </thead>
         <tbody>
           {offers.map((offer) => (
             <tr key={offer.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 transition-colors">
-              <td className="px-4 py-3 font-medium text-theme">{offer.name}</td>
-              <td className="px-4 py-3"><OfferTypeBadge type={offer.type} /></td>
-              <td className="px-4 py-3 text-theme font-medium">{getBenefitText(offer)}</td>
-              <td className="px-4 py-3 text-secondary">{getConditionText(offer)}</td>
-              <td className="px-4 py-3 text-secondary text-xs">
+              <td className="px-5 py-3.5 font-semibold text-theme">{offer.name}</td>
+              <td className="px-4 py-3.5"><OfferTypeBadge type={offer.type} /></td>
+              <td className="px-4 py-3.5 text-theme font-medium">{getBenefitText(offer)}</td>
+              <td className="px-4 py-3.5 text-secondary">{getConditionText(offer)}</td>
+              <td className="px-4 py-3.5 text-secondary text-xs">
                 {formatDate(offer.validity?.startDate)} – {formatDate(offer.validity?.endDate)}
               </td>
-              <td className="px-4 py-3 text-right text-theme">{formatCount(offer.performance?.timesAvailed)}</td>
-              <td className="px-4 py-3 text-right text-theme">{formatInr(offer.performance?.totalDiscountGiven)}</td>
-              <td className="px-4 py-3"><StatusBadge status={offer.status} /></td>
-              <td className="px-4 py-3 text-right">
+              <td className="px-4 py-3.5 text-right text-theme">{formatCount(offer.performance?.timesAvailed)}</td>
+              <td className="px-4 py-3.5 text-right text-theme font-medium">{formatInr(offer.performance?.totalDiscountGiven)}</td>
+              <td className="px-4 py-3.5"><StatusBadge status={offer.status} /></td>
+              <td className="px-5 py-3.5 text-right">
                 <div className="flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => onViewOffer(offer)}
-                    className="p-1.5 text-primary hover:bg-primary-light/20 rounded-md transition-colors"
+                    className="p-1.5 text-primary hover:bg-primary-light/30 rounded-lg transition-colors cursor-pointer"
                     title="View Details"
                   >
                     <Eye size={16} />
@@ -156,7 +157,7 @@ function OfferTable({ offers, onViewOffer, onRequestDelete }) {
                   <button
                     type="button"
                     onClick={() => onRequestDelete(offer)}
-                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
                     title="Delete Offer"
                   >
                     <Trash2 size={16} />
@@ -194,55 +195,52 @@ function OfferCard({ offer, onViewOffer, onRequestDelete }) {
   };
 
   return (
-    <div className="bg-surface border border-theme rounded-lg p-4 space-y-3">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-medium text-theme">{offer.name}</h3>
-          <div className="mt-1">
-            <OfferTypeBadge type={offer.type} />
+    <div className="bg-surface rounded-xl border border-theme p-5 shadow-sm space-y-4 flex flex-col justify-between">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h3 className="font-semibold text-theme text-base">{offer.name}</h3>
+            <p className="text-xs text-secondary mt-0.5">{getConditionText(offer)}</p>
           </div>
+          <StatusBadge status={offer.status} />
         </div>
-        <StatusBadge status={offer.status} />
-      </div>
 
-      <div>
-        <p className="text-xl font-bold text-theme">{getBenefitText(offer)}</p>
-        <p className="text-sm text-secondary mt-0.5">{getConditionText(offer)}</p>
-      </div>
-
-      <div className="flex justify-between items-center text-xs text-secondary">
-        <span>
-          {formatDate(offer.validity?.startDate)} – {formatDate(offer.validity?.endDate)}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-theme">
-        <div>
-          <p className="text-xs text-secondary">Times Availed</p>
-          <p className="text-sm font-semibold text-theme">{formatCount(offer.performance?.timesAvailed)}</p>
+        <div className="flex items-center gap-2">
+          <OfferTypeBadge type={offer.type} />
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-primary-light text-primary">
+            {getBenefitText(offer)}
+          </span>
         </div>
-        <div>
-          <p className="text-xs text-secondary">Total Discount</p>
-          <p className="text-sm font-semibold text-theme">{formatInr(offer.performance?.totalDiscountGiven)}</p>
+
+        <div className="text-xs text-secondary pt-1">
+          Valid: {formatDate(offer.validity?.startDate)} – {formatDate(offer.validity?.endDate)}
         </div>
       </div>
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => onViewOffer(offer)}
-          className="flex-1 py-2 text-sm text-primary border border-primary rounded-lg hover:bg-primary-light/20 transition-colors font-medium"
-        >
-          View Details
-        </button>
-        <button
-          type="button"
-          onClick={() => onRequestDelete(offer)}
-          className="px-3 py-2 text-red-500 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete Offer"
-        >
-          <Trash2 size={16} />
-        </button>
+      <div className="pt-3 border-t border-theme/60 flex items-center justify-between">
+        <div className="text-xs">
+          <span className="text-secondary">Availed: </span>
+          <span className="font-semibold text-theme">{formatCount(offer.performance?.timesAvailed)}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onViewOffer(offer)}
+            className="p-1.5 text-primary hover:bg-primary-light/30 rounded-lg transition-colors cursor-pointer"
+            title="View Details"
+          >
+            <Eye size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRequestDelete(offer)}
+            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
+            title="Delete Offer"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -253,24 +251,47 @@ export default function OffersPromosPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [draftType, setDraftType] = useState("");
+  const [draftStatus, setDraftStatus] = useState("");
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Pagination state
+  const [pagination, setPagination] = useState({ page: 1, limit: 10 });
+
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
 
-  const filteredOffers = offers.filter((offer) => {
-    const matchSearch = !search || offer.name.toLowerCase().includes(search.toLowerCase());
-    const matchType = !typeFilter || offer.type === typeFilter;
-    const matchStatus = !statusFilter || offer.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
-  });
+  const filteredOffers = useMemo(() => {
+    return offers.filter((offer) => {
+      const matchSearch = !search || offer.name.toLowerCase().includes(search.toLowerCase());
+      const matchType = !typeFilter || offer.type === typeFilter;
+      const matchStatus = !statusFilter || offer.status === statusFilter;
+      return matchSearch && matchType && matchStatus;
+    });
+  }, [offers, search, typeFilter, statusFilter]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [search, typeFilter, statusFilter]);
+
+  const paginatedOffers = useMemo(() => {
+    const start = (pagination.page - 1) * pagination.limit;
+    return filteredOffers.slice(start, start + pagination.limit);
+  }, [filteredOffers, pagination]);
+
+  const handleApplyFilters = () => {
+    setTypeFilter(draftType);
+    setStatusFilter(draftStatus);
+  };
 
   const clearFilters = () => {
     setSearch("");
+    setDraftType("");
+    setDraftStatus("");
     setTypeFilter("");
     setStatusFilter("");
   };
@@ -296,24 +317,24 @@ export default function OffersPromosPage() {
 
   if (loading && !loaded) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 space-y-3">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex-1 flex flex-col items-center justify-center p-16 space-y-3 h-[calc(100vh-7rem)]">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
         <p className="text-sm text-secondary">Loading offers from server...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      {/* Search & Filters at top */}
-      <div className="space-y-2">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Top Filter Bar */}
+      <div className="flex-none mb-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <SearchInput value={search} onChange={setSearch} placeholder="Search offers by name..." />
           </div>
           <Select
-            value={typeFilter}
-            onChange={setTypeFilter}
+            value={draftType}
+            onChange={setDraftType}
             options={[
               { value: "", label: "All Types" },
               { value: "repeat_order", label: "Repeat Order" },
@@ -323,8 +344,8 @@ export default function OffersPromosPage() {
             className="w-full sm:w-40"
           />
           <Select
-            value={statusFilter}
-            onChange={setStatusFilter}
+            value={draftStatus}
+            onChange={setDraftStatus}
             options={[
               { value: "", label: "All Status" },
               { value: "active", label: "Active" },
@@ -332,12 +353,15 @@ export default function OffersPromosPage() {
             ]}
             className="w-full sm:w-36"
           />
+          <Button variant="secondary" onClick={handleApplyFilters}>
+            Apply
+          </Button>
         </div>
 
         {hasFilters && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-secondary">Active filters</span>
-            <button onClick={clearFilters} className="text-xs text-primary hover:underline">
+            <button onClick={clearFilters} className="text-xs text-primary hover:underline cursor-pointer">
               Clear filters
             </button>
           </div>
@@ -345,68 +369,82 @@ export default function OffersPromosPage() {
       </div>
 
       {/* Summary KPI Cards */}
-      <SummaryCards />
+      <div className="flex-none mb-3">
+        <SummaryCards />
+      </div>
 
       {/* Table Section Header with Action Buttons */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-theme">
-              Offers List
-              {filteredOffers.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-secondary">
-                  ({filteredOffers.length} {filteredOffers.length === 1 ? "offer" : "offers"})
-                </span>
-              )}
-            </h2>
-            {error && (
-              <span className="text-xs text-red-500 bg-red-50 border border-red-200 px-2.5 py-1 rounded-md inline-block mt-1">
-                {error}
+      <div className="flex-none mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-theme">
+            Offers List
+            {filteredOffers.length > 0 && (
+              <span className="ml-2 text-xs font-normal text-secondary">
+                ({filteredOffers.length} {filteredOffers.length === 1 ? "offer" : "offers"})
               </span>
             )}
-          </div>
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus size={16} className="mr-1.5" />
-            Create Offer
-          </Button>
+          </h2>
+          {error && (
+            <span className="text-xs text-red-500 bg-red-50 border border-red-200 px-2.5 py-1 rounded-md inline-block mt-1">
+              {error}
+            </span>
+          )}
         </div>
+        <Button onClick={() => setShowCreate(true)}>
+          <Plus size={16} className="mr-1.5" />
+          Create Offer
+        </Button>
+      </div>
 
-        {!offers.length ? (
+      {/* Main Full-Height Table Card */}
+      {!offers.length ? (
+        <div className="flex-1 min-h-0 flex items-center justify-center bg-surface border border-theme rounded-xl p-8">
           <EmptyState
             title="No offers created yet"
             description="Create an offer to give customers more reasons to order from your restaurant."
             actionLabel="Create Offer"
             onAction={() => setShowCreate(true)}
           />
-        ) : filteredOffers.length === 0 ? (
-          <div className="p-8 text-center text-secondary bg-surface rounded-lg border border-theme">
-            No offers found matching your filters.{" "}
-            <button onClick={clearFilters} className="text-primary hover:underline ml-1">
+        </div>
+      ) : filteredOffers.length === 0 ? (
+        <div className="flex-1 min-h-0 flex items-center justify-center p-8 text-center text-secondary bg-surface rounded-xl border border-theme">
+          <div>
+            <p>No offers found matching your filters.</p>
+            <button onClick={clearFilters} className="text-primary hover:underline mt-2 text-sm cursor-pointer">
               Clear filters
             </button>
           </div>
-        ) : (
-          <>
-            <div className="hidden md:block">
-              <OfferTable
-                offers={filteredOffers}
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
+          <div className="hidden md:flex flex-1 min-h-0 flex-col overflow-hidden">
+            <OfferTable
+              offers={paginatedOffers}
+              onViewOffer={setSelectedOffer}
+              onRequestDelete={setOfferToDelete}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:hidden overflow-y-auto p-4 flex-1">
+            {paginatedOffers.map((offer) => (
+              <OfferCard
+                key={offer.id}
+                offer={offer}
                 onViewOffer={setSelectedOffer}
                 onRequestDelete={setOfferToDelete}
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:hidden">
-              {filteredOffers.map((offer) => (
-                <OfferCard
-                  key={offer.id}
-                  offer={offer}
-                  onViewOffer={setSelectedOffer}
-                  onRequestDelete={setOfferToDelete}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+            ))}
+          </div>
+
+          {/* Pinned Bottom Pagination */}
+          <Pagination
+            pagination={pagination}
+            totalItems={filteredOffers.length}
+            onPageChange={(newPage) => setPagination((prev) => ({ ...prev, page: newPage }))}
+            onLimitChange={(newLimit) => setPagination({ page: 1, limit: newLimit })}
+            itemName="offers"
+          />
+        </div>
+      )}
 
       {/* Offer Details Drawer */}
       {selectedOffer && (
@@ -443,7 +481,7 @@ export default function OffersPromosPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setOfferToDelete(null)}
-                className="flex-1 py-3 text-secondary hover:bg-primary-light/20 font-medium transition-colors"
+                className="flex-1 py-3 text-secondary hover:bg-primary-light/20 font-medium transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -451,7 +489,7 @@ export default function OffersPromosPage() {
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDeleteConfirmed}
-                className="flex-1 py-3 text-red-600 border-l border-theme font-semibold hover:bg-red-50 transition-colors"
+                className="flex-1 py-3 text-red-600 border-l border-theme font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>

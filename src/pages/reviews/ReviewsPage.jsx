@@ -6,7 +6,7 @@ import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
 import ReviewFilters from "./components/ReviewFilters";
 import ReviewList from "./components/ReviewList";
-import Pagination from "./components/Pagination";
+import Pagination from "../../components/ui/Pagination";
 import ReviewActionModal from "./modals/ReviewActionModal";
 
 const SUCCESS_MESSAGES = {
@@ -43,12 +43,12 @@ function SummaryCards({ stats }) {
 
 function SkeletonLoader() {
   return (
-    <div className="animate-pulse space-y-5" aria-busy="true" aria-label="Loading reviews">
+    <div className="animate-pulse space-y-4 flex-1 flex flex-col" aria-busy="true" aria-label="Loading reviews">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => <div key={i} className="h-[74px] bg-gray-200 dark:bg-gray-700 rounded-xl" />)}
       </div>
-      <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-      <div className="bg-surface rounded-lg border border-theme p-4 space-y-3">
+      <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+      <div className="flex-1 bg-surface rounded-xl border border-theme p-4 space-y-3">
         {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />)}
       </div>
     </div>
@@ -94,7 +94,7 @@ export default function ReviewsPage() {
       toast.success(SUCCESS_MESSAGES[confirm.action]);
       setConfirm(null);
     } else {
-      toast.error(result.message); // keep the modal open so the action can be retried
+      toast.error(result.message);
     }
   };
 
@@ -103,37 +103,43 @@ export default function ReviewsPage() {
 
     if (stats.total === 0) {
       return (
-        <EmptyState
-          title="No reviews yet"
-          description="Reviews that customers submit through your restaurant's ordering page will show up here."
-        />
+        <div className="flex-1 flex items-center justify-center bg-surface border border-theme rounded-xl p-8">
+          <EmptyState
+            title="No reviews yet"
+            description="Reviews that customers submit through your restaurant's ordering page will show up here."
+          />
+        </div>
       );
     }
 
     if (total === 0) {
       return (
-        <div className="p-8 text-center text-secondary">
-          No reviews match your filters.{" "}
-          <button type="button" onClick={clearFilters} className="text-primary hover:underline">Clear filters</button>
+        <div className="flex-1 flex items-center justify-center p-8 text-center text-secondary bg-surface border border-theme rounded-xl">
+          <div>
+            <p>No reviews match your filters.</p>
+            <button type="button" onClick={clearFilters} className="text-primary hover:underline mt-2 text-sm cursor-pointer">
+              Clear filters
+            </button>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="space-y-4">
+      <div className="flex-1 min-h-0 flex flex-col bg-surface border border-theme rounded-xl overflow-hidden shadow-sm">
         <ReviewList
           reviews={reviews}
           onAccept={(review) => setConfirm({ review, action: "accepted" })}
           onReject={(review) => setConfirm({ review, action: "rejected" })}
         />
-        <Pagination page={shownPage} pageSize={pageSize} total={total} onPageChange={setPage} disabled={loading} />
+        <Pagination page={shownPage} pageSize={pageSize} total={total} onPageChange={setPage} disabled={loading} itemName="reviews" />
       </div>
     );
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-start gap-2 px-4 py-3 bg-surface border border-theme rounded-lg text-sm text-secondary">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      <div className="flex-none mb-3 flex items-start gap-2 px-4 py-2.5 bg-surface border border-theme rounded-lg text-sm text-secondary">
         <Eye size={16} className="mt-0.5 flex-shrink-0" />
         <p>
           Accepted reviews appear on your restaurant website and the customer ordering page. Rejected reviews stay hidden.
@@ -143,16 +149,15 @@ export default function ReviewsPage() {
       {!loaded && !error ? (
         <SkeletonLoader />
       ) : (
-        <>
-          {loaded && <SummaryCards stats={stats} />}
-          {/* Filters stay visible even when nothing matches, so they can be changed or cleared */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {loaded && <div className="flex-none mb-3"><SummaryCards stats={stats} /></div>}
           {(loaded && (stats.total > 0 || hasFilters)) && (
-            <ReviewFilters filters={filters} onChange={setFilters} onClear={clearFilters} />
+            <div className="flex-none mb-3"><ReviewFilters filters={filters} onChange={setFilters} onClear={clearFilters} /></div>
           )}
-          <div className={loading ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"} aria-busy={loading}>
+          <div className={`flex-1 min-h-0 flex flex-col ${loading ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}`} aria-busy={loading}>
             {renderContent()}
           </div>
-        </>
+        </div>
       )}
 
       {confirm && (

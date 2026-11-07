@@ -3,7 +3,8 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import StatusChip from "./StatusChip";
-import { ICON_BTN, ITEM_STATUS_OPTIONS, SELECT_SM, TINT_SOFT, btn } from "../constants";
+import Select from "../../../components/ui/Select";
+import { ICON_BTN, ITEM_STATUS_OPTIONS, TINT_SOFT, btn } from "../constants";
 import {
   canCancelOrder,
   formatCurrency,
@@ -34,23 +35,19 @@ function ItemRow({ order, item, onRemoveItem }) {
         {formatCurrency(item.price * quantity)}
       </span>
 
-      <div className="flex items-center justify-end gap-1 w-[10.5rem]">
+      <div className="flex items-center justify-end gap-1 w-[11rem]">
         {cancelled ? (
           <StatusChip status="cancelled" />
         ) : (
           <>
-            <select
+            <Select
               aria-label={`Status of ${item.name}`}
               value={item.status}
-              onChange={(e) => updateItemStatus(order.id, item.id, e.target.value)}
-              className={SELECT_SM}
-            >
-              {ITEM_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => updateItemStatus(order.id, item.id, val)}
+              options={ITEM_STATUS_OPTIONS}
+              className="w-32"
+              isSearchable={false}
+            />
             <span className="w-8 flex justify-center">
               {item.status !== "served" && (
                 <button
@@ -70,130 +67,121 @@ function ItemRow({ order, item, onRemoveItem }) {
   );
 }
 
-function OrderBlock({ order, onViewOrder, onCancelOrder, onRemoveItem }) {
-  return (
-    <div
-      className={`rounded-lg border border-theme overflow-hidden ${
-        order.status === "cancelled" ? "opacity-70" : ""
-      }`}
-    >
-      <div
-        className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-theme ${TINT_SOFT}`}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-theme">{order.orderNumber}</span>
-          <span className="text-xs text-secondary">{formatTime(order.createdAt)}</span>
-          {order.source === "manual" && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Manual</span>
-          )}
-          <StatusChip status={order.status} />
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-medium text-theme mr-1">{formatCurrency(order.total)}</span>
-          <button
-            onClick={() => onViewOrder(order.id)}
-            className={ICON_BTN}
-            title="View order details"
-            aria-label={`View ${order.orderNumber}`}
-          >
-            <Eye size={16} />
-          </button>
-          {canCancelOrder(order) && (
-            <button
-              onClick={() => onCancelOrder(order.id)}
-              className={ICON_BTN}
-              title="Cancel order or items"
-              aria-label={`Cancel ${order.orderNumber}`}
-            >
-              <Ban size={16} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="divide-y divide-[color:var(--color-border)]">
-        {order.items.map((item) => (
-          <ItemRow key={item.id} order={order} item={item} onRemoveItem={onRemoveItem} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// One open table session: every order, item, price and status in one place.
 export default function SessionCard({ session, orders, onMarkPaid, onRemoveItem, onViewOrder, onCancelOrder }) {
   const getTableName = useOrdersStore((state) => state.getTableName);
+  const total = getSessionTotal(orders);
+  const unresolved = getUnresolvedItems(orders).length;
+  const tableCancelledTotal = orders.reduce((sum, order) => sum + getCancelledAmount(order), 0);
 
-  const total = session.total ?? getSessionTotal(orders, session);
-  const cancelledAmount = orders.reduce((sum, order) => sum + getCancelledAmount(order), 0);
-  const unresolved = getUnresolvedItems(orders);
-  const pendingCount = unresolved.filter(({ item }) => item.status === "pending").length;
-  const processingCount = unresolved.length - pendingCount;
+  const handleMarkPaid = () => {
+    if (unresolved > 0) {
+      toast.warning("Table still has unserved items.");
+    }
+    onMarkPaid(session.id);
+  };
 
-  const unresolvedSummary = [
-    pendingCount > 0 && `${pendingCount} pending`,
-    processingCount > 0 && `${processingCount} under process`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasOrders = orders.length > 0;
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+  const canCancelAnyOrder = orders.some(canCancelOrder);
 
   return (
-    <article className="rounded-xl border border-theme bg-surface p-4 space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-theme">{getTableName(session.tableId)}</h3>
-          <p className="text-sm text-secondary">
-            {session.sessionNumber} · Started {formatTime(session.startedAt)} (
-            {formatDistanceToNowStrict(new Date(session.startedAt), { addSuffix: true })})
+    <article className="rounded-xl border border-theme bg-surface shadow-xs transition-shadow hover:shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-theme/60 px-4 py-3">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h4 className="text-base font-semibold text-theme">{getTableName(session.tableId)}</h4>
+            <span className="text-xs text-secondary font-mono">#{session.sessionNumber}</span>
+          </div>
+          <p className="text-xs text-secondary">
+            Started {formatTime(session.startedAt)} · {formatDistanceToNowStrict(new Date(session.startedAt))} ago
           </p>
         </div>
-        <span className="text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap bg-yellow-100 text-yellow-700">
-          Payment Pending
-        </span>
+
+        <div className="flex items-center gap-2">
+          {unresolved > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <TriangleAlert size={13} /> {unresolved} unserved
+            </span>
+          ) : (
+            <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              All served
+            </span>
+          )}
+          <span className="text-base font-bold text-theme">{formatCurrency(total)}</span>
+        </div>
+      </header>
+
+      <div className="divide-y divide-theme/40">
+        {!hasOrders ? (
+          <p className="p-4 text-sm text-secondary">No orders placed yet.</p>
+        ) : (
+          orders.map((order) => {
+            const isOrderCancelled = order.status === "cancelled";
+            const cancellable = canCancelOrder(order);
+
+            return (
+              <div
+                key={order.id}
+                className={isOrderCancelled ? "bg-red-500/5 opacity-80" : undefined}
+              >
+                <div className="flex items-center justify-between px-3 py-2 text-xs bg-primary-light/10 text-secondary">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-medium text-theme">#{order.orderNumber}</span>
+                    <span className="capitalize">{order.source}</span>
+                    <span>·</span>
+                    <span>{formatTime(order.createdAt)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <StatusChip status={order.status} />
+                    <button
+                      onClick={() => onViewOrder(order)}
+                      className="text-primary hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+                      title="View full order details"
+                    >
+                      <Eye size={13} /> View
+                    </button>
+                    {cancellable && (
+                      <button
+                        onClick={() => onCancelOrder(order)}
+                        className="text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1 ml-1 cursor-pointer"
+                        title="Cancel this order"
+                      >
+                        <Ban size={13} /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="divide-y divide-theme/20">
+                  {order.items.map((item) => (
+                    <ItemRow key={item.id} order={order} item={item} onRemoveItem={onRemoveItem} />
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      <div className="space-y-3">
-        {orders.map((order) => (
-          <OrderBlock
-            key={order.id}
-            order={order}
-            onViewOrder={onViewOrder}
-            onCancelOrder={onCancelOrder}
-            onRemoveItem={onRemoveItem}
-          />
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-end justify-between gap-3 border-t border-theme pt-3">
-        <div>
-          <p className="text-xs text-secondary">Session total (incl. 5% GST)</p>
-          <p className="text-xl font-bold text-theme">{formatCurrency(total)}</p>
-          {cancelledAmount > 0 && (
-            <p className="text-xs text-red-600">−{formatCurrency(cancelledAmount)} cancelled / removed</p>
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-theme/60 px-4 py-3 bg-primary-light/5">
+        <div className="text-xs text-secondary">
+          {activeOrders.length} {activeOrders.length === 1 ? "order" : "orders"}
+          {tableCancelledTotal > 0 && (
+            <span className="ml-2 text-red-600 line-through">
+              ({formatCurrency(tableCancelledTotal)} cancelled)
+            </span>
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          {unresolved.length > 0 && (
-            <p className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
-              <TriangleAlert size={14} /> {unresolvedSummary} · Delivery verification required
-            </p>
-          )}
-          <button
-            onClick={() => {
-              if (unresolved.length > 0) {
-                toast.warning(`${unresolved.length} item(s) pending delivery. Please verify items before payment.`);
-              }
-              onMarkPaid(session.id);
-            }}
-            className={btn(unresolved.length > 0 ? "outline" : "success", "lg")}
-            title={unresolved.length > 0 ? "Verify delivery status of remaining items before payment" : "Collect payment and free table"}
-          >
-            <IndianRupee size={16} /> {total > 0 ? "Mark as Paid" : "Close Session"}
-          </button>
-        </div>
-      </div>
+        <button
+          onClick={handleMarkPaid}
+          className={`${btn.primary} inline-flex items-center gap-1.5 cursor-pointer`}
+          title={unresolved > 0 ? "Table has unserved items" : "Close session and mark as paid"}
+        >
+          <IndianRupee size={15} /> Mark as Paid
+        </button>
+      </footer>
     </article>
   );
 }

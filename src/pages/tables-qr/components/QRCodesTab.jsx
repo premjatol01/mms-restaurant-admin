@@ -19,6 +19,12 @@ export default function QRCodesTab() {
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [layoutFilter, setLayoutFilter] = useState("");
+  
+  // Draft filters
+  const [draftType, setDraftType] = useState("");
+  const [draftStatus, setDraftStatus] = useState("");
+  const [draftLayout, setDraftLayout] = useState("");
+
   const [showGenerate, setShowGenerate] = useState(false);
   const [viewQR, setViewQR] = useState(null);
 
@@ -36,7 +42,22 @@ export default function QRCodesTab() {
   const assignedQRs = qrCodes.filter((qr) => qr.status === "assigned").length;
   const availableQRs = qrCodes.filter((qr) => qr.status === "available").length;
 
-  const clearFilters = () => { setSearch(""); setTypeFilter(""); setStatusFilter(""); setLayoutFilter(""); };
+  const handleApplyFilters = () => {
+    setTypeFilter(draftType);
+    setStatusFilter(draftStatus);
+    setLayoutFilter(draftLayout);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setDraftType("");
+    setDraftStatus("");
+    setDraftLayout("");
+    setTypeFilter("");
+    setStatusFilter("");
+    setLayoutFilter("");
+  };
+
   const hasFilters = search || typeFilter || statusFilter || layoutFilter;
 
   const handleRegenerate = async () => {
@@ -76,9 +97,10 @@ export default function QRCodesTab() {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1"><SearchInput value={search} onChange={setSearch} placeholder="Search QR codes..." /></div>
-        <Select value={typeFilter} onChange={setTypeFilter} options={[{ value: "", label: "All Types" }, { value: "default", label: "Default" }, { value: "premium", label: "Premium" }, { value: "paid", label: "Paid" }]} className="w-full sm:w-32" />
-        <Select value={statusFilter} onChange={setStatusFilter} options={[{ value: "", label: "All Status" }, { value: "available", label: "Available" }, { value: "assigned", label: "Assigned" }, { value: "inactive", label: "Inactive" }]} className="w-full sm:w-32" />
-        <Select value={layoutFilter} onChange={setLayoutFilter} options={[{ value: "", label: "All Layouts" }, { value: "classic", label: "Classic" }, { value: "modern", label: "Modern" }, { value: "elegant", label: "Elegant" }]} className="w-full sm:w-32" />
+        <Select value={draftType} onChange={setDraftType} options={[{ value: "", label: "All Types" }, { value: "default", label: "Default" }, { value: "premium", label: "Premium" }, { value: "paid", label: "Paid" }]} className="w-full sm:w-32" />
+        <Select value={draftStatus} onChange={setDraftStatus} options={[{ value: "", label: "All Status" }, { value: "available", label: "Available" }, { value: "assigned", label: "Assigned" }, { value: "inactive", label: "Inactive" }]} className="w-full sm:w-32" />
+        <Select value={draftLayout} onChange={setDraftLayout} options={[{ value: "", label: "All Layouts" }, { value: "classic", label: "Classic" }, { value: "modern", label: "Modern" }, { value: "elegant", label: "Elegant" }]} className="w-full sm:w-32" />
+        <Button variant="secondary" onClick={handleApplyFilters}>Apply</Button>
         <Button variant="secondary" onClick={handleRegenerate} disabled={isRegenerating}>
           {isRegenerating ? "Regenerating..." : "Regenerate URLs"}
         </Button>
@@ -108,10 +130,10 @@ export default function QRCodesTab() {
                 <p className="text-sm text-secondary capitalize mb-2">Layout: {qr.layout}</p>
                 <p className="text-sm text-secondary mb-3">Assigned: {getTableName(qr.tableId) || "—"}</p>
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs px-2 py-1 rounded-full ${QR_STATUS_COLORS[qr.status]}`}>{qr.status}</span>
-                  <div className="flex gap-1">
-                    <button onClick={() => setViewQR(qr)} className="p-1.5 text-secondary hover:text-theme rounded hover:bg-primary-light"><Eye size={16} /></button>
-                  </div>
+                  <button onClick={() => setViewQR(qr)} className="text-sm text-primary hover:underline flex items-center gap-1">
+                    <Eye size={14} /> View Details
+                  </button>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${QR_STATUS_COLORS[qr.status]}`}>{qr.status}</span>
                 </div>
               </div>
             </div>
@@ -120,7 +142,7 @@ export default function QRCodesTab() {
       )}
 
       {showGenerate && <GenerateQRDrawer isOpen={showGenerate} onClose={() => setShowGenerate(false)} />}
-      {viewQR && <QRDetailsDrawer qr={viewQR} onClose={() => setViewQR(null)} />}
+      {viewQR && <QRDetailsDrawer qr={viewQR} isOpen={Boolean(viewQR)} onClose={() => setViewQR(null)} />}
     </div>
   );
 }

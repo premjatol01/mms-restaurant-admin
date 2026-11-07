@@ -31,6 +31,8 @@ export default function ActiveOrdersTab() {
   const [search, setSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [draftTable, setDraftTable] = useState("");
+  const [draftStatus, setDraftStatus] = useState("");
   const [viewOrder, setViewOrder] = useState(null);
   const [showManualOrder, setShowManualOrder] = useState(false);
   const [viewSessionFromOrder, setViewSessionFromOrder] = useState(null);
@@ -50,7 +52,19 @@ export default function ActiveOrdersTab() {
     return matchSearch && matchTable && matchStatus;
   });
 
-  const clearFilters = () => { setSearch(""); setTableFilter(""); setStatusFilter(""); };
+  const handleApplyFilters = () => {
+    setTableFilter(draftTable);
+    setStatusFilter(draftStatus);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setDraftTable("");
+    setDraftStatus("");
+    setTableFilter("");
+    setStatusFilter("");
+  };
+
   const hasFilters = search || tableFilter || statusFilter;
 
   const tables = [...new Set(sessions.filter((s) => s.status === "active").map((s) => s.tableId))];
@@ -62,14 +76,14 @@ export default function ActiveOrdersTab() {
           <SearchInput value={search} onChange={setSearch} placeholder="Search orders..." />
         </div>
         <Select 
-          value={tableFilter} 
-          onChange={setTableFilter} 
+          value={draftTable} 
+          onChange={setDraftTable} 
           options={[{ value: "", label: "All Tables" }, ...tables.map((t) => ({ value: t, label: getTableName(t) }))]} 
           className="w-full sm:w-40" 
         />
         <Select 
-          value={statusFilter} 
-          onChange={setStatusFilter} 
+          value={draftStatus} 
+          onChange={setDraftStatus} 
           options={[
             { value: "", label: "All Status" }, 
             { value: "new", label: "New" }, 
@@ -80,13 +94,16 @@ export default function ActiveOrdersTab() {
           ]} 
           className="w-full sm:w-36" 
         />
+        <Button variant="secondary" onClick={handleApplyFilters}>
+          Apply
+        </Button>
         <Button onClick={() => setShowManualOrder(true)}>
           <Plus size={16} /> Add Manual Order
         </Button>
       </div>
 
       {hasFilters && (
-        <button onClick={clearFilters} className="text-sm text-primary hover:underline">
+        <button onClick={clearFilters} className="text-sm text-primary hover:underline cursor-pointer">
           Clear filters
         </button>
       )}

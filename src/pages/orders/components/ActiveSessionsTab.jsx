@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useOrdersStore } from "../../../store/ordersStore";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
+import Button from "../../../components/ui/Button";
 import EmptyState from "../../../components/ui/EmptyState";
 import SessionCard from "./SessionCard";
 import MarkPaidModal from "../modals/MarkPaidModal";
@@ -18,6 +19,7 @@ export default function ActiveSessionsTab({ onViewOrder, onCancelOrder }) {
   const { sessions, orders, getTableName } = useOrdersStore();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
+  const [draftFilter, setDraftFilter] = useState("");
   const [payTarget, setPayTarget] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
 
@@ -40,11 +42,17 @@ export default function ActiveSessionsTab({ onViewOrder, onCancelOrder }) {
     return matchSearch && matchFilter;
   });
 
-  const hasFilters = search || filter;
+  const handleApplyFilter = () => {
+    setFilter(draftFilter);
+  };
+
   const clearFilters = () => {
     setSearch("");
+    setDraftFilter("");
     setFilter("");
   };
+
+  const hasFilters = search || filter;
 
   return (
     <div className="space-y-4">
@@ -52,11 +60,16 @@ export default function ActiveSessionsTab({ onViewOrder, onCancelOrder }) {
         <div className="flex-1">
           <SearchInput value={search} onChange={setSearch} placeholder="Search table or session..." />
         </div>
-        <Select value={filter} onChange={setFilter} options={FILTER_OPTIONS} className="w-full sm:w-48" />
+        <div className="flex items-center gap-2">
+          <Select value={draftFilter} onChange={setDraftFilter} options={FILTER_OPTIONS} className="w-full sm:w-48" />
+          <Button variant="secondary" onClick={handleApplyFilter}>
+            Apply
+          </Button>
+        </div>
       </div>
 
       {hasFilters && (
-        <button onClick={clearFilters} className="text-sm text-[color:var(--color-primary)] hover:underline">
+        <button onClick={clearFilters} className="text-sm text-[color:var(--color-primary)] hover:underline cursor-pointer">
           Clear filters
         </button>
       )}

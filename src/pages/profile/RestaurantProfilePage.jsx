@@ -35,7 +35,6 @@ const TABS = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-
 function SkeletonLoader() {
   return (
     <div className="animate-pulse space-y-4">
@@ -95,34 +94,16 @@ export default function RestaurantProfilePage() {
     );
   }
 
-  const statusColor = profile?.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500";
-
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-surface border border-theme overflow-hidden flex-shrink-0">
-            {profile?.logo
-              ? <img src={profile.logo} alt="Logo" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-primary flex items-center justify-center text-white font-bold">{profile?.name?.[0] || "R"}</div>}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
-                {profile?.status === "active" ? "Active" : "Inactive"}
-              </span>
-            </div>
-          </div>
+      {/* Header Actions (if changes are dirty) */}
+      {isDirty && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={handleDiscard}>
+            <RotateCcw size={14} /> Discard Changes
+          </Button>
         </div>
-        {isDirty && (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleDiscard}>
-              <RotateCcw size={14} /> Discard
-            </Button>
-          </div>
-        )}
-      </div>
+      )}
 
       {isDirty && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
@@ -135,20 +116,20 @@ export default function RestaurantProfilePage() {
         {/* Sidebar nav */}
         <aside className="lg:w-56 flex-shrink-0">
           <nav className="bg-surface rounded-xl border border-theme overflow-hidden">
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => handleTabChange(id)}
-                  className={`w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm transition-colors border-b border-theme last:border-0 ${
-                    activeTab === id
-                      ? "bg-primary text-white font-medium"
-                      : "text-theme hover:bg-primary-light"
-                  }`}
-                >
-                  <Icon size={15} className="flex-shrink-0" />
-                  {label}
-                </button>
-              ))}
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => handleTabChange(id)}
+                className={`w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm transition-colors border-b border-theme last:border-0 cursor-pointer ${
+                  activeTab === id
+                    ? "bg-primary text-white font-medium"
+                    : "text-theme hover:bg-primary-light"
+                }`}
+              >
+                <Icon size={15} className="flex-shrink-0" />
+                {label}
+              </button>
+            ))}
           </nav>
         </aside>
 

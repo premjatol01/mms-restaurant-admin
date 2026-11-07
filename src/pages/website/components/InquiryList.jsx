@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
+import Button from "../../../components/ui/Button";
 import InquiryDetailsDrawer, { StatusBadge } from "../modals/InquiryDetailsDrawer";
 
 const formatDate = (dateStr) => {
@@ -30,6 +31,8 @@ export default function InquiryList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [purposeFilter, setPurposeFilter] = useState("");
+  const [draftStatus, setDraftStatus] = useState("");
+  const [draftPurpose, setDraftPurpose] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
@@ -57,6 +60,21 @@ export default function InquiryList() {
     const matchPurpose = !purposeFilter || inq.purpose === purposeFilter;
     return matchSearch && matchStatus && matchPurpose;
   });
+
+  const handleApplyFilters = () => {
+    setStatusFilter(draftStatus);
+    setPurposeFilter(draftPurpose);
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setDraftStatus("");
+    setDraftPurpose("");
+    setStatusFilter("");
+    setPurposeFilter("");
+  };
+
+  const hasFilters = search || statusFilter || purposeFilter;
 
   return (
     <div className="space-y-5">
@@ -90,14 +108,14 @@ export default function InquiryList() {
           />
         </div>
         <Select
-          value={purposeFilter}
-          onChange={setPurposeFilter}
+          value={draftPurpose}
+          onChange={setDraftPurpose}
           options={purposeOptions}
           className="w-full sm:w-48"
         />
         <Select
-          value={statusFilter}
-          onChange={setStatusFilter}
+          value={draftStatus}
+          onChange={setDraftStatus}
           options={[
             { value: "", label: "All Status" },
             { value: "new", label: "New" },
@@ -106,7 +124,16 @@ export default function InquiryList() {
           ]}
           className="w-full sm:w-40"
         />
+        <Button variant="secondary" onClick={handleApplyFilters}>
+          Apply
+        </Button>
       </div>
+
+      {hasFilters && (
+        <button onClick={clearFilters} className="text-sm text-primary hover:underline cursor-pointer">
+          Clear filters
+        </button>
+      )}
 
       {/* List */}
       {filteredInquiries.length === 0 ? (

@@ -98,17 +98,13 @@ export default function OrdersPage() {
           toast.success(`⚡ New QR Order ${orderNum}${tableNum} placed!`, {
             duration: 6000,
           });
-          fetchData();
+          useOrdersStore.getState().fetchData();
         },
-        onOrderUpdated: () => {
-          fetchData();
+        onOrderStatusUpdated: () => {
+          useOrdersStore.getState().fetchData();
         },
         onSessionUpdated: () => {
-          fetchData();
-        },
-        onSessionCompleted: () => {
-          toast.info("A table session was paid & marked completed. Table freed.");
-          fetchData();
+          useOrdersStore.getState().fetchData();
         },
       });
     };
@@ -122,23 +118,25 @@ export default function OrdersPage() {
   }, [fetchData]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-end gap-4">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      <div className="flex-none mb-3 flex flex-col lg:flex-row lg:items-end lg:justify-end gap-4">
         <ExportControls />
       </div>
 
-      <SummaryCards />
+      <div className="flex-none mb-4">
+        <SummaryCards />
+      </div>
 
-      <div className="bg-surface rounded-xl border border-theme overflow-hidden">
-        <div className="flex border-b border-theme" role="tablist">
+      <div className="flex-1 min-h-0 flex flex-col bg-surface rounded-xl border border-theme overflow-hidden shadow-sm">
+        <div className="flex-none flex border-b border-theme bg-surface" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id ? "bg-primary text-white" : "text-theme hover:bg-primary-light"
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === tab.id ? "border-b-2 border-primary text-primary font-semibold" : "text-secondary hover:text-theme"
               }`}
             >
               {tab.label}
@@ -147,7 +145,7 @@ export default function OrdersPage() {
           ))}
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 min-h-0 flex flex-col p-4 overflow-hidden">
           {activeTab === "pending" && (
             <PendingOrdersTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
           )}

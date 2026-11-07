@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Palette } from "lucide-react";
 import MenuItemsTab from "./components/MenuItemsTab";
 import CategoriesTab from "./components/CategoriesTab";
 import CombosTab from "./components/CombosTab";
 import AIPromptGenerator from "./components/AIPromptGenerator";
 import ContactDesignerModal from "./modals/ContactDesignerModal";
-import Button from "../../components/ui/Button";
 import { useMenuStore } from "../../store/menuStore";
 
 const TABS = [
@@ -27,29 +25,34 @@ export default function MenuPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-7rem)]">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm text-secondary">Loading menu...</p>
       </div>
     );
   }
 
   if (error) {
-    return <div className="p-6 text-red-500 bg-red-50 rounded-lg">{error}</div>;
+    return (
+      <div className="p-6 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200">
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      {/* Tabs */}
-      <div className="bg-surface rounded-xl border border-theme overflow-hidden mt-4">
-        <div className="flex border-b border-theme overflow-x-auto">
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Tabs Bar & Content Card */}
+      <div className="flex-1 min-h-0 flex flex-col bg-surface rounded-xl border border-theme overflow-hidden shadow-sm">
+        <div className="flex-none flex border-b border-theme overflow-x-auto bg-surface">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`flex-1 px-4 py-3.5 text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 activeTab === tab.id
-                  ? "bg-primary text-white"
-                  : "text-theme hover:bg-primary-light"
+                  ? "border-b-2 border-primary text-primary font-semibold"
+                  : "text-secondary hover:text-theme"
               }`}
             >
               {tab.label}
@@ -57,7 +60,7 @@ export default function MenuPage() {
           ))}
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 min-h-0 flex flex-col p-4 overflow-hidden">
           {activeTab === "items" && (
             <MenuItemsTab 
               onShowAIPrompt={() => setShowAIPrompt(true)}

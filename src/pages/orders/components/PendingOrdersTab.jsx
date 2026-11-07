@@ -42,6 +42,7 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
   const { orders, getTableName } = useOrdersStore();
   const [search, setSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
+  const [draftTable, setDraftTable] = useState("");
   const [showManualOrder, setShowManualOrder] = useState(false);
   const [, setTick] = useState(0);
 
@@ -70,8 +71,14 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
 
   const tableIds = [...new Set(openOrders.map((o) => o.tableId))];
   const hasFilters = search || tableFilter;
+
+  const handleApplyFilter = () => {
+    setTableFilter(draftTable);
+  };
+
   const clearFilters = () => {
     setSearch("");
+    setDraftTable("");
     setTableFilter("");
   };
 
@@ -81,19 +88,24 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
         <div className="flex-1">
           <SearchInput value={search} onChange={setSearch} placeholder="Search order, table or mobile..." />
         </div>
-        <Select
-          value={tableFilter}
-          onChange={setTableFilter}
-          options={[{ value: "", label: "All Tables" }, ...tableIds.map((t) => ({ value: t, label: getTableName(t) }))]}
-          className="w-full sm:w-40"
-        />
+        <div className="flex items-center gap-2">
+          <Select
+            value={draftTable}
+            onChange={setDraftTable}
+            options={[{ value: "", label: "All Tables" }, ...tableIds.map((t) => ({ value: t, label: getTableName(t) }))]}
+            className="w-full sm:w-40"
+          />
+          <Button variant="secondary" onClick={handleApplyFilter}>
+            Apply
+          </Button>
+        </div>
         <Button onClick={() => setShowManualOrder(true)}>
           <Plus size={16} /> Add Manual Order
         </Button>
       </div>
 
       {hasFilters && (
-        <button onClick={clearFilters} className="text-sm text-[color:var(--color-primary)] hover:underline">
+        <button onClick={clearFilters} className="text-sm text-[color:var(--color-primary)] hover:underline cursor-pointer">
           Clear filters
         </button>
       )}

@@ -10,16 +10,17 @@ export default function TablesAndQRPage() {
   }, [fetchData]);
 
   if (loading) {
-    return <div className="p-8 text-center text-secondary">Loading tables and QR codes...</div>;
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-7rem)]">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm text-secondary">Loading tables and QR codes...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="bg-surface rounded-xl border border-theme overflow-hidden">
-        <div className="p-6">
-          <TablesTab />
-        </div>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      <TablesTab />
     </div>
   );
 }
