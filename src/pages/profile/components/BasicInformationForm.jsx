@@ -5,19 +5,16 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../../store/profileStore";
 import Input from "../../../components/ui/Input";
-import Textarea from "../../../components/ui/Textarea";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 import SelectInput from "./SelectInput";
+import { RESTAURANT_TYPES } from "../../../constants/restaurantTypes";
 
-const RESTAURANT_TYPES = ["Restaurant", "Café", "Fast Food", "Bakery", "Bar & Restaurant", "Hotel Restaurant", "Food Court", "Other"];
 const CUISINE_TYPES = ["Indian", "Chinese", "Italian", "Mexican", "Continental", "North Indian", "South Indian", "Rajasthani", "Fast Food", "Desserts"];
 
 const schema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
   tagline: z.string().max(100, "Max 100 characters").optional(),
-  shortDescription: z.string().max(200, "Max 200 characters").optional(),
-  fullDescription: z.string().max(2000, "Max 2000 characters").optional(),
   restaurantType: z.string().min(1, "Restaurant type is required"),
   cuisineTypes: z.array(z.string()).min(1, "Select at least one cuisine"),
   establishmentYear: z.string().optional(),
@@ -31,8 +28,6 @@ export default function BasicInformationForm() {
     defaultValues: {
       name: profile?.name || "",
       tagline: profile?.tagline || "",
-      shortDescription: profile?.shortDescription || "",
-      fullDescription: profile?.fullDescription || "",
       restaurantType: profile?.restaurantType || "",
       cuisineTypes: profile?.cuisineTypes || [],
       establishmentYear: profile?.establishmentYear || "",
@@ -43,16 +38,12 @@ export default function BasicInformationForm() {
     if (profile) {
       setValue("name", profile.name || "");
       setValue("tagline", profile.tagline || "");
-      setValue("shortDescription", profile.shortDescription || "");
-      setValue("fullDescription", profile.fullDescription || "");
       setValue("restaurantType", profile.restaurantType || "");
       setValue("cuisineTypes", profile.cuisineTypes || []);
       setValue("establishmentYear", profile.establishmentYear || "");
     }
   }, [profile, setValue]);
 
-  const shortDesc = watch("shortDescription") || "";
-  const fullDesc = watch("fullDescription") || "";
   const cuisineValues = watch("cuisineTypes") || [];
 
   const onSubmit = async (data) => {
@@ -97,29 +88,6 @@ export default function BasicInformationForm() {
             onChange={(val) => setValue("cuisineTypes", val, { shouldValidate: true })}
             error={errors.cuisineTypes?.message}
             placeholder="Select cuisines..."
-          />
-        </div>
-      </FormSection>
-
-      <FormSection title="Description">
-        <div className="space-y-4">
-          <Textarea
-            label="Short Description"
-            maxLength={200}
-            value={shortDesc}
-            error={errors.shortDescription?.message}
-            {...register("shortDescription")}
-            rows={2}
-            placeholder="Brief description shown in listings..."
-          />
-          <Textarea
-            label="Full Description"
-            maxLength={2000}
-            value={fullDesc}
-            error={errors.fullDescription?.message}
-            {...register("fullDescription")}
-            rows={5}
-            placeholder="Detailed description of your restaurant..."
           />
         </div>
       </FormSection>

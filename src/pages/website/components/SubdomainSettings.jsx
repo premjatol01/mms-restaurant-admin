@@ -16,19 +16,20 @@ import { useProfileStore } from "../../../store/profileStore";
 const toUrl = (slug) => `http://${slug || "your-restaurant"}.${BASE_DOMAIN}`;
 
 export default function SubdomainSettings() {
-  const { restaurantSlug, websiteStatus, updateSubdomain } = useWebsiteStore();
+  const { restaurantSlug, websiteStatus, updateSubdomain, unpublishWebsite } = useWebsiteStore();
   const [slug, setSlug] = useState(restaurantSlug || "");
   const [touched, setTouched] = useState(false);
   const [availability, setAvailability] = useState("idle"); // idle | checking | available | taken
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setSlug(restaurantSlug || "");
   }, [restaurantSlug]);
 
-  const isChanged = slug !== restaurantSlug;
-  const error = touched ? validateSubdomain(slug) : "";
-  const checking = availability === "checking";
+  const isChanged = slug !== (restaurantSlug || "");
+  const error = touched && slug.trim() ? validateSubdomain(slug) : "";
+  const checking = availability === "checking" || saving;
 
   const handleChange = (e) => {
     setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"));
@@ -36,24 +37,24 @@ export default function SubdomainSettings() {
     setAvailability("idle");
   };
 
-  // Returns true when the subdomain is valid and free.
-  const runCheck = async () => {
-    if (validateSubdomain(slug)) {
-      setTouched(true);
-      return false;
-    }
-    setAvailability("checking");
-    const isAvailable = await checkSubdomainAvailability(slug, restaurantSlug);
-    setAvailability(isAvailable ? "available" : "taken");
-    return isAvailable;
-  };
-
   const commit = async () => {
     try {
+      setSaving(true);
       await websiteApi.saveSubdomain(slug);
       // Regenerate all assigned QR codes with the new subdomain URL
       await tablesApi.regenerateAllQRCodes().catch(() => {});
       updateSubdomain(slug);
+
+      // If user cleared the subdomain, automatically unpublish the website
+      if (!slug.trim()) {
+        try {
+          await unpublishWebsite();
+        } catch {}
+        toast.success("Website address cleared and website unpublished");
+      } else {
+        toast.success("Website address updated and QR codes regenerated");
+      }
+
       try {
         const profileState = useProfileStore.getState();
         if (profileState?.profile) {
@@ -62,18 +63,57 @@ export default function SubdomainSettings() {
       } catch {}
       setConfirmOpen(false);
       setAvailability("idle");
-      toast.success("Website address updated and QR codes regenerated");
     } catch {
       toast.error("Failed to save subdomain. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleSave = async () => {
-    if (!isChanged) return;
-    const isAvailable = await runCheck();
-    if (!isAvailable) return;
-    if (websiteStatus === "published") setConfirmOpen(true);
-    else commit();
+    setTouched(true);
+
+    // If user cleared the subdomain, unpublish and clear
+    if (!slug.trim()) {
+      if (websiteStatus === "published") {
+        setConfirmOpen(true);
+      } else {
+        await commit();
+      }
+      return;
+    }
+
+    const valErr = validateSubdomain(slug);
+    if (valErr) {
+      toast.error(valErr);
+      return;
+    }
+
+    // Automatically check availability on Save Address
+    setAvailability("checking");
+    setSaving(true);
+    try {
+      const isAvailable = await checkSubdomainAvailability(slug, restaurantSlug);
+      if (!isAvailable) {
+        setAvailability("taken");
+        setSaving(false);
+        toast.error(`"${slug}" is already taken. Please choose another subdomain.`);
+        return;
+      }
+
+      setAvailability("available");
+      setSaving(false);
+
+      if (websiteStatus === "published") {
+        setConfirmOpen(true);
+      } else {
+        await commit();
+      }
+    } catch {
+      setSaving(false);
+      setAvailability("idle");
+      toast.error("Failed to check subdomain availability. Please try again.");
+    }
   };
 
   return (
@@ -140,10 +180,7 @@ export default function SubdomainSettings() {
           </code>
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={runCheck} disabled={!isChanged || checking}>
-            Check availability
-          </Button>
-          <Button onClick={handleSave} disabled={!isChanged || checking}>
+          <Button onClick={handleSave} disabled={!isChanged || checking} loading={checking}>
             Save address
           </Button>
         </div>

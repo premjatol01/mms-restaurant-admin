@@ -8,5 +8,6 @@ export const ordersApi = {
   updateItemStatus: (id, itemId, status) => apiClient.put(`/orders/${id}/items/${itemId}/status`, { status }),
   cancelOrderItems: (id, data) => apiClient.post(`/orders/${id}/cancel`, data),
   serveAllInSession: (sessionId) => apiClient.post(`/orders/sessions/${sessionId}/serve-all`),
-  markSessionPaid: (sessionId, force = false) => apiClient.post(`/orders/sessions/${sessionId}/pay`, { force }),
+  markSessionPaid: (sessionId, paymentMethod = "cash", force = true) =>
+    apiClient.post(`/orders/sessions/${sessionId}/pay`, { paymentMethod, force }),
 };

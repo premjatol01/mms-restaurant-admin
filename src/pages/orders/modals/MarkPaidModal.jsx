@@ -20,10 +20,25 @@ import {
 
 // Confirmation step before a bill is marked as paid.
 // If any item is still Pending / Under Process, an alert lists them and the
-// admin can update their status or remove them; payment can only be confirmed
-// once nothing is outstanding.
+// admin can update their status, deliver all, or confirm payment directly.
 export default function MarkPaidModal({ sessionId, onClose }) {
-  const session = useOrdersStore((state) => state.sessions.find((s) => s.id === sessionId));
+  const session = useOrdersStore(
+    (state) =>
+      state.sessions.find(
+        (s) =>
+          s.id === sessionId ||
+          s._id === sessionId ||
+          String(s.id) === String(sessionId) ||
+          String(s._id) === String(sessionId)
+      ) ||
+      state.completedSessions.find(
+        (s) =>
+          s.id === sessionId ||
+          s._id === sessionId ||
+          String(s.id) === String(sessionId) ||
+          String(s._id) === String(sessionId)
+      )
+  );
   const orders = useOrdersStore((state) => state.orders);
   const getTableName = useOrdersStore((state) => state.getTableName);
   const updateItemStatus = useOrdersStore((state) => state.updateItemStatus);
@@ -33,31 +48,39 @@ export default function MarkPaidModal({ sessionId, onClose }) {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [removeTarget, setRemoveTarget] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isServingAll, setIsServingAll] = useState(false);
 
   if (!session) return null;
 
   const sessionOrders = getSessionOrders(session, orders);
   const unresolved = getUnresolvedItems(sessionOrders);
   const subtotal = getSessionSubtotal(sessionOrders);
-  const gst = getSessionGst(subtotal);
-  const discount = getSessionDiscount(subtotal);
-  const total = getSessionTotal(sessionOrders);
+  const gst = getSessionGst(sessionOrders, session);
+  const discount = getSessionDiscount(sessionOrders);
+  const total = getSessionTotal(sessionOrders, session);
   const cancelledTotal = sessionOrders.reduce((sum, o) => sum + getCancelledAmount(o), 0);
   const tableName = getTableName(session.tableId);
 
-  const handleServeAll = () => {
-    serveAllInSession(session.id);
-    toast.success(`Marked all items as Delivered for ${tableName}.`);
+  const handleServeAll = async () => {
+    setIsServingAll(true);
+    try {
+      await serveAllInSession(session.id);
+      toast.success(`Marked all items as Delivered for ${tableName}.`);
+    } catch (err) {
+      toast.error(err.message || "Failed to update item statuses.");
+    } finally {
+      setIsServingAll(false);
+    }
   };
 
   const handleConfirm = async () => {
-    if (unresolved.length > 0) {
-      toast.error("Please confirm all items as Delivered or remove them before collecting payment.");
-      return;
-    }
     setIsSubmitting(true);
     try {
-      await markSessionPaid(session.id, paymentMethod);
+      const res = await markSessionPaid(session.id, paymentMethod, true);
+      if (res && !res.ok) {
+        toast.error(res.message || "Failed to mark session as paid.");
+        return;
+      }
       toast.success(`Session for ${tableName} marked as paid (${paymentMethod.toUpperCase()}).`);
       onClose();
     } catch (err) {
@@ -83,10 +106,10 @@ export default function MarkPaidModal({ sessionId, onClose }) {
                 <TriangleAlert size={20} className="mt-0.5 shrink-0 text-amber-600" />
                 <div>
                   <p className="text-sm font-semibold text-theme">
-                    Delivery Verification Required ({unresolved.length} {unresolved.length === 1 ? "item" : "items"} not delivered yet)
+                    Delivery Verification ({unresolved.length} {unresolved.length === 1 ? "item" : "items"} not delivered yet)
                   </p>
                   <p className="text-sm text-secondary">
-                    Please verify if these items have been sent to {tableName}. Confirm them as delivered, or remove items that were not served before collecting payment.
+                    Please verify if these items have been sent to {tableName}. You can confirm them as delivered or proceed with payment to auto-deliver all.
                   </p>
                 </div>
               </div>
@@ -110,8 +133,9 @@ export default function MarkPaidModal({ sessionId, onClose }) {
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          updateItemStatus(order.id, item.id, "served");
+                        type="button"
+                        onClick={async () => {
+                          await updateItemStatus(order.id, item.id, "served");
                           toast.success(`Marked "${item.name}" as Delivered.`);
                         }}
                         className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
@@ -130,6 +154,7 @@ export default function MarkPaidModal({ sessionId, onClose }) {
                       />
 
                       <button
+                        type="button"
                         onClick={() => setRemoveTarget({ orderId: order.id, itemId: item.id })}
                         className="p-1.5 text-red-600 hover:bg-red-500/10 rounded-md transition-colors cursor-pointer"
                         title="Not sent (Remove / Cancel item)"
@@ -146,8 +171,13 @@ export default function MarkPaidModal({ sessionId, onClose }) {
                 <span className="text-xs text-amber-700 font-medium">
                   Sent all orders to the table?
                 </span>
-                <button onClick={handleServeAll} className={`${btn("outline")} cursor-pointer`}>
-                  <CheckCheck size={14} /> Deliver All Items
+                <button
+                  type="button"
+                  disabled={isServingAll}
+                  onClick={handleServeAll}
+                  className={`${btn("outline")} cursor-pointer`}
+                >
+                  <CheckCheck size={14} /> {isServingAll ? "Delivering..." : "Deliver All Items"}
                 </button>
               </div>
             </div>
@@ -224,11 +254,15 @@ export default function MarkPaidModal({ sessionId, onClose }) {
             </button>
             <button
               type="button"
-              disabled={unresolved.length > 0 || isSubmitting}
+              disabled={isSubmitting}
               onClick={handleConfirm}
               className={`${btn("primary")} cursor-pointer`}
             >
-              {isSubmitting ? "Processing..." : `Confirm Payment (${formatCurrency(total)})`}
+              {isSubmitting
+                ? "Processing..."
+                : unresolved.length > 0
+                ? `Deliver & Confirm Payment (${formatCurrency(total)})`
+                : `Confirm Payment (${formatCurrency(total)})`}
             </button>
           </div>
         </div>

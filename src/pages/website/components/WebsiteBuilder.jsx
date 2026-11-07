@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../../store/websiteStore";
-import BasicInfoForm from "./BasicInfoForm";
 import SubdomainSettings from "./SubdomainSettings";
 import WebsiteColorSettings from "./WebsiteColorSettings";
 import SectionCard from "./SectionCard";
@@ -54,7 +53,6 @@ export default function WebsiteBuilder() {
 
   return (
     <div className="space-y-6">
-      <BasicInfoForm />
       <SubdomainSettings />
       <WebsiteColorSettings />
 

@@ -210,17 +210,20 @@ export const useOrdersStore = create((set, get) => ({
   // -------------------------------------------------------------------------
   // Payment
   // -------------------------------------------------------------------------
-  markSessionPaid: async (sessionId, force = false) => {
+  markSessionPaid: async (sessionId, paymentMethod = "cash", force = true) => {
     try {
-      const res = await ordersApi.markSessionPaid(sessionId, force);
+      const res = await ordersApi.markSessionPaid(sessionId, paymentMethod, force);
       await get().fetchData();
-      return { ok: true, total: res.data?.data?.total || 0 };
+      return { ok: true, total: res.data?.data?.total || 0, data: res.data?.data };
     } catch (err) {
       console.error("Failed to mark session as paid:", err);
+      const message =
+        err.response?.data?.message || err.message || "Failed to mark session as paid";
+      const reason = err.response?.data?.reason || "error";
       return {
         ok: false,
-        reason: err.response?.data?.reason || "error",
-        message: err.response?.data?.message || err.message,
+        reason,
+        message,
       };
     }
   },

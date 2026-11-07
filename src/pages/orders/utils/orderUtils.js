@@ -103,11 +103,20 @@ export function applyCancellation(order, selections, { reason, comment } = {}) {
 // Sessions
 // ---------------------------------------------------------------------------
 
-export const getSessionOrders = (session, orders) =>
-  session.orderIds
-    .map((id) => orders.find((o) => o.id === id))
-    .filter(Boolean)
+export const getSessionOrders = (session, orders) => {
+  if (!session) return [];
+  const sessionOrderIds = new Set((session.orderIds || []).map((id) => String(id)));
+  const sessionIdStr = String(session.id || session._id || "");
+  return (orders || [])
+    .filter((o) => {
+      const orderIdStr = String(o.id || o._id || "");
+      const orderSessionIdStr = String(
+        typeof o.sessionId === "object" ? o.sessionId?._id || o.sessionId?.id : o.sessionId || ""
+      );
+      return sessionOrderIds.has(orderIdStr) || (sessionIdStr && orderSessionIdStr === sessionIdStr);
+    })
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+};
 
 export const getSessionSubtotal = (sessionOrders) =>
   sessionOrders

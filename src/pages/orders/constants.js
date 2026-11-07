@@ -62,13 +62,19 @@ const btnBase =
 const BTN_SIZES = { sm: "px-3 py-1.5", lg: "px-4 py-2.5" };
 const BTN_TONES = {
   primary: "bg-primary text-white hover:opacity-90",
+  secondary: "border border-theme text-theme hover:bg-gray-500/10",
   success: "bg-green-500 text-white hover:opacity-90",
   danger: "bg-red-500 text-white hover:opacity-90",
   outline: "border border-theme text-theme hover:bg-gray-500/10",
   outlineDanger: "border border-red-300 text-red-600 hover:bg-red-500/10",
 };
 
-export const btn = (tone, size = "sm") => `${btnBase} ${BTN_SIZES[size]} ${BTN_TONES[tone]}`;
+export const btn = (tone, size = "sm") => `${btnBase} ${BTN_SIZES[size]} ${BTN_TONES[tone] || ""}`;
+btn.primary = btn("primary");
+btn.secondary = btn("secondary");
+btn.outline = btn("outline");
+btn.danger = btn("danger");
+btn.success = btn("success");
 
 export const ICON_BTN =
   "p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-500/10 transition-colors";

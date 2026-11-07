@@ -26,17 +26,23 @@ export default function WebsitePage() {
     : "(no subdomain set)";
 
   const handleCopyUrl = () => {
+    if (!restaurantSlug) return;
     navigator.clipboard.writeText(websiteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handlePublish = async () => {
+    if (!restaurantSlug || !restaurantSlug.trim()) {
+      toast.error("Please add and save a website subdomain before publishing.");
+      setShowPublishConfirm(false);
+      return;
+    }
     try {
       await publishWebsite();
       toast.success("Website published successfully! It is now live.");
-    } catch {
-      toast.error("Failed to publish website. Please try again.");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to publish website. Please try again.");
     }
     setShowPublishConfirm(false);
   };
@@ -72,13 +78,15 @@ export default function WebsitePage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-secondary">Website URL</span>
               <code className="text-sm text-theme bg-primary-light/30 px-2 py-1 rounded">{websiteUrl}</code>
-              <button 
-                onClick={handleCopyUrl}
-                className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors"
-                title="Copy URL"
-              >
-                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-              </button>
+              {restaurantSlug && (
+                <button 
+                  onClick={handleCopyUrl}
+                  className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors"
+                  title="Copy URL"
+                >
+                  {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                </button>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -91,7 +99,16 @@ export default function WebsitePage() {
                 Unpublish
               </Button>
             ) : (
-              <Button size="sm" onClick={() => setShowPublishConfirm(true)}>
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  if (!restaurantSlug || !restaurantSlug.trim()) {
+                    toast.error("Please add and save a website subdomain before publishing.");
+                    return;
+                  }
+                  setShowPublishConfirm(true);
+                }}
+              >
                 Publish Website
               </Button>
             )}

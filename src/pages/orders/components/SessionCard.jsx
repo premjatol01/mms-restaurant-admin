@@ -176,7 +176,7 @@ export default function SessionCard({ session, orders, onMarkPaid, onRemoveItem,
 
         <button
           onClick={handleMarkPaid}
-          className={`${btn.primary} inline-flex items-center gap-1.5 cursor-pointer`}
+          className={`${btn("primary")} inline-flex items-center gap-1.5 cursor-pointer`}
           title={unresolved > 0 ? "Table has unserved items" : "Close session and mark as paid"}
         >
           <IndianRupee size={15} /> Mark as Paid

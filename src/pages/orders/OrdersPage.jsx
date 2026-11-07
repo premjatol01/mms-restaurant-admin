@@ -100,10 +100,16 @@ export default function OrdersPage() {
           });
           useOrdersStore.getState().fetchData();
         },
+        onOrderUpdated: () => {
+          useOrdersStore.getState().fetchData();
+        },
         onOrderStatusUpdated: () => {
           useOrdersStore.getState().fetchData();
         },
         onSessionUpdated: () => {
+          useOrdersStore.getState().fetchData();
+        },
+        onSessionCompleted: () => {
           useOrdersStore.getState().fetchData();
         },
       });
