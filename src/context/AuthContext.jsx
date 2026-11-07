@@ -3,6 +3,25 @@ import { apiClient } from "../api/client";
 
 export const AuthContext = createContext();
 
+const decodeToken = (tokenStr) => {
+  if (!tokenStr || typeof tokenStr !== "string") return null;
+  try {
+    const parts = tokenStr.split(".");
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
     // 1. Check if token is passed in URL query (from login redirect)
@@ -11,6 +30,17 @@ export const AuthProvider = ({ children }) => {
       const urlToken = params.get("token");
       if (urlToken) {
         localStorage.setItem("restaurant_admin_token", urlToken);
+        const decoded = decodeToken(urlToken);
+        if (decoded) {
+          const userObj = {
+            id: decoded.userId || "user-id",
+            name: decoded.role === "super_admin" ? "Super Admin" : "Restaurant Admin",
+            email: decoded.email || "",
+            role: decoded.role || "restaurant_admin",
+            restaurantId: decoded.restaurantId || null,
+          };
+          localStorage.setItem("restaurant_user", JSON.stringify(userObj));
+        }
         // Clean URL without triggering a React Router re-render loop
         window.history.replaceState({}, "", window.location.pathname);
         return urlToken;
@@ -34,6 +64,19 @@ export const AuthProvider = ({ children }) => {
           // ignore parsing error
         }
       }
+      const initialToken = localStorage.getItem("restaurant_admin_token") || localStorage.getItem("restaurant_token");
+      if (initialToken) {
+        const decoded = decodeToken(initialToken);
+        if (decoded) {
+          return {
+            id: decoded.userId || "user-id",
+            name: decoded.role === "super_admin" ? "Super Admin" : "Restaurant Admin",
+            email: decoded.email || "",
+            role: decoded.role || "restaurant_admin",
+            restaurantId: decoded.restaurantId || null,
+          };
+        }
+      }
     }
     return null;
   });
@@ -41,14 +84,27 @@ export const AuthProvider = ({ children }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (token && !user) {
-      setUser({
-        id: "admin-user-id",
-        name: "Restaurant Admin",
-        restaurantId: "restaurant-id",
-        role: "restaurant_admin",
-      });
-    } else if (!token) {
+    if (token) {
+      const decoded = decodeToken(token);
+      if (decoded) {
+        if (!user || user.role !== decoded.role) {
+          setUser({
+            id: decoded.userId || user?.id || "user-id",
+            name: user?.name || (decoded.role === "super_admin" ? "Super Admin" : "Restaurant Admin"),
+            email: user?.email || decoded.email || "",
+            role: decoded.role || "restaurant_admin",
+            restaurantId: decoded.restaurantId || user?.restaurantId || null,
+          });
+        }
+      } else if (!user) {
+        setUser({
+          id: "admin-user-id",
+          name: "Restaurant Admin",
+          restaurantId: "restaurant-id",
+          role: "restaurant_admin",
+        });
+      }
+    } else {
       setUser(null);
     }
   }, [token, user]);
@@ -58,6 +114,19 @@ export const AuthProvider = ({ children }) => {
     if (newUser) {
       localStorage.setItem("restaurant_user", JSON.stringify(newUser));
       setUser(newUser);
+    } else {
+      const decoded = decodeToken(newToken);
+      if (decoded) {
+        const userObj = {
+          id: decoded.userId || "user-id",
+          name: decoded.role === "super_admin" ? "Super Admin" : "Restaurant Admin",
+          email: decoded.email || "",
+          role: decoded.role || "restaurant_admin",
+          restaurantId: decoded.restaurantId || null,
+        };
+        localStorage.setItem("restaurant_user", JSON.stringify(userObj));
+        setUser(userObj);
+      }
     }
     setToken(newToken);
   }, []);

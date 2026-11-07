@@ -2,10 +2,11 @@ import { Outlet } from "react-router-dom";
 import { Lock, ArrowRight } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import RoleAccessDenied from "../components/RoleAccessDenied";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AdminLayout() {
-  const { isAuthenticated, isLoggingOut } = useAuth();
+  const { isAuthenticated, isLoggingOut, user } = useAuth();
   const marketingWebUrl = import.meta.env.VITE_MARKETING_WEBSITE_URL || "http://localhost:3000";
 
   // When logging out, show clean transition loader (prevents access denied screen flash)
@@ -44,7 +45,12 @@ export default function AdminLayout() {
     );
   }
 
-  // Logged in — full layout with sidebar + header
+  // Role check: if authenticated but role is not restaurant_admin
+  if (user?.role && user.role !== "restaurant_admin") {
+    return <RoleAccessDenied requiredRole="restaurant_admin" />;
+  }
+
+  // Logged in with valid role — full layout with sidebar + header
   return (
     <div className="flex h-screen overflow-hidden bg-theme">
       <Sidebar />
