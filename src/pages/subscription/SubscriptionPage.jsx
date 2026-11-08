@@ -12,6 +12,7 @@ import TicketModal from "./modals/TicketModal";
 import ScreenshotPreviewModal from "./modals/ScreenshotPreviewModal";
 
 export default function SubscriptionPage() {
+  const store = useSubscriptionStore();
   const {
     subscription,
     packages,
@@ -22,7 +23,9 @@ export default function SubscriptionPage() {
     status,
     error,
     loadSubscription,
-  } = useSubscriptionStore();
+  } = store;
+
+  console.log("SubscriptionPage store status:", status, "hasSub:", Boolean(subscription));
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPackageData, setSelectedPackageData] = useState(null); // { pkg, pricingTier, requestType }

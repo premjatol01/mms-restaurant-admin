@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Armchair, Clock, CreditCard, Globe, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Share2, Star, Store,
+  Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Star, Store,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
@@ -9,8 +9,6 @@ import BrandingForm from "./components/BrandingForm";
 import ContactInformationForm from "./components/ContactInformationForm";
 import AddressForm from "./components/AddressForm";
 import BusinessHoursForm from "./components/BusinessHoursForm";
-import SocialLinksForm from "./components/SocialLinksForm";
-import WebsiteInfoSection from "./components/WebsiteInfoSection";
 import MenuMasterSection from "./components/MenuMasterSection";
 import TableConfigSection from "./components/TableConfigSection";
 import GoogleReviewForm from "./components/GoogleReviewForm";
@@ -26,8 +24,6 @@ const TABS = [
   { id: "contact", label: "Contact", icon: Phone },
   { id: "address", label: "Address", icon: MapPin },
   { id: "hours", label: "Business Hours", icon: Clock },
-  { id: "social", label: "Social Links", icon: Share2 },
-  { id: "website", label: "Website", icon: Globe },
   { id: "menu", label: "Menu Master", icon: LayoutGrid },
   { id: "tables", label: "Table Configuration", icon: Armchair },
   { id: "review", label: "Google Review", icon: Star },
@@ -140,8 +136,6 @@ export default function RestaurantProfilePage() {
           {activeTab === "contact" && <ContactInformationForm />}
           {activeTab === "address" && <AddressForm />}
           {activeTab === "hours" && <BusinessHoursForm />}
-          {activeTab === "social" && <SocialLinksForm />}
-          {activeTab === "website" && <WebsiteInfoSection />}
           {activeTab === "menu" && <MenuMasterSection />}
           {activeTab === "tables" && <TableConfigSection />}
           {activeTab === "review" && <GoogleReviewForm />}

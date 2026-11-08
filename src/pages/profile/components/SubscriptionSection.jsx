@@ -1,13 +1,16 @@
 import { useEffect } from "react";
-import { CalendarClock, Check, CreditCard } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, CalendarClock, Check, CreditCard, ShieldCheck } from "lucide-react";
 import { differenceInCalendarDays, format } from "date-fns";
 import { useProfileStore } from "../../../store/profileStore";
 import FormSection from "../../../components/ui/FormSection";
 
 const STATUS = {
   active: { label: "Active", badge: "bg-green-100 text-green-700", dot: "bg-green-500" },
-  trial: { label: "Trial", badge: "bg-amber-50 text-amber-700", dot: "bg-amber-400" },
+  expiring: { label: "Expiring Soon", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-500" },
+  trial: { label: "Trial", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
   expired: { label: "Expired", badge: "bg-red-100 text-red-700", dot: "bg-red-500" },
+  pending: { label: "Pending Verification", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-500" },
   cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-500", dot: "bg-gray-400" },
 };
 
@@ -39,11 +42,33 @@ function SkeletonLoader() {
 }
 
 export default function SubscriptionSection() {
-  const { subscription: sub, fetchSubscription } = useProfileStore();
+  const { subscription: sub, fetchSubscription, subscriptionLoading } = useProfileStore();
 
-  useEffect(() => { fetchSubscription(); }, [fetchSubscription]);
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
 
-  if (!sub) return <SkeletonLoader />;
+  if (subscriptionLoading && !sub) return <SkeletonLoader />;
+
+  if (!sub) {
+    return (
+      <div className="p-8 text-center bg-surface rounded-xl border border-theme space-y-4">
+        <CreditCard size={36} className="mx-auto text-secondary opacity-60" />
+        <div>
+          <h3 className="text-base font-semibold text-theme">No Active Subscription</h3>
+          <p className="text-xs text-secondary mt-1">
+            Your restaurant does not currently have an active plan. Browse our packages to get started.
+          </p>
+        </div>
+        <Link
+          to="/subscription"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
+        >
+          View Packages <ArrowUpRight size={14} />
+        </Link>
+      </div>
+    );
+  }
 
   const status = STATUS[sub.status] || STATUS.active;
   const daysLeft = sub.renewalDate ? differenceInCalendarDays(new Date(sub.renewalDate), new Date()) : null;
@@ -57,25 +82,34 @@ export default function SubscriptionSection() {
 
   return (
     <div className="space-y-5">
-      <FormSection title="Current Plan" description="Your restaurant's subscription and billing details.">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-lg bg-theme border border-theme flex items-center justify-center flex-shrink-0">
-            <CreditCard size={18} className="text-[var(--color-primary)]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-theme">{sub.planName}</h3>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.badge}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                {status.label}
-              </span>
+      <FormSection title="Current Plan" description="Your restaurant's active subscription and billing details.">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-theme border border-theme flex items-center justify-center flex-shrink-0">
+              <CreditCard size={18} className="text-[var(--color-primary)]" />
             </div>
-            {sub.price != null && (
-              <p className="text-sm text-secondary">
-                {formatPrice(sub.price, sub.currency)}{sub.billingCycle ? ` / ${sub.billingCycle === "yearly" ? "year" : sub.billingCycle === "monthly" ? "month" : sub.billingCycle}` : ""}
-              </p>
-            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold text-theme">{sub.planName}</h3>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.badge}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                  {status.label}
+                </span>
+              </div>
+              {sub.price != null && (
+                <p className="text-sm text-secondary">
+                  {formatPrice(sub.price, sub.currency)}{sub.billingCycle ? ` / ${sub.billingCycle === "yearly" ? "year" : sub.billingCycle === "monthly" ? "month" : sub.billingCycle}` : ""}
+                </p>
+              )}
+            </div>
           </div>
+
+          <Link
+            to="/subscription"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-primary text-primary hover:bg-primary-light transition-colors self-start sm:self-center"
+          >
+            Manage Subscription <ArrowUpRight size={14} />
+          </Link>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

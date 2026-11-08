@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { profileApi } from "../api/profile.api";
+import { subscriptionApi } from "../api/subscription.api";
 import { DUMMY_TABLES, createDummyQr, createDummyTable } from "../pages/profile/data/tablesData";
-import { getDummySubscription } from "../pages/profile/data/subscriptionData";
+
 
 const defaultProfile = {
   name: "",
@@ -57,7 +58,7 @@ const defaultProfile = {
   settings: {
     isActive: true,
     acceptOrders: true,
-    showOnPublicWebsite: true,
+    showOnPublicWebsite: false,
   },
 };
 
@@ -480,10 +481,47 @@ export const useProfileStore = create((set, get) => ({
 
   // ---------- Subscription (read-only) ----------
   subscription: null,
+  subscriptionLoading: false,
 
   fetchSubscription: async () => {
-    if (get().subscription) return;
-    // TODO: const { data } = await profileApi.getSubscription();
-    set({ subscription: getDummySubscription() });
+
+
+    set({ subscriptionLoading: true });
+    try {
+      const res = await subscriptionApi.getOverview();
+      const currentSub = res?.data?.subscription;
+      const tableCount = (get().tables || []).length;
+      if (currentSub) {
+        set({
+          subscription: {
+            planName: currentSub.packageName || "No Active Plan",
+            packageId: currentSub.packageId,
+            status: currentSub.status || "active",
+            price: currentSub.price,
+            currency: "INR",
+            billingCycle: currentSub.billingCycle || "monthly",
+            startDate: currentSub.startDate,
+            renewalDate: currentSub.endDate,
+            daysRemaining: currentSub.daysRemaining,
+            isExpired: currentSub.isExpired,
+            isExpiring: currentSub.isExpiring,
+            maxTables: currentSub.maxTables || 0,
+            features: currentSub.features || [],
+            usage: {
+              tables: {
+                used: tableCount,
+                limit: currentSub.maxTables || 15,
+              },
+            },
+          },
+          subscriptionLoading: false,
+        });
+      } else {
+        set({ subscription: null, subscriptionLoading: false });
+      }
+    } catch (err) {
+      console.error("Failed to load subscription in profile", err);
+      set({ subscriptionLoading: false });
+    }
   },
 }));
