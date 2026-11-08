@@ -189,3 +189,20 @@ button {
   scrollbar-width: thin;
   scrollbar-color: var(--color-primary) transparent;
 }
+
+/* ================================
+   Toast Close Button (Sonner)
+================================ */
+[data-sonner-toast] [data-close-button] {
+  opacity: 1 !important;
+  cursor: pointer !important;
+  background-color: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: inherit;
+  transition: all 0.15s ease;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background-color: rgba(0, 0, 0, 0.18);
+  transform: scale(1.08);
+}

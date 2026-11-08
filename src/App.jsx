@@ -30,7 +30,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors closeButton />
         <Routes>
           <Route element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
