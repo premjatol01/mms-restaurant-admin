@@ -24,12 +24,26 @@ const decodeToken = (tokenStr) => {
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => {
-    // 1. Check if token is passed in URL query (from login redirect)
+    // 1. Check if token & remember flags are passed in URL query (from login redirect)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const urlToken = params.get("token");
+      const urlRefreshToken = params.get("refreshToken");
+      const urlRemember = params.get("remember");
+
       if (urlToken) {
         localStorage.setItem("restaurant_admin_token", urlToken);
+
+        if (urlRemember === "1") {
+          localStorage.setItem("restaurant_admin_remember", "true");
+          if (urlRefreshToken) {
+            localStorage.setItem("restaurant_admin_refresh_token", urlRefreshToken);
+          }
+        } else if (urlRemember === "0") {
+          localStorage.setItem("restaurant_admin_remember", "false");
+          localStorage.removeItem("restaurant_admin_refresh_token");
+        }
+
         const decoded = decodeToken(urlToken);
         if (decoded) {
           const userObj = {
@@ -64,7 +78,9 @@ export const AuthProvider = ({ children }) => {
           // ignore parsing error
         }
       }
-      const initialToken = localStorage.getItem("restaurant_admin_token") || localStorage.getItem("restaurant_token");
+      const initialToken =
+        localStorage.getItem("restaurant_admin_token") ||
+        localStorage.getItem("restaurant_token");
       if (initialToken) {
         const decoded = decodeToken(initialToken);
         if (decoded) {
@@ -109,8 +125,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, user]);
 
-  const login = useCallback((newToken, newUser) => {
+  const login = useCallback((newToken, newUser, newRefreshToken = null, rememberMe = false) => {
     localStorage.setItem("restaurant_admin_token", newToken);
+    if (rememberMe) {
+      localStorage.setItem("restaurant_admin_remember", "true");
+      if (newRefreshToken) {
+        localStorage.setItem("restaurant_admin_refresh_token", newRefreshToken);
+      }
+    } else {
+      localStorage.setItem("restaurant_admin_remember", "false");
+      localStorage.removeItem("restaurant_admin_refresh_token");
+    }
+
     if (newUser) {
       localStorage.setItem("restaurant_user", JSON.stringify(newUser));
       setUser(newUser);
@@ -131,10 +157,11 @@ export const AuthProvider = ({ children }) => {
     setToken(newToken);
   }, []);
 
-  const loginWithCredentials = useCallback(async (email, password) => {
-    const response = await apiClient.post("/auth/login", { email, password });
+  const loginWithCredentials = useCallback(async (email, password, rememberMe = false) => {
+    const response = await apiClient.post("/auth/login", { email, password, rememberMe });
     const payload = response.data?.data;
     const authToken = payload?.token;
+    const authRefreshToken = payload?.refreshToken;
     const authUser = payload?.user;
 
     if (!authToken) {
@@ -142,6 +169,16 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.setItem("restaurant_admin_token", authToken);
+    if (rememberMe) {
+      localStorage.setItem("restaurant_admin_remember", "true");
+      if (authRefreshToken) {
+        localStorage.setItem("restaurant_admin_refresh_token", authRefreshToken);
+      }
+    } else {
+      localStorage.setItem("restaurant_admin_remember", "false");
+      localStorage.removeItem("restaurant_admin_refresh_token");
+    }
+
     if (authUser) {
       localStorage.setItem("restaurant_user", JSON.stringify(authUser));
       setUser(authUser);
@@ -162,7 +199,10 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.removeItem("restaurant_admin_token");
+    localStorage.removeItem("restaurant_admin_refresh_token");
+    localStorage.removeItem("restaurant_admin_remember");
     localStorage.removeItem("restaurant_token");
+    localStorage.removeItem("restaurant_refresh_token");
     localStorage.removeItem("restaurant_user");
 
     const marketingWebUrl = import.meta.env.VITE_MARKETING_WEBSITE_URL || "http://localhost:3000";
@@ -172,7 +212,17 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated, isLoggingOut, login, loginWithCredentials, logout }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isAuthenticated,
+        isLoggingOut,
+        login,
+        loginWithCredentials,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
