@@ -5,6 +5,8 @@ import { useTablesQRStore } from "../../../store/tablesQRStore";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 import ConfirmDialog from "./ConfirmDialog";
+import { downloadQRCode } from "../utils/qrDownload";
+import { buildTableQRUrl } from "../utils/qrLink";
 
 const QR_TYPE_COLORS = { default: "bg-blue-100 text-blue-700", premium: "bg-purple-100 text-purple-700", paid: "bg-amber-100 text-amber-700" };
 const QR_STATUS_COLORS = { available: "bg-green-100 text-green-700", assigned: "bg-purple-100 text-purple-700", inactive: "bg-gray-100 text-gray-500" };
@@ -14,6 +16,7 @@ export default function QRDetailsDrawer({ qr, onClose }) {
   const [showAssign, setShowAssign] = useState(false);
   const [showUnassign, setShowUnassign] = useState(false);
   const [selectedTable, setSelectedTable] = useState(qr.tableId || "");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const assignedTable = tables.find((t) => t.id === qr.tableId);
   const availableTables = tables.filter((t) => t.status === "active" && (!t.qrCodeId || t.id === qr.tableId));
@@ -36,6 +39,23 @@ export default function QRDetailsDrawer({ qr, onClose }) {
     const newStatus = qr.status === "inactive" ? "available" : "inactive";
     updateQRCode(qr.id, { status: newStatus });
     toast.success(`QR code ${newStatus === "available" ? "activated" : "deactivated"} successfully.`);
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadQRCode({
+        qr,
+        table: assignedTable,
+        url: qr.scanUrl || (assignedTable ? buildTableQRUrl({ table: assignedTable, qr }) : undefined)
+      });
+      toast.success(`${assignedTable?.tableNo || assignedTable?.tableId || qr.name} downloaded.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download QR code.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -91,8 +111,8 @@ export default function QRDetailsDrawer({ qr, onClose }) {
               <Button variant="secondary" className="w-full" onClick={handleToggleStatus}>
                 {qr.status === "inactive" ? "Activate" : "Deactivate"}
               </Button>
-              <Button variant="ghost" className="w-full">
-                <Download size={16} /> Download QR
+              <Button variant="ghost" className="w-full" onClick={handleDownload} disabled={isDownloading}>
+                <Download size={16} /> {isDownloading ? "Downloading..." : "Download QR"}
               </Button>
             </div>
           </div>

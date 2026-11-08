@@ -54,12 +54,17 @@ export default function TablesTab() {
 
   const getQRInfo = (qrCodeId) => {
     if (!qrCodeId) return null;
-    if (typeof qrCodeId === 'object') return qrCodeId; // Already populated
-    return qrCodes.find((qr) => qr.id === qrCodeId || qr._id === qrCodeId);
+    if (typeof qrCodeId === 'object' && (qrCodeId.imageUrl || qrCodeId.name)) return qrCodeId; // Fully populated
+    const targetId = typeof qrCodeId === 'object' ? (qrCodeId.id || qrCodeId._id) : qrCodeId;
+    return qrCodes.find((qr) => qr.id === targetId || qr._id === targetId);
   };
 
   // Every table that currently has a QR - this is what "Download All" exports
-  const assignedPairs = getAssignedPairs(tables, qrCodes);
+  const assignedPairs = useMemo(() => {
+    return tables
+      .map((table) => ({ table, qr: getQRInfo(table.qrCodeId) }))
+      .filter(({ qr }) => Boolean(qr));
+  }, [tables, qrCodes]);
 
   const handleToggleStatus = async (table) => {
     const newStatus = table.status === "active" ? "inactive" : "active";
@@ -75,7 +80,7 @@ export default function TablesTab() {
     setDownloadingId(table.id);
     try {
       await downloadQRCode({ qr, table, url: qr.scanUrl || buildTableQRUrl({ table, qr }) });
-      toast.success(`${qr.name} downloaded.`);
+      toast.success(`${table.tableNo || table.tableId || qr.name} downloaded.`);
     } catch (error) {
       console.error(error);
       toast.error("Couldn't generate the QR file. Please try again.");

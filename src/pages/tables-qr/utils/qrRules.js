@@ -11,18 +11,35 @@ export const isQRVisibleToRestaurant = (qr, restaurantId = CURRENT_RESTAURANT_ID
  * A QR is "free" only if it is available AND nothing references it:
  * neither its own tableId nor any table's qrCodeId.
  */
-export const isQRFree = (qr, tables) =>
-  qr.status === "available" && !qr.tableId && !tables.some((t) => t.qrCodeId === qr.id);
+export const isQRFree = (qr, tables) => {
+  const qrId = qr?.id || qr?._id;
+  return (
+    qr.status === "available" &&
+    !qr.tableId &&
+    !tables.some((t) => {
+      const tQrId = typeof t.qrCodeId === "object" ? (t.qrCodeId?.id || t.qrCodeId?._id) : t.qrCodeId;
+      return tQrId === qrId;
+    })
+  );
+};
 
 /** QR codes that may be offered in an assignment dropdown. */
 export const getFreeQRCodes = (qrCodes, tables, restaurantId = CURRENT_RESTAURANT_ID) =>
   qrCodes.filter((qr) => isQRVisibleToRestaurant(qr, restaurantId) && isQRFree(qr, tables));
 
 /** Tables that currently have a QR, paired with that QR (what "Download All" exports). */
-export const getAssignedPairs = (tables, qrCodes, restaurantId = CURRENT_RESTAURANT_ID) =>
+export const getAssignedPairs = (tables, qrCodes) =>
   tables
-    .map((table) => ({ table, qr: qrCodes.find((qr) => qr.id === table.qrCodeId) }))
-    .filter(({ qr }) => qr && isQRVisibleToRestaurant(qr, restaurantId));
+    .map((table) => {
+      let qr = null;
+      if (table.qrCodeId && typeof table.qrCodeId === "object") {
+        qr = table.qrCodeId;
+      } else if (table.qrCodeId) {
+        qr = qrCodes.find((q) => q.id === table.qrCodeId || q._id === table.qrCodeId);
+      }
+      return { table, qr };
+    })
+    .filter(({ qr }) => Boolean(qr));
 
 export const formatQROption = (qr) => {
   const layout = qr.layout.charAt(0).toUpperCase() + qr.layout.slice(1);

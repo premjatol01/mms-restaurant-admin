@@ -12,12 +12,16 @@ const LAYOUT_STYLES = {
   elegant: { bg: "#faf6ee", plate: "#ffffff", module: "#3b2f1e", text: "#3b2f1e", muted: "#8a7756", font: SERIF, gold: "#b8964f" },
 };
 
-const sanitize = (text) => String(text).replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "");
+const sanitizeFilename = (text) =>
+  String(text || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, " ");
 
 export function buildQRFilename({ table, qr }) {
-  const tableLabel = table?.tableNo || table?.tableId;
-  const parts = [tableLabel && sanitize(tableLabel), sanitize(qr.name)].filter(Boolean);
-  return `${parts.join("_")}.png`;
+  const tableLabel = table?.tableNo || table?.tableId || qr?.name || "Table";
+  const clean = sanitizeFilename(tableLabel);
+  return `${clean || "Table"}.png`;
 }
 
 function fillRoundRect(ctx, x, y, w, h, r) {
@@ -28,8 +32,10 @@ function fillRoundRect(ctx, x, y, w, h, r) {
 
 /** Fetches the backend-stored QR image (with template overlay) and returns a Blob. */
 async function fetchRemoteImage(imageUrl) {
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${imageUrl}`;
+  const rawBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const baseUrl = rawBase.replace(/\/api\/?$/, "");
+  const cleanPath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${cleanPath}`;
   const res = await fetch(fullUrl);
   if (!res.ok) throw new Error(`Failed to fetch QR image: ${res.status}`);
   return res.blob();
@@ -125,14 +131,19 @@ export async function renderQRImage({ url, label, sublabel, layout = "classic" }
  * - Otherwise → render a plain canvas QR as fallback.
  */
 async function resolveQRBlob({ qr, table, url }) {
-  if (qr.imageUrl) {
+  if (qr && typeof qr.imageUrl === "string" && qr.imageUrl.trim()) {
     try {
       return await fetchRemoteImage(qr.imageUrl);
     } catch (err) {
       console.warn("Could not fetch QR image from server, falling back to canvas render.", err);
     }
   }
-  return renderQRImage({ url: qr.scanUrl || url, label: table?.tableNo || table?.tableId, sublabel: qr.name, layout: qr.layout });
+  return renderQRImage({
+    url: qr?.scanUrl || url,
+    label: table?.tableNo || table?.tableId,
+    sublabel: qr?.name,
+    layout: qr?.layout || "classic",
+  });
 }
 
 /** Individual download: one PNG. */
@@ -153,7 +164,7 @@ export async function createQRZip(items, onProgress) {
 
     const base = buildQRFilename({ table, qr }).replace(/\.png$/i, "");
     let name = `${base}.png`;
-    for (let n = 2; used.has(name.toLowerCase()); n++) name = `${base}-${n}.png`;
+    for (let n = 2; used.has(name.toLowerCase()); n++) name = `${base} (${n}).png`;
     used.add(name.toLowerCase());
 
     zip.file(name, blob);
@@ -177,6 +188,6 @@ export function saveBlob(blob, filename) {
 export async function downloadAllQRCodes(items, onProgress) {
   const zipBlob = await createQRZip(items, onProgress);
   const today = new Date().toISOString().slice(0, 10);
-  saveBlob(zipBlob, `qr-codes-${today}.zip`);
+  saveBlob(zipBlob, `tables-qr-${today}.zip`);
   return items.length;
 }

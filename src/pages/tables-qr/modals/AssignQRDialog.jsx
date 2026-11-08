@@ -20,7 +20,9 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
   const [isRemoving, setIsRemoving] = useState(false);
 
   const liveTable = tables.find((t) => t.id === table.id) || table;
-  const currentQR = qrCodes.find((qr) => qr.id === liveTable.qrCodeId);
+  const currentQR = typeof liveTable.qrCodeId === "object" && liveTable.qrCodeId !== null
+    ? liveTable.qrCodeId
+    : qrCodes.find((qr) => qr.id === liveTable.qrCodeId || qr._id === liveTable.qrCodeId);
   const activeTemplates = qrTemplates.filter((t) => t.status === "active");
 
   useEffect(() => {
