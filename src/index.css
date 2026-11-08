@@ -108,6 +108,50 @@ button {
 }
 
 /* ================================
+   Inputs & Placeholder Styling
+================================ */
+
+::placeholder {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: var(--color-text-secondary);
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: var(--color-text-secondary);
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: var(--color-text-secondary);
+}
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+/* React-Select & custom dropdown placeholders */
+.select__placeholder,
+[class*="-placeholder"] {
+  color: var(--color-text-secondary) !important;
+  opacity: 1 !important;
+}
+
+/* ================================
    Custom Utility Classes
 ================================ */
 

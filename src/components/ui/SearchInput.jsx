@@ -53,7 +53,7 @@ export default function SearchInput({
         value={displayValue}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full pl-9 pr-8 py-2 rounded-lg border border-theme text-sm text-theme bg-surface focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)] transition-all"
+        className="w-full pl-9 pr-8 py-2 rounded-lg border border-theme text-sm text-theme bg-surface placeholder:text-secondary placeholder:opacity-100 focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)] transition-all"
       />
       {displayValue && (
         <button

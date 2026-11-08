@@ -262,7 +262,7 @@ export const useProfileStore = create((set, get) => ({
           id: item._id,
           categoryId: catId,
           name: item.name,
-          description: "", 
+          description: item.description || "", 
           image: getImageUrl(item.image),
           source: "master",
           editable: false,

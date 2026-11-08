@@ -84,7 +84,7 @@ export default function Select({
       ...base,
       color: "var(--color-text-secondary)",
       fontSize: "0.875rem",
-      opacity: 0.8,
+      opacity: 1,
     }),
     indicatorSeparator: () => ({
       display: "none",
