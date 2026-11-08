@@ -11,6 +11,7 @@ const PlaceholderPage = lazy(() => import("./pages/PlaceholderPage"));
 const RestaurantProfilePage = lazy(() => import("./pages/profile/RestaurantProfilePage"));
 const MenuPage = lazy(() => import("./pages/menu/MenuPage"));
 const TablesAndQRPage = lazy(() => import("./pages/tables-qr/TablesAndQRPage"));
+const DesignRequestsPage = lazy(() => import("./pages/design-requests/DesignRequestsPage"));
 const OrdersPage = lazy(() => import("./pages/orders/OrdersPage"));
 const OffersPromosPage = lazy(() => import("./pages/offers-promos/OffersPromosPage"));
 const WebsitePage = lazy(() => import("./pages/website/WebsitePage"));
@@ -63,6 +64,14 @@ export default function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <TablesAndQRPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/design-requests"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <DesignRequestsPage />
                   </Suspense>
                 }
               />

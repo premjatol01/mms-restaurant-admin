@@ -12,9 +12,24 @@ export const useDesignRequestStore = create((set, get) => ({
   loading: false,
   error: null,
   loaded: false,
+  showCreateModal: false,
+  modalDefaultType: "Menu Design",
+  selectedRequest: null,
 
-  fetchRequests: async () => {
-    if (get().loaded) return;
+  openCreateModal: (defaultType = "Menu Design") => {
+    set({ showCreateModal: true, modalDefaultType: defaultType });
+  },
+
+  closeCreateModal: () => {
+    set({ showCreateModal: false });
+  },
+
+  setSelectedRequest: (request) => {
+    set({ selectedRequest: request });
+  },
+
+  fetchRequests: async (force = false) => {
+    if (get().loaded && !force) return;
     set({ loading: true, error: null });
     try {
       const res = await designRequestApi.getRequests();
@@ -28,9 +43,9 @@ export const useDesignRequestStore = create((set, get) => ({
     }
   },
 
-  addRequest: async ({ description, file = null }) => {
+  addRequest: async ({ description, requestType = "Menu Design", title = "", file = null }) => {
     try {
-      const res = await designRequestApi.createRequest({ description, file });
+      const res = await designRequestApi.createRequest({ description, requestType, title, file });
       const newRequest = norm(res.data?.data);
       set((state) => ({ requests: [newRequest, ...state.requests] }));
       return newRequest;

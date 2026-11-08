@@ -201,7 +201,11 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
         </div>
       </Modal>
 
-      <ContactDesignerModal isOpen={showDesigner} onClose={() => setShowDesigner(false)} />
+      <ContactDesignerModal 
+        isOpen={showDesigner} 
+        onClose={() => setShowDesigner(false)} 
+        initialRequestType="QR Template Design"
+      />
     </>
   );
 }
