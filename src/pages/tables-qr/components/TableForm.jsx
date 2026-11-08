@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { QrCode } from "lucide-react";
+import { QrCode, Check } from "lucide-react";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
@@ -10,11 +10,7 @@ import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function TableForm({ isOpen, onClose, editTable }) {
   const { tables, qrCodes, qrTemplates, fetchQRTemplates, addTable, updateTable, generateQRCodes } = useTablesQRStore();
-  
-  // selectedTemplateId will be:
-  // null (Keep current or Skip)
-  // 'plain' (Generate a plain QR)
-  // <template_id> (Generate from specific template)
+
   const [form, setForm] = useState({ tableId: "", status: "active", selectedTemplateId: null });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,26 +19,84 @@ export default function TableForm({ isOpen, onClose, editTable }) {
     if (isOpen) fetchQRTemplates();
   }, [isOpen, fetchQRTemplates]);
 
-  useEffect(() => {
-    setForm(
-      editTable
-        ? { tableId: editTable.tableNo || editTable.tableId, status: editTable.status, selectedTemplateId: null }
-        : { tableId: "", status: "active", selectedTemplateId: null }
-    );
-    setErrors({});
-  }, [editTable, isOpen]);
+  const liveEditTable = editTable
+    ? tables.find((t) => String(t.id || t._id) === String(editTable.id || editTable._id)) || editTable
+    : null;
 
-  const liveEditTable = editTable ? tables.find((t) => t.id === editTable.id) || editTable : null;
-  const currentQR = liveEditTable ? qrCodes.find((qr) => qr.id === liveEditTable.qrCodeId || qr._id === liveEditTable.qrCodeId) : null;
-  const currentTemplate = currentQR ? qrTemplates.find(t => t.id === currentQR.templateId || t._id === currentQR.templateId) : null;
-  
-  const activeTemplates = qrTemplates.filter((t) => t.status === "active");
+  // Resolve assigned QR object
+  const currentQR = useMemo(() => {
+    if (!liveEditTable || !liveEditTable.qrCodeId) return null;
+    const qrRef = liveEditTable.qrCodeId;
+    if (typeof qrRef === "object" && qrRef !== null) {
+      const refId = String(qrRef.id || qrRef._id || "");
+      const fromStore = qrCodes.find((q) => String(q.id || q._id) === refId);
+      return fromStore || qrRef;
+    }
+    const qrIdStr = String(qrRef);
+    return qrCodes.find((q) => String(q.id || q._id) === qrIdStr) || null;
+  }, [liveEditTable, qrCodes]);
+
+  // Determine current template ID ('plain', '<templateId>', or null if unassigned)
+  const initialTemplateId = useMemo(() => {
+    if (!currentQR) return null;
+    const rawTpl = currentQR.templateId;
+    if (!rawTpl || currentQR.type === "standard") return "plain";
+    if (typeof rawTpl === "object" && rawTpl !== null) {
+      return String(rawTpl.id || rawTpl._id || "plain");
+    }
+    return String(rawTpl);
+  }, [currentQR]);
+
+  // Find populated current template for display
+  const currentTemplate = useMemo(() => {
+    if (!currentQR || !currentQR.templateId || currentQR.type === "standard") return null;
+    const tId = typeof currentQR.templateId === "object"
+      ? String(currentQR.templateId.id || currentQR.templateId._id || "")
+      : String(currentQR.templateId);
+    return (
+      qrTemplates.find((t) => String(t.id || t._id) === tId) ||
+      (typeof currentQR.templateId === "object" ? currentQR.templateId : null)
+    );
+  }, [currentQR, qrTemplates]);
+
+  const activeTemplates = useMemo(() => {
+    return qrTemplates.filter((t) => {
+      if (t.status === "active") return true;
+      const tId = String(t.id || t._id);
+      return initialTemplateId && tId === String(initialTemplateId);
+    });
+  }, [qrTemplates, initialTemplateId]);
+
+  // Initialize form when drawer opens or editing table changes
+  useEffect(() => {
+    if (!isOpen) return;
+    if (editTable) {
+      setForm({
+        tableId: liveEditTable?.tableNo || liveEditTable?.tableId || editTable.tableNo || editTable.tableId || "",
+        status: liveEditTable?.status || editTable.status || "active",
+        selectedTemplateId: initialTemplateId,
+      });
+    } else {
+      setForm({
+        tableId: "",
+        status: "active",
+        selectedTemplateId: null,
+      });
+    }
+    setErrors({});
+  }, [isOpen, editTable?.id, initialTemplateId]);
 
   const validate = () => {
     const errs = {};
     const tableNo = form.tableId.trim();
     if (!tableNo) errs.tableId = "Table No. is required";
-    else if (tables.some((t) => (t.tableNo || t.tableId).trim().toLowerCase() === tableNo.toLowerCase() && t.id !== editTable?.id)) {
+    else if (
+      tables.some(
+        (t) =>
+          (t.tableNo || t.tableId).trim().toLowerCase() === tableNo.toLowerCase() &&
+          String(t.id || t._id) !== String(editTable?.id || editTable?._id)
+      )
+    ) {
       errs.tableId = "Table No. already exists";
     }
     setErrors(errs);
@@ -55,21 +109,48 @@ export default function TableForm({ isOpen, onClose, editTable }) {
     setIsSubmitting(true);
 
     try {
-      let finalQrCodeId = undefined; // undefined means backend will keep it as is (for edit) or null (for create)
-
-      // If they explicitly selected a template OR 'plain' to generate a new one
-      if (form.selectedTemplateId !== null) {
-        const templateIdParam = form.selectedTemplateId === 'plain' ? null : form.selectedTemplateId;
-        const qrs = await generateQRCodes(1, templateIdParam);
-        if (qrs && qrs.length > 0) {
-          finalQrCodeId = qrs[0].id;
-        }
-      }
-
       if (editTable) {
-        await updateTable(editTable.id, { tableNo, tableId: editTable.tableId, status: form.status, qrCodeId: finalQrCodeId });
+        const hasTemplateChanged = String(form.selectedTemplateId ?? "") !== String(initialTemplateId ?? "");
+
+        if (hasTemplateChanged) {
+          if (form.selectedTemplateId === null) {
+            // Remove / unassign QR code
+            await updateTable(editTable.id, {
+              tableNo,
+              tableId: editTable.tableId,
+              status: form.status,
+              qrCodeId: null,
+              templateId: null,
+            });
+          } else {
+            // Update to selected template or 'plain'
+            const tplParam = form.selectedTemplateId === "plain" ? null : form.selectedTemplateId;
+            await updateTable(editTable.id, {
+              tableNo,
+              tableId: editTable.tableId,
+              status: form.status,
+              templateId: tplParam,
+            });
+          }
+        } else {
+          // Template untouched — update table details only
+          await updateTable(editTable.id, {
+            tableNo,
+            tableId: editTable.tableId,
+            status: form.status,
+          });
+        }
         toast.success("Table updated successfully.");
       } else {
+        // Add new table
+        let finalQrCodeId = undefined;
+        if (form.selectedTemplateId !== null) {
+          const tplParam = form.selectedTemplateId === "plain" ? null : form.selectedTemplateId;
+          const qrs = await generateQRCodes(1, tplParam);
+          if (qrs && qrs.length > 0) {
+            finalQrCodeId = qrs[0].id;
+          }
+        }
         await addTable({ tableNo, status: form.status, qrCodeId: finalQrCodeId });
         toast.success("Table added successfully.");
       }
@@ -80,6 +161,10 @@ export default function TableForm({ isOpen, onClose, editTable }) {
       setIsSubmitting(false);
     }
   };
+
+  const selectedStr = form.selectedTemplateId
+    ? String(form.selectedTemplateId.id || form.selectedTemplateId._id || form.selectedTemplateId)
+    : null;
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title={editTable ? "Edit Table" : "Add Table"} size="sm">
@@ -98,11 +183,25 @@ export default function TableForm({ isOpen, onClose, editTable }) {
               <label className="text-sm font-medium text-theme block mb-2">Status</label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="status" checked={form.status === "active"} onChange={() => setForm({ ...form, status: "active" })} className="w-4 h-4" style={{ accentColor: "var(--color-primary)" }} />
+                  <input
+                    type="radio"
+                    name="status"
+                    checked={form.status === "active"}
+                    onChange={() => setForm({ ...form, status: "active" })}
+                    className="w-4 h-4"
+                    style={{ accentColor: "var(--color-primary)" }}
+                  />
                   <span className="text-sm text-theme">Active</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="status" checked={form.status === "inactive"} onChange={() => setForm({ ...form, status: "inactive" })} className="w-4 h-4" style={{ accentColor: "var(--color-primary)" }} />
+                  <input
+                    type="radio"
+                    name="status"
+                    checked={form.status === "inactive"}
+                    onChange={() => setForm({ ...form, status: "inactive" })}
+                    className="w-4 h-4"
+                    style={{ accentColor: "var(--color-primary)" }}
+                  />
                   <span className="text-sm text-theme">Inactive</span>
                 </label>
               </div>
@@ -113,22 +212,27 @@ export default function TableForm({ isOpen, onClose, editTable }) {
         <FormSection title="QR Assignment">
           <div className="mb-3">
             <p className="text-sm font-medium text-theme mb-2">
-              {currentQR ? "Change QR Template" : "Generate & Assign QR (Optional)"}
+              {editTable ? "QR Template" : "Generate & Assign QR (Optional)"}
             </p>
-            
+
             <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
-              {/* Keep/Skip option */}
+              {/* None / No QR option */}
               <button
                 type="button"
                 onClick={() => setForm({ ...form, selectedTemplateId: null })}
-                className={`border-2 rounded-lg p-2 text-center transition-all ${
-                  form.selectedTemplateId === null 
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20" 
+                className={`relative border-2 rounded-lg p-2 text-center transition-all cursor-pointer ${
+                  form.selectedTemplateId === null
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20 ring-2 ring-[var(--color-primary)]/20 shadow-sm"
                     : "border-theme hover:border-[var(--color-primary)]/50"
                 }`}
               >
-                <div className="w-full aspect-square bg-surface border border-theme border-dashed rounded mb-1 flex items-center justify-center text-[10px] text-secondary">
-                  {currentQR ? "Keep Current" : "Skip for now"}
+                {form.selectedTemplateId === null && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm z-10 pointer-events-none">
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
+                <div className="w-full aspect-square bg-surface border border-theme border-dashed rounded mb-1 flex items-center justify-center text-[11px] text-secondary font-medium">
+                  {editTable ? (currentQR ? "Remove QR" : "None") : "Skip"}
                 </div>
                 <p className="text-[10px] font-medium text-theme leading-tight">None</p>
               </button>
@@ -136,47 +240,90 @@ export default function TableForm({ isOpen, onClose, editTable }) {
               {/* Plain QR option */}
               <button
                 type="button"
-                onClick={() => setForm({ ...form, selectedTemplateId: 'plain' })}
-                className={`border-2 rounded-lg p-2 text-center transition-all ${
-                  form.selectedTemplateId === 'plain' 
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20" 
+                onClick={() => setForm({ ...form, selectedTemplateId: "plain" })}
+                className={`relative border-2 rounded-lg p-2 text-center transition-all cursor-pointer ${
+                  form.selectedTemplateId === "plain"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20 ring-2 ring-[var(--color-primary)]/20 shadow-sm"
                     : "border-theme hover:border-[var(--color-primary)]/50"
                 }`}
               >
-                <div className="w-full aspect-square bg-gray-100 rounded mb-1 flex items-center justify-center">
-                  <QrCode size={24} className="text-gray-400" />
+                {form.selectedTemplateId === "plain" && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm z-10 pointer-events-none">
+                    <Check size={10} strokeWidth={3} />
+                  </span>
+                )}
+                <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded mb-1 flex items-center justify-center border border-theme/30">
+                  <QrCode size={24} className="text-secondary" />
                 </div>
                 <p className="text-[10px] font-medium text-theme leading-tight">Plain QR</p>
               </button>
 
               {/* API Templates */}
-              {activeTemplates.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  onClick={() => setForm({ ...form, selectedTemplateId: tpl.id })}
-                  className={`border-2 rounded-lg p-2 text-center transition-all ${
-                    form.selectedTemplateId === tpl.id 
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20" 
-                      : "border-theme hover:border-[var(--color-primary)]/50"
-                  }`}
-                >
-                  <img src={getImageUrl(tpl.imagePath)} alt={tpl.name} className="w-full aspect-square object-cover rounded mb-1 bg-white" />
-                  <p className="text-[10px] font-medium text-theme leading-tight truncate" title={tpl.name}>{tpl.name}</p>
-                </button>
-              ))}
+              {activeTemplates.map((tpl) => {
+                const tplIdStr = String(tpl.id || tpl._id);
+                const isSelected = selectedStr === tplIdStr;
+                return (
+                  <button
+                    key={tpl.id || tpl._id}
+                    type="button"
+                    onClick={() => setForm({ ...form, selectedTemplateId: tpl.id || tpl._id })}
+                    className={`relative border-2 rounded-lg p-2 text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/20 ring-2 ring-[var(--color-primary)]/20 shadow-sm"
+                        : "border-theme hover:border-[var(--color-primary)]/50"
+                    }`}
+                  >
+                    {isSelected && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-[10px] font-bold shadow-sm z-10 pointer-events-none">
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                    )}
+                    <img
+                      src={getImageUrl(tpl.imagePath)}
+                      alt={tpl.name}
+                      className="w-full aspect-square object-cover rounded mb-1 bg-white border border-gray-100"
+                    />
+                    <p className="text-[10px] font-medium text-theme leading-tight truncate" title={tpl.name}>
+                      {tpl.name}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
 
-            {currentQR && (
-              <p className="text-xs text-secondary mt-3 p-2 bg-primary-light/20 rounded-md">
-                Currently assigned: <strong className="text-theme">{currentTemplate ? currentTemplate.name : (currentQR.type === 'standard' || !currentQR.templateId ? 'Plain QR' : currentQR.name)}</strong>
-              </p>
+            {editTable && (
+              <div className="mt-3 p-2.5 bg-surface border border-theme rounded-lg text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-secondary">Assigned QR:</span>
+                  <span className="font-semibold text-theme">
+                    {currentTemplate
+                      ? currentTemplate.name
+                      : (!currentQR || !currentQR.templateId || currentQR.type === "standard"
+                        ? (currentQR ? "Plain QR" : "None")
+                        : currentQR.name || "Assigned")}
+                  </span>
+                </div>
+                {form.selectedTemplateId !== initialTemplateId && (
+                  <div className="flex items-center justify-between pt-1.5 border-t border-theme/40 text-[var(--color-primary)]">
+                    <span className="font-medium">Change to:</span>
+                    <span className="font-semibold">
+                      {form.selectedTemplateId === null
+                        ? "Remove QR (None)"
+                        : form.selectedTemplateId === "plain"
+                        ? "Plain QR"
+                        : (qrTemplates.find((t) => String(t.id || t._id) === String(form.selectedTemplateId))?.name || "Selected Template")}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </FormSection>
 
         <div className="flex gap-3 pt-4 border-t border-theme">
-          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={isSubmitting}>
+            Cancel
+          </Button>
           <Button className="flex-1" onClick={handleSubmit} loading={isSubmitting}>
             {editTable ? "Save Changes" : "Add Table"}
           </Button>

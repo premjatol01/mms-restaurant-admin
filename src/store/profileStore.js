@@ -173,6 +173,22 @@ export const useProfileStore = create((set, get) => ({
         profile: { ...state.profile, coverImage },
         originalProfile: { ...state.originalProfile, coverImage },
       }));
+
+      // Keep websiteStore Hero section in sync
+      try {
+        const { useWebsiteStore } = await import("./websiteStore");
+        const wState = useWebsiteStore.getState();
+        if (wState?.sections) {
+          useWebsiteStore.setState({
+            sections: wState.sections.map((s) =>
+              s.id === "hero" ? { ...s, content: { ...s.content, imageUrl: coverImage } } : s
+            )
+          });
+        }
+      } catch {
+        // ignore if not initialized
+      }
+
       return { success: true };
     } catch (err) {
       return { success: false, message: err?.response?.data?.message || "Failed to upload cover image." };
@@ -186,6 +202,22 @@ export const useProfileStore = create((set, get) => ({
         profile: { ...state.profile, coverImage: null },
         originalProfile: { ...state.originalProfile, coverImage: null },
       }));
+
+      // Keep websiteStore Hero section in sync
+      try {
+        const { useWebsiteStore } = await import("./websiteStore");
+        const wState = useWebsiteStore.getState();
+        if (wState?.sections) {
+          useWebsiteStore.setState({
+            sections: wState.sections.map((s) =>
+              s.id === "hero" ? { ...s, content: { ...s.content, imageUrl: "" } } : s
+            )
+          });
+        }
+      } catch {
+        // ignore
+      }
+
       return { success: true };
     } catch (err) {
       return { success: false, message: err?.response?.data?.message || "Failed to remove cover image." };
@@ -240,7 +272,7 @@ export const useProfileStore = create((set, get) => ({
         id: cat._id,
         name: cat.name,
         description: cat.description || "",
-        image: null,
+        image: getImageUrl(cat.image) || null,
         source: "master",
         editable: false,
         items: itemsByCat[cat._id] || []
@@ -392,28 +424,37 @@ export const useProfileStore = create((set, get) => ({
   // ---------- Tables ----------
   tables: [], 
   tablesLoaded: false,
+  maxTables: 15,
+  planName: "Basic",
 
   fetchTables: async () => {
-    if (get().tablesLoaded) return;
     try {
       const { data } = await profileApi.getTables();
-      set({ tables: data.data || [], tablesLoaded: true });
+      set({ 
+        tables: data.data || [], 
+        maxTables: data.maxTables || 15,
+        planName: data.planName || "Basic",
+        tablesLoaded: true 
+      });
     } catch (error) {
       console.error("Failed to load tables", error);
       set({ tables: [], tablesLoaded: true });
     }
   },
 
-  createTables: async ({ count, assignQr, qrType }) => {
+  createTables: async ({ count, qrType }) => {
     try {
-      // In backend, qrType translates to templateId (if assigned).
-      const payload = { count, templateId: assignQr ? qrType : null };
+      // In backend, qrType translates to templateId (or null for normal plain QR).
+      const payload = { count, templateId: qrType === "normal" ? null : qrType };
       const { data } = await profileApi.createTables(payload);
       
-      const newTables = data.data || [];
-      // Replace existing code that appended manually, since backend returns created ones
-      // and we just append them to the current list
-      set((s) => ({ tables: [...s.tables, ...newTables].sort((a, b) => a.number - b.number) }));
+      // Re-fetch tables to sync fresh populated table and QR data
+      const res = await profileApi.getTables();
+      set({ 
+        tables: res.data?.data || [],
+        maxTables: res.data?.maxTables || get().maxTables,
+        planName: res.data?.planName || get().planName
+      });
       return { success: true, created: count };
     } catch (error) {
       console.error("Failed to create tables", error);

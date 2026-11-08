@@ -12,9 +12,11 @@ import {
   Star
 } from "lucide-react";
 import { useWebsiteStore } from "../../../store/websiteStore";
+import { useProfileStore } from "../../../store/profileStore";
 import { useMenuItems } from "../hooks/useMenuItems";
 import { normalizeField } from "../utils/validation";
 import { checkboxClass } from "./shared/fieldStyles";
+import { getImageUrl } from "../../../utils/getImageUrl";
 
 const SECTION_ICONS = {
   hero: LayoutTemplate,
@@ -31,10 +33,13 @@ const SECTION_ICONS = {
 const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 // A short status line under the section name, so admins can see what is configured at a glance.
-function getSectionMeta(section, popularCount) {
-  const c = section.content;
+function getSectionMeta(section, popularCount, profileCover) {
+  const c = section.content || {};
   switch (section.type) {
-    case "hero":
+    case "hero": {
+      const hasImage = Boolean(c.imageUrl || profileCover);
+      return hasImage ? "Cover image synced" : "No image yet";
+    }
     case "about":
       return c.imageUrl ? "Image added" : "No image yet";
     case "menu":
@@ -63,8 +68,11 @@ function getSectionMeta(section, popularCount) {
 
 export default function SectionCard({ section, onEdit }) {
   const toggleSection = useWebsiteStore((s) => s.toggleSection);
+  const profileCover = useProfileStore((s) => s.profile?.coverImage);
   const { items } = useMenuItems();
   const availableItems = useMemo(() => items.filter((i) => i.isAvailable), [items]);
+
+  const heroImage = section.type === "hero" ? (section.content?.imageUrl || profileCover) : null;
 
   const popularCount = useMemo(() => {
     if (section.content?.popularItemIds && Array.isArray(section.content.popularItemIds) && section.content.popularItemIds.length > 0) {
@@ -74,14 +82,22 @@ export default function SectionCard({ section, onEdit }) {
   }, [section.content?.popularItemIds, availableItems]);
 
   const Icon = SECTION_ICONS[section.type] ?? Info;
-  const meta = getSectionMeta(section, popularCount);
+  const meta = getSectionMeta(section, popularCount, profileCover);
 
   return (
     <div className={`border border-theme rounded-lg p-4 bg-surface ${section.enabled ? "" : "opacity-60"}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2 rounded-lg bg-primary-soft text-primary shrink-0">
-            <Icon size={18} />
+          <div className="w-9 h-9 rounded-lg bg-primary-soft text-primary shrink-0 flex items-center justify-center overflow-hidden border border-theme">
+            {heroImage ? (
+              <img
+                src={getImageUrl(heroImage)}
+                alt="Hero thumbnail"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Icon size={18} />
+            )}
           </div>
           <div className="min-w-0">
             <h3 className="font-medium text-theme">{section.title}</h3>

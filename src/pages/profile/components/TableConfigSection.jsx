@@ -1,35 +1,21 @@
-import { useEffect, useState } from "react";
-import { Copy, ExternalLink, Lock, Plus, QrCode } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { QrCode, Plus, Check, AlertCircle, Sparkles, ExternalLink, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import { useProfileStore } from "../../../store/profileStore";
 import Button from "../../../components/ui/Button";
 import FormSection from "../../../components/ui/FormSection";
 import Input from "../../../components/ui/Input";
 import ConfirmModal from "../modals/ConfirmModal";
 
-const MAX_PER_BATCH = 100;
-
-const FILTERS = [
-  { id: "all", label: "All" },
-  { id: "assigned", label: "With QR" },
-  { id: "unassigned", label: "Without QR" },
-];
-
-function Stat({ label, value }) {
-  return (
-    <div className="rounded-lg border border-theme bg-theme px-4 py-3">
-      <p className="text-xs text-secondary">{label}</p>
-      <p className="text-xl font-bold text-theme">{value}</p>
-    </div>
-  );
-}
-
 function SkeletonLoader() {
   return (
-    <div className="animate-pulse bg-surface rounded-xl border border-theme p-6 space-y-3">
+    <div className="animate-pulse bg-surface rounded-xl border border-theme p-6 space-y-4">
       <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />)}
+      <div className="grid grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-28 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+        ))}
       </div>
     </div>
   );
@@ -37,250 +23,272 @@ function SkeletonLoader() {
 
 export default function TableConfigSection() {
   const { 
-    tables, tablesLoaded, fetchTables, createTables, assignTableQr, assignAllTableQr,
-    qrTemplates, templatesLoaded, fetchQrTemplates 
+    tables, 
+    tablesLoaded, 
+    fetchTables, 
+    createTables, 
+    qrTemplates, 
+    fetchQrTemplates,
+    maxTables = 15,
+    planName = "Basic"
   } = useProfileStore();
 
   const [saving, setSaving] = useState(false);
   const [count, setCount] = useState("");
-  const [assignNow, setAssignNow] = useState(true);
-  const [qrType, setQrType] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [confirm, setConfirm] = useState(null); // { type: "create", count } | { type: "assignAll" }
-  const [assigningId, setAssigningId] = useState(null);
+  const [qrType, setQrType] = useState("normal"); // "normal" or templateId
+  const [confirmModal, setConfirmModal] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
   useEffect(() => { 
     fetchTables(); 
     fetchQrTemplates();
   }, [fetchTables, fetchQrTemplates]);
 
-  // Set default qrType when templates load if not set
+  // Set default qrType: prefer first available template if any, else "normal"
   useEffect(() => {
-    if (qrTemplates.length > 0 && !qrType) {
+    if (qrTemplates.length > 0 && qrType === "normal") {
       setQrType(qrTemplates[0]._id);
     }
-  }, [qrTemplates, qrType]);
+  }, [qrTemplates]);
 
-  const hasTables = tables.length > 0;
-  const withQr = tables.filter((t) => t.qrCode);
-  const withoutQr = tables.filter((t) => !t.qrCode);
-  const nextNumber = tables.reduce((max, t) => Math.max(max, t.number), 0) + 1;
+  const currentCount = tables.length;
+  const remainingAllowed = Math.max(0, maxTables - currentCount);
+  const nextNumber = tables.reduce((max, t) => {
+    const n = parseInt((t.tableNo || t.tableId || "").replace(/\D/g, ""), 10);
+    return !isNaN(n) ? Math.max(max, n) : max;
+  }, 0) + 1;
 
   const parsed = Number(count);
-  const countValid = Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_PER_BATCH;
-  const countError = count !== "" && !countValid ? `Enter a whole number from 1 to ${MAX_PER_BATCH}.` : undefined;
+  const countValid = Number.isInteger(parsed) && parsed >= 1 && parsed <= remainingAllowed;
 
-  const visibleTables = tables.filter((t) =>
-    filter === "assigned" ? t.qrCode : filter === "unassigned" ? !t.qrCode : true
-  );
-
-  const handleConfirm = async () => {
-    setSaving(true);
-    if (confirm.type === "create") {
-      const result = await createTables({ count: confirm.count, assignQr: assignNow, qrType });
-      if (result.success) {
-        toast.success(`${result.created} ${result.created === 1 ? "table" : "tables"} added.`);
-        setCount("");
-      } else {
-        toast.error(result.message);
-      }
-    } else {
-      const result = await assignAllTableQr(qrType);
-      if (result.success) toast.success(`QR codes assigned to ${result.assigned} ${result.assigned === 1 ? "table" : "tables"}.`);
-      else toast.error(result.message);
+  let countError = undefined;
+  if (count !== "") {
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      countError = "Please enter a whole number of at least 1.";
+    } else if (parsed > remainingAllowed) {
+      countError = `You can only add up to ${remainingAllowed} more tables on your ${planName} plan.`;
     }
+  }
+
+  // Selected QR type display name
+  const selectedQrLabel = useMemo(() => {
+    if (qrType === "normal") return "Normal Plain QR";
+    const found = qrTemplates.find(t => t._id === qrType);
+    return found ? `${found.name} Template` : "Normal Plain QR";
+  }, [qrType, qrTemplates]);
+
+  const handleCreate = async () => {
+    setSaving(true);
+    const result = await createTables({ count: parsed, qrType });
     setSaving(false);
-    setConfirm(null);
-  };
+    setConfirmModal(false);
 
-  const handleAssignOne = async (table) => {
-    setAssigningId(table.id);
-    const result = await assignTableQr(table.id, qrType);
-    setAssigningId(null);
-    if (result.success) toast.success(`QR code assigned to ${table.tableId}.`);
-    else toast.error(result.message);
-  };
-
-  const copyLink = (url) => {
-    navigator.clipboard.writeText(url);
-    toast.success("QR link copied to clipboard.");
+    if (result.success) {
+      toast.success(`${result.created} ${result.created === 1 ? "table" : "tables"} created with ${selectedQrLabel}!`);
+      setCount("");
+    } else {
+      toast.error(result.message || "Failed to create tables.");
+    }
   };
 
   if (!tablesLoaded) return <SkeletonLoader />;
 
   return (
-    <div className="space-y-5">
-      {hasTables && (
-        <FormSection title="Table Overview" description="Each table has its own QR code that customers scan to order.">
-          <div className="grid grid-cols-3 gap-3">
-            <Stat label="Total tables" value={tables.length} />
-            <Stat label="With QR code" value={withQr.length} />
-            <Stat label="Without QR code" value={withoutQr.length} />
-          </div>
-        </FormSection>
-      )}
+    <div className="space-y-6">
 
-      <FormSection title="Default QR Template" description="Select the default QR code design that will be assigned to your tables.">
-        {qrTemplates.length === 0 ? (
-          <p className="text-sm text-secondary py-4">No templates available.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {qrTemplates.map((tpl) => (
+      {/* ── Table & Subscription Summary ── */}
+      <div className="bg-surface rounded-xl border border-theme p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-theme text-base">Table & QR Configuration</h3>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-light/40 text-primary border border-primary/20">
+                <ShieldCheck size={13} /> {planName} Plan
+              </span>
+            </div>
+            <p className="text-xs text-secondary">
+              Set your default QR code style and configure tables within your subscription limit.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-theme px-4 py-2.5 rounded-lg border border-theme shrink-0">
+            <div>
+              <p className="text-[11px] text-secondary font-medium">Configured</p>
+              <p className="text-lg font-bold text-theme">{currentCount} <span className="text-xs font-normal text-secondary">/ {maxTables}</span></p>
+            </div>
+            <div className="h-8 w-px bg-theme" />
+            <div>
+              <p className="text-[11px] text-secondary font-medium">Available</p>
+              <p className={`text-lg font-bold ${remainingAllowed > 0 ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+                {remainingAllowed}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-4">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                currentCount >= maxTables ? "bg-red-500" : "bg-primary"
+              }`}
+              style={{ width: `${Math.min(100, (currentCount / maxTables) * 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between items-center text-[11px] text-secondary mt-1.5">
+            <span>{currentCount} tables active</span>
+            <span>Max {maxTables} tables allowed</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 1. Select Default QR Template / Style (Small Size) ── */}
+      <FormSection 
+        title="1. Select Default QR Code Style" 
+        description="Choose a custom branded QR standee template or a classic plain QR code for all your tables."
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          
+          {/* Normal QR Option Card */}
+          <button
+            type="button"
+            onClick={() => setQrType("normal")}
+            className={`relative rounded-xl p-2.5 text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-between ${
+              qrType === "normal"
+                ? "border-primary bg-primary-light/15 shadow-sm ring-2 ring-primary/20"
+                : "border-theme bg-surface hover:border-primary/50"
+            }`}
+          >
+            {qrType === "normal" && (
+              <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shadow">
+                <Check size={12} strokeWidth={3} />
+              </span>
+            )}
+            <div className="w-full h-24 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center p-2 mb-2 border border-theme">
+              <QrCode size={38} className="text-theme" />
+              <span className="text-[10px] text-secondary mt-1 font-medium">Standard</span>
+            </div>
+            <div className="w-full">
+              <p className="text-xs font-semibold text-theme truncate">Normal QR</p>
+              <p className="text-[10px] text-secondary">Classic Plain</p>
+            </div>
+          </button>
+
+          {/* QR Templates (Shown in compact small size) */}
+          {qrTemplates.map((tpl) => {
+            const isSelected = qrType === tpl._id;
+            return (
               <button
                 key={tpl._id}
                 type="button"
                 onClick={() => setQrType(tpl._id)}
-                className={`border-2 rounded-lg p-3 text-left transition-all ${
-                  qrType === tpl._id ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/10" : "border-theme hover:border-[var(--color-primary)]/50"
+                className={`relative rounded-xl p-2.5 text-center transition-all cursor-pointer border-2 flex flex-col items-center justify-between ${
+                  isSelected
+                    ? "border-primary bg-primary-light/15 shadow-sm ring-2 ring-primary/20"
+                    : "border-theme bg-surface hover:border-primary/50"
                 }`}
               >
-                <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded mb-2 overflow-hidden flex items-center justify-center">
+                {isSelected && (
+                  <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center shadow z-10">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                )}
+                
+                {/* Small thumbnail */}
+                <div className="w-full h-24 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden mb-2 border border-theme p-1">
                   {tpl.imagePath ? (
-                    <img src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${tpl.imagePath}`} alt={tpl.name} className="w-full h-full object-contain" />
+                    <img 
+                      src={`${API_BASE}${tpl.imagePath}`} 
+                      alt={tpl.name} 
+                      className="max-h-full max-w-full object-contain rounded select-none"
+                    />
                   ) : (
-                    <QrCode className="text-gray-400" size={32} />
+                    <QrCode size={32} className="text-secondary opacity-40" />
                   )}
                 </div>
-                <p className="text-sm font-medium text-theme">{tpl.name}</p>
+
+                <div className="w-full">
+                  <p className="text-xs font-semibold text-theme truncate" title={tpl.name}>
+                    {tpl.name}
+                  </p>
+                  <p className="text-[10px] text-primary font-medium">Branded Template</p>
+                </div>
               </button>
-            ))}
+            );
+          })}
+        </div>
+      </FormSection>
+
+      {/* ── 2. Add Table Numbers & Auto-Generate ── */}
+      <FormSection
+        title="2. Add Tables"
+        description={remainingAllowed > 0
+          ? `Enter how many tables to add. They will automatically be assigned your chosen QR style (${selectedQrLabel}) starting from Table ${nextNumber}.`
+          : `You have reached the maximum of ${maxTables} tables allowed on your current plan.`}
+      >
+        {remainingAllowed <= 0 ? (
+          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 text-sm flex items-start gap-3">
+            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Subscription Limit Reached ({maxTables} tables)</p>
+              <p className="text-xs mt-0.5 text-amber-700 dark:text-amber-300">
+                Your restaurant has configured all {maxTables} tables allowed on the {planName} plan. Upgrade your plan in the Subscription tab to add more tables.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="max-w-xs">
+              <Input
+                label="Number of tables to add"
+                type="number"
+                min="1"
+                max={remainingAllowed}
+                value={count}
+                onChange={(e) => setCount(e.target.value)}
+                error={countError}
+                placeholder={`e.g. ${Math.min(5, remainingAllowed)}`}
+              />
+              <p className="text-[11px] text-secondary mt-1">
+                You can add up to <strong className="text-theme">{remainingAllowed}</strong> more tables.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <Button 
+                type="button" 
+                disabled={!countValid || remainingAllowed <= 0} 
+                onClick={() => setConfirmModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus size={15} /> Add Tables with Default QR
+              </Button>
+
+              {currentCount > 0 && (
+                <Link
+                  to="/tables"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline px-3 py-2 rounded-lg hover:bg-primary-light/20 transition-colors"
+                >
+                  <ExternalLink size={13} />
+                  View & Download QR Codes ({currentCount})
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </FormSection>
 
-      <FormSection
-        title={hasTables ? "Add More Tables" : "Set Up Tables"}
-        description={hasTables
-          ? `New tables are numbered from Table ${nextNumber}.`
-          : "Enter how many tables your restaurant has. You can add more later."}
-      >
-        <div className="space-y-4">
-          <div className="max-w-xs">
-            <Input
-              label={hasTables ? "Number of tables to add" : "Number of tables"}
-              type="number"
-              min="1"
-              max={MAX_PER_BATCH}
-              value={count}
-              onChange={(e) => setCount(e.target.value)}
-              error={countError}
-              placeholder="e.g. 12"
-            />
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer w-fit">
-            <input
-              type="checkbox"
-              checked={assignNow}
-              onChange={(e) => setAssignNow(e.target.checked)}
-              className="w-4 h-4 accent-[var(--color-primary)]"
-            />
-            <span className="text-sm text-theme">Assign QR codes to the new tables now</span>
-          </label>
-
-          {hasTables && (
-            <div className="flex items-start gap-2 text-xs text-secondary mt-3">
-              <Lock size={13} className="mt-0.5 flex-shrink-0" />
-              <p>Adding tables never changes your existing tables or their QR codes.</p>
-            </div>
-          )}
-
-          <div>
-            <Button type="button" disabled={!countValid} onClick={() => setConfirm({ type: "create", count: parsed })}>
-              <Plus size={14} /> {hasTables ? "Add Tables" : "Create Tables"}
-            </Button>
-          </div>
-        </div>
-      </FormSection>
-
-      {hasTables && (
-        <FormSection title="Tables & QR Codes" description="A QR code stays with its table once it's assigned.">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div className="inline-flex rounded-lg border border-theme overflow-hidden w-fit">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilter(f.id)}
-                  aria-pressed={filter === f.id}
-                  className={`px-3 py-1.5 text-xs transition-colors border-r border-theme last:border-0 ${filter === f.id ? "bg-primary text-white font-medium" : "text-theme hover:bg-theme"}`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            {withoutQr.length > 0 && (
-              <Button type="button" variant="secondary" size="sm" onClick={() => setConfirm({ type: "assignAll" })}>
-                <QrCode size={14} /> Assign QR to {withoutQr.length} {withoutQr.length === 1 ? "table" : "tables"}
-              </Button>
-            )}
-          </div>
-
-          {visibleTables.length === 0 ? (
-            <p className="text-sm text-secondary text-center py-8">No tables match this filter.</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-              {visibleTables.map((table) => (
-                <div key={table.id} className="rounded-lg border border-theme bg-theme p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-theme">{table.tableId}</span>
-                    {table.qrCode && (
-                      <span title="QR code is locked to this table" className="text-secondary">
-                        <Lock size={13} />
-                      </span>
-                    )}
-                  </div>
-
-                  {table.qrCode ? (
-                    <div className="flex items-center gap-1.5">
-                      <QrCode size={14} className="text-green-600 flex-shrink-0" />
-                      <span className="text-xs text-secondary truncate flex-1">
-                        {table.qrCode.name || "QR"}
-                        <span className="ml-1.5 text-[10px] uppercase font-semibold text-primary bg-primary-light px-1.5 py-0.5 rounded">
-                          Template
-                        </span>
-                      </span>
-                      {table.qrCode.imageUrl && (
-                        <>
-                          <a href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${table.qrCode.imageUrl}`} download title="Download QR image" aria-label={`Download QR image for ${table.number}`} className="text-secondary hover:text-theme transition-colors">
-                            <Copy size={14} />
-                          </a>
-                          <a href={table.qrCode.scanUrl} target="_blank" rel="noopener noreferrer" title="Open QR link" aria-label={`Open QR link for ${table.number}`} className="text-secondary hover:text-theme transition-colors">
-                            <ExternalLink size={14} />
-                          </a>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <Button type="button" variant="secondary" size="sm" loading={assigningId === table.id} onClick={() => handleAssignOne(table)}>
-                      <QrCode size={14} /> Assign QR
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </FormSection>
-      )}
-
-      {confirm?.type === "create" && (
+      {/* Confirmation Modal */}
+      {confirmModal && (
         <ConfirmModal
-          title={hasTables ? "Add tables?" : "Create tables?"}
-          message={`This adds ${confirm.count} ${confirm.count === 1 ? "table" : "tables"}${hasTables ? ` (Table ${nextNumber} onwards)` : ""}${assignNow ? " and assigns a QR code to each" : ""}. Existing tables and QR codes stay as they are.`}
-          confirmLabel={hasTables ? "Add Tables" : "Create Tables"}
+          title={`Add ${parsed} Tables?`}
+          message={`This will add ${parsed} ${parsed === 1 ? "table" : "tables"} (numbered Table ${nextNumber} to Table ${nextNumber + parsed - 1}). Each table will automatically be generated with your selected ${selectedQrLabel}.`}
+          confirmLabel={`Add ${parsed} Tables`}
           loading={saving}
-          onConfirm={handleConfirm}
-          onCancel={() => setConfirm(null)}
-        />
-      )}
-      {confirm?.type === "assignAll" && (
-        <ConfirmModal
-          title="Assign QR codes?"
-          message={`This assigns a QR code to ${withoutQr.length} ${withoutQr.length === 1 ? "table" : "tables"} that don't have one. Tables that already have a QR code are not changed.`}
-          confirmLabel="Assign QR Codes"
-          loading={saving}
-          onConfirm={handleConfirm}
-          onCancel={() => setConfirm(null)}
+          onConfirm={handleCreate}
+          onCancel={() => setConfirmModal(false)}
         />
       )}
     </div>

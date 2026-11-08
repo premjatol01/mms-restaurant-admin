@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useProfileStore } from "../../../../store/profileStore";
 import Input from "../../../../components/ui/Input";
 import Textarea from "../../../../components/ui/Textarea";
 import EditorShell from "../shared/EditorShell";
@@ -7,8 +8,21 @@ import FieldError from "../shared/FieldError";
 import { validateHero } from "../../utils/validation";
 
 export default function HeroEditor({ section, onSave, onCancel }) {
-  const [content, setContent] = useState(section.content);
+  const profileCover = useProfileStore((s) => s.profile?.coverImage);
+  const initialImageUrl = section.content?.imageUrl || profileCover || "";
+
+  const [content, setContent] = useState({
+    ...section.content,
+    imageUrl: initialImageUrl
+  });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    // If the section didn't have an image, but profile has a cover image, populate it
+    if (!content.imageUrl && profileCover) {
+      setContent((c) => ({ ...c, imageUrl: profileCover }));
+    }
+  }, [profileCover]);
 
   const setField = (key) => (e) => setContent((c) => ({ ...c, [key]: e.target.value }));
 
@@ -21,7 +35,7 @@ export default function HeroEditor({ section, onSave, onCancel }) {
   return (
     <EditorShell
       title="Hero Section"
-      description="The first thing visitors see on your website"
+      description="The main header banner visitors see when they open your restaurant website"
       onBack={onCancel}
       onSave={handleSave}
     >
@@ -50,13 +64,15 @@ export default function HeroEditor({ section, onSave, onCancel }) {
         />
         <FieldError message={errors.buttonText} />
       </div>
-      <ImageUpload
-        label="Hero image"
-        value={content.imageUrl}
-        onChange={(url) => setContent((c) => ({ ...c, imageUrl: url }))}
-        hint="Recommended 1920 x 1080 px. JPG, PNG or WebP, up to 5 MB"
-        aspectClass="aspect-video"
-      />
+      <div>
+        <ImageUpload
+          label="Hero image / Cover banner"
+          value={content.imageUrl}
+          onChange={(url) => setContent((c) => ({ ...c, imageUrl: url }))}
+          hint="Synced with your restaurant profile Cover / Banner image. Updating here or in Profile keeps both in sync. Recommended: 1200×400px (3:1) or 1920×1080px (max 5 MB)."
+          aspectClass="aspect-video"
+        />
+      </div>
     </EditorShell>
   );
 }

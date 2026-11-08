@@ -27,10 +27,23 @@ export const useWebsiteStore = create((set, get) => ({
   loadProfile: async () => {
     set({ loading: true });
     try {
+      // Ensure profile is loaded so coverImage is present if not already fetched
+      if (!useProfileStore.getState().profile) {
+        useProfileStore.getState().fetchProfile().catch(() => {});
+      }
       const res = await websiteApi.getConfig();
       const payload = res.data?.data;
       if (payload) {
         const { config, sections } = payload;
+        const profileCover = useProfileStore.getState().profile?.coverImage;
+        const rawSections = sections && sections.length > 0 ? sections : [...defaultSections];
+        const normalizedSections = rawSections.map((s) => {
+          if (s.id === "hero" && !s.content?.imageUrl && profileCover) {
+            return { ...s, content: { ...s.content, imageUrl: profileCover } };
+          }
+          return s;
+        });
+
         set({
           websiteStatus: config?.websiteStatus || "draft",
           restaurantName: config?.restaurantName || "",
@@ -47,7 +60,7 @@ export const useWebsiteStore = create((set, get) => ({
           websiteColors: config?.websiteColors
             ? { ...DEFAULT_WEBSITE_COLORS, ...config.websiteColors }
             : { ...DEFAULT_WEBSITE_COLORS },
-          sections: sections && sections.length > 0 ? sections : [...defaultSections],
+          sections: normalizedSections,
         });
       }
     } catch (err) {
@@ -116,6 +129,15 @@ export const useWebsiteStore = create((set, get) => ({
           : s
       ),
     }));
+
+    // Keep profile cover image in sync if Hero image was modified
+    if (sectionId === "hero" && content && content.imageUrl !== undefined) {
+      const newCover = content.imageUrl || null;
+      useProfileStore.setState((state) => ({
+        profile: state.profile ? { ...state.profile, coverImage: newCover } : state.profile,
+        originalProfile: state.originalProfile ? { ...state.originalProfile, coverImage: newCover } : state.originalProfile,
+      }));
+    }
 
     try {
       const payload = { content };
