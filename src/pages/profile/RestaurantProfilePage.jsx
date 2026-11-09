@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Star, Store,
+  Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Store,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
@@ -11,7 +11,6 @@ import AddressForm from "./components/AddressForm";
 import BusinessHoursForm from "./components/BusinessHoursForm";
 import MenuMasterSection from "./components/MenuMasterSection";
 import TableConfigSection from "./components/TableConfigSection";
-import GoogleReviewForm from "./components/GoogleReviewForm";
 import SubscriptionSection from "./components/SubscriptionSection";
 import RestaurantSettingsForm from "./components/RestaurantSettingsForm";
 
@@ -26,7 +25,6 @@ const TABS = [
   { id: "hours", label: "Business Hours", icon: Clock },
   { id: "menu", label: "Menu Master", icon: LayoutGrid },
   { id: "tables", label: "Table Configuration", icon: Armchair },
-  { id: "review", label: "Google Review", icon: Star },
   { id: "subscription", label: "Subscription", icon: CreditCard },
   { id: "settings", label: "Settings", icon: Settings },
 ];
@@ -138,7 +136,6 @@ export default function RestaurantProfilePage() {
           {activeTab === "hours" && <BusinessHoursForm />}
           {activeTab === "menu" && <MenuMasterSection />}
           {activeTab === "tables" && <TableConfigSection />}
-          {activeTab === "review" && <GoogleReviewForm />}
           {activeTab === "subscription" && <SubscriptionSection />}
           {activeTab === "settings" && <RestaurantSettingsForm />}
         </div>

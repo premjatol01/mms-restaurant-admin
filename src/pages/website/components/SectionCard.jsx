@@ -23,6 +23,7 @@ const SECTION_ICONS = {
   about: Info,
   menu: UtensilsCrossed,
   offers: Tag,
+  googleReview: Star,
   gallery: Images,
   reviews: Star,
   map: MapPin,
@@ -44,6 +45,10 @@ function getSectionMeta(section, popularCount, profileCover) {
       return c.imageUrl ? "Image added" : "No image yet";
     case "menu":
       return `${plural(popularCount, "popular dish", "popular dishes")} from Menu`;
+    case "offers":
+      return "Current offers & promotions";
+    case "googleReview":
+      return c.googleReviewLink ? "Google review link configured" : "Google review link not set";
     case "gallery":
       return plural(c.images?.length ?? 0, "image", "images");
     case "reviews":

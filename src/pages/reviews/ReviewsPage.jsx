@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, Clock, Eye, MessageSquare, RotateCcw, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Eye, Filter, MessageSquare, RotateCcw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useReviewsStore } from "../../store/reviewsStore";
 import Button from "../../components/ui/Button";
 import EmptyState from "../../components/ui/EmptyState";
-import ReviewFilters from "./components/ReviewFilters";
+import ReviewFilterDrawer from "./components/ReviewFilterDrawer";
 import ReviewList from "./components/ReviewList";
 import Pagination from "../../components/ui/Pagination";
 import ReviewActionModal from "./modals/ReviewActionModal";
@@ -80,10 +80,16 @@ export default function ReviewsPage() {
 
   const [confirm, setConfirm] = useState(null); // { review, action }
   const [submitting, setSubmitting] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
   const hasFilters = Object.values(filters).some(Boolean);
+  const activeFiltersCount = [
+    filters.status,
+    filters.rating,
+    filters.datePreset || (filters.dateFrom || filters.dateTo),
+  ].filter(Boolean).length;
 
   const handleConfirm = async () => {
     setSubmitting(true);
@@ -139,11 +145,26 @@ export default function ReviewsPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-7rem)]">
-      <div className="flex-none mb-3 flex items-start gap-2 px-4 py-2.5 bg-surface border border-theme rounded-lg text-sm text-secondary">
-        <Eye size={16} className="mt-0.5 flex-shrink-0" />
-        <p>
-          Accepted reviews appear on your restaurant website and the customer ordering page. Rejected reviews stay hidden.
-        </p>
+      {/* Top Header Row: Info Line & Filter Button */}
+      <div className="flex-none mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-surface border border-theme rounded-lg text-sm text-secondary flex-1">
+          <Eye size={16} className="flex-shrink-0 text-primary" />
+          <p>
+            Accepted reviews appear on your restaurant website and the customer ordering page. Rejected reviews stay hidden.
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => setShowFilters(true)}
+          className="shrink-0 flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+        >
+          <Filter size={16} /> Filters
+          {activeFiltersCount > 0 && (
+            <span className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+              {activeFiltersCount}
+            </span>
+          )}
+        </Button>
       </div>
 
       {!loaded && !error ? (
@@ -151,14 +172,34 @@ export default function ReviewsPage() {
       ) : (
         <div className="flex-1 min-h-0 flex flex-col">
           {loaded && <div className="flex-none mb-3"><SummaryCards stats={stats} /></div>}
-          {(loaded && (stats.total > 0 || hasFilters)) && (
-            <div className="flex-none mb-3"><ReviewFilters filters={filters} onChange={setFilters} onClear={clearFilters} /></div>
+          {hasFilters && (
+            <div className="flex-none mb-3 flex items-center justify-between px-1">
+              <span className="text-xs text-secondary">
+                Filtered: {total} {total === 1 ? "review" : "reviews"} found
+              </span>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs text-primary hover:underline cursor-pointer font-medium"
+              >
+                Clear filters
+              </button>
+            </div>
           )}
           <div className={`flex-1 min-h-0 flex flex-col ${loading ? "opacity-60 pointer-events-none transition-opacity" : "transition-opacity"}`} aria-busy={loading}>
             {renderContent()}
           </div>
         </div>
       )}
+
+      {/* Filter Sidebar Drawer */}
+      <ReviewFilterDrawer
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onApply={(newFilters) => setFilters(newFilters)}
+        onReset={clearFilters}
+      />
 
       {confirm && (
         <ReviewActionModal

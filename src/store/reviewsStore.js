@@ -3,7 +3,7 @@ import { reviewsApi } from "../api/reviews.api";
 
 export const PAGE_SIZE = 10;
 
-const EMPTY_FILTERS = { status: "", rating: "", dateFrom: "", dateTo: "" };
+const EMPTY_FILTERS = { status: "", rating: "", datePreset: "", dateFrom: "", dateTo: "" };
 
 let requestSeq = 0; // ignore responses that arrive after a newer request was made
 
@@ -24,7 +24,8 @@ export const useReviewsStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { filters, page, pageSize } = get();
-      const res = await reviewsApi.list({ ...filters, page, pageSize });
+      const tzOffset = new Date().getTimezoneOffset();
+      const res = await reviewsApi.list({ ...filters, tzOffset, page, pageSize });
       if (seq !== requestSeq) return;
 
       const {

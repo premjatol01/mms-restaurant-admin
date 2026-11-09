@@ -36,10 +36,31 @@ export const useWebsiteStore = create((set, get) => ({
       if (payload) {
         const { config, sections } = payload;
         const profileCover = useProfileStore.getState().profile?.coverImage;
-        const rawSections = sections && sections.length > 0 ? sections : [...defaultSections];
+        const profileReviewLink = useProfileStore.getState().profile?.googleReviewLink || "";
+        let rawSections = sections && sections.length > 0 ? sections : [...defaultSections];
+        const hasGoogleReview = rawSections.some((s) => s.id === "googleReview" || s.type === "googleReview");
+        if (!hasGoogleReview) {
+          const defaultGoogleReview = defaultSections.find((s) => s.id === "googleReview");
+          if (defaultGoogleReview) {
+            rawSections = [
+              ...rawSections,
+              {
+                ...defaultGoogleReview,
+                content: {
+                  ...defaultGoogleReview.content,
+                  googleReviewLink: profileReviewLink || defaultGoogleReview.content.googleReviewLink || ""
+                }
+              }
+            ];
+            rawSections.sort((a, b) => a.order - b.order);
+          }
+        }
         const normalizedSections = rawSections.map((s) => {
           if (s.id === "hero" && !s.content?.imageUrl && profileCover) {
             return { ...s, content: { ...s.content, imageUrl: profileCover } };
+          }
+          if (s.id === "googleReview" && !s.content?.googleReviewLink && profileReviewLink) {
+            return { ...s, content: { ...s.content, googleReviewLink: profileReviewLink } };
           }
           return s;
         });
@@ -136,6 +157,15 @@ export const useWebsiteStore = create((set, get) => ({
       useProfileStore.setState((state) => ({
         profile: state.profile ? { ...state.profile, coverImage: newCover } : state.profile,
         originalProfile: state.originalProfile ? { ...state.originalProfile, coverImage: newCover } : state.originalProfile,
+      }));
+    }
+
+    // Keep profile googleReviewLink in sync if Google Review section was modified
+    if (sectionId === "googleReview" && content && content.googleReviewLink !== undefined) {
+      const newLink = content.googleReviewLink || "";
+      useProfileStore.setState((state) => ({
+        profile: state.profile ? { ...state.profile, googleReviewLink: newLink } : state.profile,
+        originalProfile: state.originalProfile ? { ...state.originalProfile, googleReviewLink: newLink } : state.originalProfile,
       }));
     }
 

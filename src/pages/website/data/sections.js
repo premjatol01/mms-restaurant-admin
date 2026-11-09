@@ -62,12 +62,26 @@ export const defaultSections = [
     }
   },
   {
+    id: "googleReview",
+    type: "googleReview",
+    title: "Google Review",
+    description: "Invite guests to leave a Google review with a banner",
+    enabled: true,
+    order: 5,
+    content: {
+      heading: "Loved your experience with us?",
+      description: "Help us grow and let others know about your dining experience by leaving a 5-star review on Google.",
+      buttonText: "Review Us on Google",
+      googleReviewLink: ""
+    }
+  },
+  {
     id: "gallery",
     type: "gallery",
     title: "Gallery",
     description: "Photos of your food and restaurant",
     enabled: true,
-    order: 5,
+    order: 6,
     content: {
       title: "Gallery",
       description: "A glimpse of our food and ambience",
@@ -80,7 +94,7 @@ export const defaultSections = [
     title: "Customer Reviews",
     description: "Customer reviews and feedback ratings",
     enabled: true,
-    order: 6,
+    order: 7,
     content: {
       title: "Customer Reviews",
       description: "What our guests say about their dining experience"
@@ -92,7 +106,7 @@ export const defaultSections = [
     title: "Map & Location",
     description: "Google Maps and restaurant address",
     enabled: true,
-    order: 7,
+    order: 8,
     content: {
       title: "Find Us",
       description: "Visit us for lunch or dinner. We would love to see you.",
@@ -117,7 +131,7 @@ export const defaultSections = [
     title: "Contact / Inquiry",
     description: "Customer inquiry form",
     enabled: true,
-    order: 8,
+    order: 9,
     content: {
       title: "Contact Us",
       description: "Have a question? Send us an inquiry.",
@@ -137,7 +151,7 @@ export const defaultSections = [
     title: "Footer",
     description: "Footer info, section links, and social media",
     enabled: true,
-    order: 9,
+    order: 10,
     content: {
       title: "Tasty Bites",
       subtitle: "Authentic Indian Flavors",

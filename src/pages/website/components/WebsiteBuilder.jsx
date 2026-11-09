@@ -13,12 +13,14 @@ import MapEditor from "./editors/MapEditor";
 import InquiryEditor from "./editors/InquiryEditor";
 import FooterEditor from "./editors/FooterEditor";
 import ReviewsEditor from "./editors/ReviewsEditor";
+import GoogleReviewEditor from "./editors/GoogleReviewEditor";
 
 const EDITORS = {
   hero: HeroEditor,
   about: AboutEditor,
   menu: MenuEditor,
   offers: OffersEditor,
+  googleReview: GoogleReviewEditor,
   gallery: GalleryEditor,
   reviews: ReviewsEditor,
   map: MapEditor,
