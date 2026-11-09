@@ -17,6 +17,7 @@ const OffersPromosPage = lazy(() => import("./pages/offers-promos/OffersPromosPa
 const WebsitePage = lazy(() => import("./pages/website/WebsitePage"));
 const ReviewsPage = lazy(() => import("./pages/reviews/ReviewsPage"));
 const SubscriptionPage = lazy(() => import("./pages/subscription/SubscriptionPage"));
+const BizGrowthPage = lazy(() => import("./pages/biz-growth/BizGrowthPage"));
 
 // Simple inline fallback shown while a lazy page chunk loads
 function PageLoader() {
@@ -112,6 +113,14 @@ export default function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <ReviewsPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/biz-growth"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <BizGrowthPage />
                   </Suspense>
                 }
               />

@@ -17,6 +17,7 @@ import {
   Settings,
   LogOut,
   CreditCard,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
@@ -31,6 +32,7 @@ const navItems = [
   { label: "Offers & Promos", icon: Tag, path: "/offers-promos" },
   { label: "Website", icon: Globe, path: "/website" },
   { label: "Reviews", icon: Star, path: "/reviews" },
+  { label: "Biz Growth", icon: TrendingUp, path: "/biz-growth" },
 ];
 
 export default function Sidebar() {
