@@ -17,7 +17,10 @@ import {
 // Served items can't be cancelled, so a full cancellation is only offered
 // while nothing on the order has been served.
 export default function CancelOrderModal({ orderId, onClose }) {
-  const order = useOrdersStore((state) => state.orders.find((o) => o.id === orderId));
+  const resolvedId = typeof orderId === "object" ? (orderId?.id || orderId?._id) : orderId;
+  const order = useOrdersStore((state) =>
+    state.orders.find((o) => o.id === resolvedId || o._id === resolvedId || String(o.id) === String(resolvedId))
+  );
   if (!order || !canCancelOrder(order)) return null;
   return <CancelForm order={order} onClose={onClose} />;
 }

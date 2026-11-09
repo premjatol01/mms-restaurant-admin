@@ -10,4 +10,5 @@ export const ordersApi = {
   serveAllInSession: (sessionId) => apiClient.post(`/orders/sessions/${sessionId}/serve-all`),
   markSessionPaid: (sessionId, paymentMethod = "cash", force = true) =>
     apiClient.post(`/orders/sessions/${sessionId}/pay`, { paymentMethod, force }),
+  endSession: (sessionId) => apiClient.post(`/orders/sessions/${sessionId}/end`),
 };

@@ -2,8 +2,10 @@ import { useState } from "react";
 import { CheckCheck, CircleCheck, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
+import { useProfileStore } from "../../../store/profileStore";
 import ModalShell from "./ModalShell";
 import RemoveItemModal from "./RemoveItemModal";
+import PaymentSlipModal from "./PaymentSlipModal";
 import Select from "../../../components/ui/Select";
 import { ICON_BTN, ITEM_STATUS_OPTIONS, TINT_SOFT, btn } from "../constants";
 import {
@@ -44,11 +46,27 @@ export default function MarkPaidModal({ sessionId, onClose }) {
   const updateItemStatus = useOrdersStore((state) => state.updateItemStatus);
   const serveAllInSession = useOrdersStore((state) => state.serveAllInSession);
   const markSessionPaid = useOrdersStore((state) => state.markSessionPaid);
+  const profile = useProfileStore((state) => state.profile);
+
+  const isGstEnabled = Boolean(profile?.gstSettings?.enabled);
+  const gstRate = Number(profile?.gstSettings?.percentage ?? 5);
+  const chargeType = profile?.gstSettings?.chargeType || "exclusive";
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [removeTarget, setRemoveTarget] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isServingAll, setIsServingAll] = useState(false);
+  const [paidSession, setPaidSession] = useState(null);
+
+  if (paidSession) {
+    return (
+      <PaymentSlipModal
+        session={paidSession}
+        isOpen={Boolean(paidSession)}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (!session) return null;
 
@@ -82,7 +100,14 @@ export default function MarkPaidModal({ sessionId, onClose }) {
         return;
       }
       toast.success(`Session for ${tableName} marked as paid (${paymentMethod.toUpperCase()}).`);
-      onClose();
+      setPaidSession({
+        ...session,
+        ...(res?.data || {}),
+        paymentMethod,
+        paymentStatus: "paid",
+        paidAt: new Date().toISOString(),
+        closedAt: new Date().toISOString(),
+      });
     } catch (err) {
       toast.error(err.message || "Failed to mark session as paid.");
     } finally {
@@ -194,10 +219,20 @@ export default function MarkPaidModal({ sessionId, onClose }) {
               <span>Subtotal</span>
               <span className="text-theme">{formatCurrency(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-secondary">
-              <span>GST (5%)</span>
-              <span className="text-theme">{formatCurrency(gst)}</span>
-            </div>
+            {isGstEnabled && gst > 0 ? (
+              <div className="flex justify-between text-secondary">
+                <span>
+                  GST ({gstRate}%)
+                  {chargeType === "inclusive" && <span className="text-[11px] text-secondary ml-1">(incl.)</span>}
+                </span>
+                <span className="text-theme font-medium">{formatCurrency(gst)}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-secondary">
+                <span>GST ({isGstEnabled ? `${gstRate}%` : "0% - Disabled"})</span>
+                <span className="text-secondary">{formatCurrency(0)}</span>
+              </div>
+            )}
             {discount > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discount</span>

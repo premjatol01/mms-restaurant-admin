@@ -88,8 +88,14 @@ export function buildExportData({ orders, sessions, getTableName }) {
       cancelledItems: cancellations
         .flatMap((entry) => entry.items.map((i) => `${i.name} × ${i.quantity}`))
         .join(", "),
-      reason: joinUnique(cancellations.map((entry) => getReasonLabel(entry.reason))),
-      comment: joinUnique(cancellations.map((entry) => entry.comment)),
+      reason: joinUnique([
+        order.cancelReason ? getReasonLabel(order.cancelReason) : null,
+        ...cancellations.map((entry) => getReasonLabel(entry.reason))
+      ]),
+      comment: joinUnique([
+        order.cancelComment,
+        ...cancellations.map((entry) => entry.comment)
+      ]),
     });
 
     order.items.forEach((item) => {
@@ -189,9 +195,12 @@ export async function exportOrdersToExcel({ orders, sessions, getTableName, mont
   workbook.creator = "Restaurant Admin";
   workbook.created = new Date();
 
+  const isAllMonths = month === "all";
+  const periodLabel = isAllMonths ? `Full Year ${year}` : `${MONTHS[month]} ${year}`;
+
   const summarySheet = workbook.addWorksheet("Summary");
   summarySheet.columns = [{ width: 38 }, { width: 18 }];
-  const title = summarySheet.addRow([`Orders report – ${MONTHS[month]} ${year}`]);
+  const title = summarySheet.addRow([`Orders report – ${periodLabel}`]);
   title.font = { bold: true, size: 14 };
   summarySheet.addRow([]);
   data.summary.forEach(([label, value, isMoney]) => {
@@ -204,5 +213,8 @@ export async function exportOrdersToExcel({ orders, sessions, getTableName, mont
   addTable(workbook, "Order Items", data.itemColumns, data.itemRows);
 
   const buffer = await workbook.xlsx.writeBuffer();
-  download(buffer, `orders-${year}-${String(month + 1).padStart(2, "0")}.xlsx`);
+  const filename = isAllMonths
+    ? `orders-${year}-full-year.xlsx`
+    : `orders-${year}-${String(Number(month) + 1).padStart(2, "0")}.xlsx`;
+  download(buffer, filename);
 }

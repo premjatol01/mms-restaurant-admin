@@ -7,12 +7,13 @@ import EmptyState from "../../../components/ui/EmptyState";
 import SessionCard from "./SessionCard";
 import MarkPaidModal from "../modals/MarkPaidModal";
 import RemoveItemModal from "../modals/RemoveItemModal";
-import { getSessionOrders, getUnresolvedItems } from "../utils/orderUtils";
+import { getSessionOrders, getUnresolvedItems, isItemCancelled } from "../utils/orderUtils";
 
 const FILTER_OPTIONS = [
   { value: "", label: "All Sessions" },
   { value: "ready", label: "Ready for payment" },
   { value: "unserved", label: "Has unserved items" },
+  { value: "empty_or_cancelled", label: "Cancelled / Empty tables" },
 ];
 
 export default function ActiveSessionsTab({ onViewOrder, onCancelOrder }) {
@@ -32,13 +33,27 @@ export default function ActiveSessionsTab({ onViewOrder, onCancelOrder }) {
     .sort((a, b) => new Date(a.session.startedAt) - new Date(b.session.startedAt));
 
   const term = search.trim().toLowerCase();
-  const filteredRows = rows.filter(({ session, unresolved }) => {
+  const filteredRows = rows.filter(({ session, orders: sessionOrders, unresolved }) => {
     const matchSearch =
       !term ||
       getTableName(session.tableId).toLowerCase().includes(term) ||
-      session.sessionNumber.toLowerCase().includes(term);
-    const matchFilter =
-      !filter || (filter === "unserved" ? unresolved > 0 : unresolved === 0);
+      session.sessionNumber?.toLowerCase().includes(term) ||
+      session.customerMobile?.includes(term) ||
+      session.customerName?.toLowerCase().includes(term);
+
+    const hasLiveOrders = sessionOrders.some(
+      (o) => o.status !== "cancelled" && o.items.some((i) => !isItemCancelled(i))
+    );
+
+    let matchFilter = true;
+    if (filter === "unserved") {
+      matchFilter = unresolved > 0;
+    } else if (filter === "ready") {
+      matchFilter = unresolved === 0 && hasLiveOrders;
+    } else if (filter === "empty_or_cancelled") {
+      matchFilter = !hasLiveOrders;
+    }
+
     return matchSearch && matchFilter;
   });
 

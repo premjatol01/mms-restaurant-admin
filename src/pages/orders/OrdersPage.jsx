@@ -42,8 +42,8 @@ function SummaryCards() {
   const pendingCount = orders.filter((o) => o.status === "pending").length;
   const processingCount = orders.filter((o) => o.status === "processing").length;
   const todayRevenue = orders
-    .filter((o) => isToday(new Date(o.createdAt)))
-    .reduce((sum, o) => sum + o.total, 0);
+    .filter((o) => isToday(new Date(o.createdAt)) && o.status !== "cancelled")
+    .reduce((sum, o) => sum + (o.total || 0), 0);
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -69,8 +69,17 @@ import { useProfileStore } from "../../store/profileStore";
 
 export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState("pending");
-  const [viewOrderId, setViewOrderId] = useState(null);
+  const [viewOrder, setViewOrder] = useState(null);
   const [cancelOrderId, setCancelOrderId] = useState(null);
+
+  const handleViewOrder = (orderOrId) => {
+    setViewOrder(orderOrId);
+  };
+
+  const handleCancelOrder = (orderOrId) => {
+    const id = typeof orderOrId === "object" ? (orderOrId?.id || orderOrId?._id) : orderOrId;
+    setCancelOrderId(id);
+  };
   const pendingCount = useOrdersStore((state) => state.orders.filter((o) => o.status === "pending").length);
   const fetchData = useOrdersStore((state) => state.fetchData);
 
@@ -124,24 +133,24 @@ export default function OrdersPage() {
   }, [fetchData]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)] pb-2">
       <div className="flex-none mb-3 flex flex-col lg:flex-row lg:items-end lg:justify-end gap-4">
         <ExportControls />
       </div>
 
-      <div className="flex-none mb-4">
+      <div className="flex-none mb-3">
         <SummaryCards />
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col bg-surface rounded-xl border border-theme overflow-hidden shadow-sm">
-        <div className="flex-none flex border-b border-theme bg-surface" role="tablist">
+      <div className="flex-1 min-h-0 flex flex-col bg-surface rounded-xl border border-theme shadow-sm overflow-hidden">
+        <div className="flex-none flex border-b border-theme bg-surface sticky top-0 z-10" role="tablist">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === tab.id ? "border-b-2 border-primary text-primary font-semibold" : "text-secondary hover:text-theme"
               }`}
             >
@@ -151,24 +160,34 @@ export default function OrdersPage() {
           ))}
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col p-4 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {activeTab === "pending" && (
-            <PendingOrdersTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
+            <div className="flex-1 overflow-y-auto p-4">
+              <PendingOrdersTab onViewOrder={handleViewOrder} onCancelOrder={handleCancelOrder} />
+            </div>
           )}
           {activeTab === "sessions" && (
-            <ActiveSessionsTab onViewOrder={setViewOrderId} onCancelOrder={setCancelOrderId} />
+            <div className="flex-1 overflow-y-auto p-4">
+              <ActiveSessionsTab onViewOrder={handleViewOrder} onCancelOrder={handleCancelOrder} />
+            </div>
           )}
           {activeTab === "completed" && (
-            <CompletedTab />
+            <div className="flex-1 min-h-0 flex flex-col h-full p-4">
+              <CompletedTab />
+            </div>
           )}
         </div>
       </div>
 
-      {viewOrderId && (
+      {viewOrder && (
         <OrderDetailsDrawer
-          orderId={viewOrderId}
-          onClose={() => setViewOrderId(null)}
-          onCancel={setCancelOrderId}
+          order={typeof viewOrder === "object" ? viewOrder : null}
+          orderId={typeof viewOrder === "string" ? viewOrder : (viewOrder?.id || viewOrder?._id)}
+          onClose={() => setViewOrder(null)}
+          onCancel={(id) => {
+            setViewOrder(null);
+            setCancelOrderId(id);
+          }}
         />
       )}
       {cancelOrderId && (

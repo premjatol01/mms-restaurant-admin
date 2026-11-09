@@ -3,7 +3,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import StatusChip from "./StatusChip";
-import { btn } from "../constants";
+import { btn, getReasonLabel } from "../constants";
 import {
   canCancelOrder,
   formatCurrency,
@@ -67,6 +67,20 @@ export default function OrderCard({ order, onView, onCancel }) {
           </p>
         </div>
       </div>
+
+      {(order.cancelReason || order.cancellations?.length > 0) && (
+        <div className="text-xs bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 px-2.5 py-1.5 rounded-lg font-medium flex items-center justify-between">
+          <span>
+            <span className="font-semibold">Cancellation Reason:</span>{" "}
+            {getReasonLabel(order.cancelReason || order.cancellations?.[0]?.reason)}
+          </span>
+          {(order.cancelComment || order.cancellations?.[0]?.comment) && (
+            <span className="opacity-80 italic max-w-[200px] truncate">
+              "{order.cancelComment || order.cancellations?.[0]?.comment}"
+            </span>
+          )}
+        </div>
+      )}
 
       <ul className="space-y-1.5">
         {order.items.map((item) => {

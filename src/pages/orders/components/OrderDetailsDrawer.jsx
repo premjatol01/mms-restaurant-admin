@@ -13,18 +13,52 @@ import {
   isItemCancelled,
 } from "../utils/orderUtils";
 
-export default function OrderDetailsDrawer({ orderId, onClose, onCancel }) {
+export default function OrderDetailsDrawer({ orderId, order: propOrder, onClose, onCancel, onViewSession }) {
   const orders = useOrdersStore((state) => state.orders);
   const sessions = useOrdersStore((state) => state.sessions);
   const completedSessions = useOrdersStore((state) => state.completedSessions);
   const getTableName = useOrdersStore((state) => state.getTableName);
 
-  const order = orders.find((o) => o.id === orderId);
+  const raw = propOrder || orderId;
+  const resolvedId = typeof raw === "object" ? String(raw?.id || raw?._id || "") : String(raw || "");
+  let order =
+    (propOrder && propOrder.items && propOrder.items.length > 0 ? propOrder : null) ||
+    orders.find(
+      (o) =>
+        String(o.id || o._id) === resolvedId ||
+        String(o._id) === resolvedId
+    );
+
+  if (!order && resolvedId) {
+    for (const s of [...sessions, ...completedSessions]) {
+      const sOrders =
+        s.orders ||
+        (Array.isArray(s.orderIds) && typeof s.orderIds[0] === "object" ? s.orderIds : []);
+      const found = sOrders.find((o) => String(o.id || o._id) === resolvedId);
+      if (found) {
+        order = found;
+        break;
+      }
+    }
+  }
+
+  if (!order && typeof raw === "object" && raw !== null) {
+    order = raw;
+  }
+
   if (!order) return null;
 
+  const orderSessionId = String(
+    typeof order.sessionId === "object"
+      ? order.sessionId?._id || order.sessionId?.id || ""
+      : order.sessionId || ""
+  );
+
   const session =
-    sessions.find((s) => s.id === order.sessionId) ||
-    completedSessions.find((s) => s.id === order.sessionId);
+    sessions.find((s) => String(s.id || s._id) === orderSessionId) ||
+    completedSessions.find((s) => String(s.id || s._id) === orderSessionId) ||
+    (typeof order.sessionId === "object" ? order.sessionId : null);
+
   const sessionOrders = session ? getSessionOrders(session, orders) : [];
   const isPaid = session?.status === "completed" && session.paymentStatus !== "pending";
   const cancelledAmount = getCancelledAmount(order);
@@ -159,19 +193,35 @@ export default function OrderDetailsDrawer({ orderId, onClose, onCancel }) {
               <div className={`rounded-lg p-3 space-y-2 ${TINT_SOFT}`}>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Session</span>
-                  <span className="text-theme">{session.sessionNumber}</span>
+                  <span className="text-theme font-medium">{session.sessionNumber}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Orders</span>
                   <span className="text-theme">{sessionOrders.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Session Total</span>
-                  <span className="text-theme font-medium">{formatCurrency(session.total ?? getSessionTotal(sessionOrders, session))}</span>
+                  <span className="text-secondary">Items Subtotal</span>
+                  <span className="text-theme">{formatCurrency(session.subtotal ?? (session.total - (session.gst || 0)))}</span>
+                </div>
+                {Number(session.gst) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">GST (Taxes)</span>
+                    <span className="text-theme font-medium">{formatCurrency(session.gst)}</span>
+                  </div>
+                )}
+                {session.discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discount</span>
+                    <span>−{formatCurrency(session.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-semibold border-t border-theme/40 pt-1.5">
+                  <span className="text-theme">Session Total</span>
+                  <span className="text-theme font-bold">{formatCurrency(session.total ?? getSessionTotal(sessionOrders, session))}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Payment</span>
-                  <span className="text-theme">{isPaid ? "Paid" : "Payment Pending"}</span>
+                  <span className="text-theme font-medium">{isPaid ? "Paid" : "Payment Pending"}</span>
                 </div>
               </div>
             </div>

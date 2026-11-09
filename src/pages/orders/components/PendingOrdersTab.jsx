@@ -8,6 +8,7 @@ import EmptyState from "../../../components/ui/EmptyState";
 import OrderCard from "./OrderCard";
 import ManualOrderDrawer from "./ManualOrderDrawer";
 import { STATUS_COLORS } from "../constants";
+import { isItemCancelled } from "../utils/orderUtils";
 
 const byOldestFirst = (a, b) => new Date(a.createdAt) - new Date(b.createdAt);
 
@@ -52,7 +53,13 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
     return () => clearInterval(timer);
   }, []);
 
-  const openOrders = orders.filter((o) => o.status === "pending" || o.status === "processing");
+  const openOrders = orders.filter((o) => {
+    if (o.status === "cancelled" || o.status === "served") return false;
+    const hasUnservedLive = (o.items || []).some(
+      (i) => !isItemCancelled(i) && i.status !== "served"
+    );
+    return hasUnservedLive;
+  });
 
   const term = search.trim().toLowerCase();
   const filtered = openOrders.filter((order) => {
@@ -61,13 +68,17 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
       order.orderNumber.toLowerCase().includes(term) ||
       getTableName(order.tableId).toLowerCase().includes(term) ||
       order.customer?.mobile?.includes(search.trim());
-    const matchTable = !tableFilter || order.tableId === tableFilter;
+    const matchTable = !tableFilter || String(order.tableId) === String(tableFilter);
     return matchSearch && matchTable;
   });
 
   // Oldest first, so the order that has waited longest is at the top.
-  const pending = filtered.filter((o) => o.status === "pending").sort(byOldestFirst);
-  const processing = filtered.filter((o) => o.status === "processing").sort(byOldestFirst);
+  const pending = filtered
+    .filter((o) => o.status === "pending" || (!o.items.some((i) => !isItemCancelled(i) && i.status === "processing") && o.status !== "processing"))
+    .sort(byOldestFirst);
+  const processing = filtered
+    .filter((o) => o.status === "processing" || o.items.some((i) => !isItemCancelled(i) && i.status === "processing"))
+    .sort(byOldestFirst);
 
   const tableIds = [...new Set(openOrders.map((o) => o.tableId))];
   const hasFilters = search || tableFilter;
@@ -114,7 +125,7 @@ export default function PendingOrdersTab({ onViewOrder, onCancelOrder }) {
         <EmptyState
           title="No pending orders"
           description="New QR and manual orders appear here until they are served."
-          actionLabel="+ Add Manual Order"
+          actionLabel="Add Manual Order"
           onAction={() => setShowManualOrder(true)}
         />
       ) : filtered.length === 0 ? (

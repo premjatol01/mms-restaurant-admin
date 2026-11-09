@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ordersApi } from "../api/orders.api";
 import { useTablesQRStore } from "./tablesQRStore";
+import { useProfileStore } from "./profileStore";
 import { TABLE_NAMES } from "../pages/orders/data/ordersData";
 import {
   applyCancellation,
@@ -45,20 +46,48 @@ const normSession = (session) => {
     typeof rest.tableId === "object"
       ? rest.tableId?._id?.toString?.() || rest.tableId?.tableId || rest.tableId
       : rest.tableId;
+  const rawOrders = (rest.orderIds || []).filter((o) => typeof o === "object" && o !== null);
   const orderIds = (rest.orderIds || []).map((o) =>
     typeof o === "object" ? o._id?.toString?.() || o.id : o
   );
-  return { ...rest, id, _id: id, tableId, orderIds };
+  return {
+    ...rest,
+    id,
+    _id: id,
+    tableId,
+    orderIds,
+    orders: rawOrders.map(normOrder),
+  };
 };
 
-// Keeps each open session's total in step with its orders including 5% GST
-const syncSessionTotals = (sessions, orders) =>
-  sessions.map((session) => {
+// Keeps each open session's total in step with its orders including configured GST
+const syncSessionTotals = (sessions, orders) => {
+  const profile = useProfileStore.getState().profile;
+  const isGstEnabled = Boolean(profile?.gstSettings?.enabled);
+  const gstRate = Number(profile?.gstSettings?.percentage ?? 5);
+  const chargeType = profile?.gstSettings?.chargeType || "exclusive";
+
+  return sessions.map((session) => {
     const sOrders = getSessionOrders(session, orders);
     const subtotal = session.subtotal ?? getSessionSubtotal(sOrders);
     const discount = session.discount ?? getSessionDiscount(sOrders);
-    const gst = session.gst ?? Math.round(subtotal * 0.05);
-    const total = session.total ?? Math.max(0, subtotal + gst - discount);
+
+    let gst = 0;
+    if (isGstEnabled && gstRate > 0) {
+      if (typeof session.gst === "number" && session.gst > 0) {
+        gst = session.gst;
+      } else if (chargeType === "inclusive") {
+        gst = Math.round(Math.max(0, subtotal - discount) * (gstRate / (100 + gstRate)));
+      } else {
+        gst = Math.round(Math.max(0, subtotal - discount) * (gstRate / 100));
+      }
+    } else {
+      gst = 0;
+    }
+
+    const total = isGstEnabled
+      ? (session.total ?? Math.max(0, subtotal + (chargeType === "inclusive" ? 0 : gst) - discount))
+      : Math.max(0, subtotal - discount);
     return {
       ...session,
       subtotal,
@@ -67,6 +96,7 @@ const syncSessionTotals = (sessions, orders) =>
       total,
     };
   });
+};
 
 // Applies `fn` to a single order and re-derives its totals / status.
 const mapOrder = (orders, orderId, fn) =>
@@ -228,14 +258,27 @@ export const useOrdersStore = create((set, get) => ({
     }
   },
 
+  endSession: async (sessionId) => {
+    try {
+      const res = await ordersApi.endSession(sessionId);
+      await get().fetchData();
+      return { ok: true, data: res.data?.data };
+    } catch (err) {
+      console.error("Failed to end session:", err);
+      const message = err.response?.data?.message || err.message || "Failed to end session";
+      return { ok: false, message };
+    }
+  },
+
   // -------------------------------------------------------------------------
   // Selectors / helpers
   // -------------------------------------------------------------------------
   getOrdersBySession: (sessionId) => {
     const { sessions, completedSessions, orders } = get();
+    const sidStr = String(sessionId || "");
     const session =
-      sessions.find((s) => s.id === sessionId) ||
-      completedSessions.find((s) => s.id === sessionId);
+      sessions.find((s) => String(s.id || s._id) === sidStr) ||
+      completedSessions.find((s) => String(s.id || s._id) === sidStr);
     return session ? getSessionOrders(session, orders) : [];
   },
 

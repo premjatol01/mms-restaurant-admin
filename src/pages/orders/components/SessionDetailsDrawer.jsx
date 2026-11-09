@@ -125,10 +125,12 @@ export default function SessionDetailsDrawer({ session, onClose, onMarkPayment, 
                   <span>Items Subtotal</span>
                   <span>₹{session.subtotal ?? Math.max(0, session.total - (session.gst || 0))}</span>
                 </div>
-                <div className="flex justify-between text-xs text-secondary">
-                  <span>Taxes (GST 5%)</span>
-                  <span>₹{session.gst ?? Math.round((session.subtotal || 0) * 0.05)}</span>
-                </div>
+                {Number(session.gst) > 0 && (
+                  <div className="flex justify-between text-xs text-secondary">
+                    <span>GST (Taxes)</span>
+                    <span>₹{session.gst}</span>
+                  </div>
+                )}
                 {session.discount > 0 && (
                   <div className="flex justify-between text-xs text-green-600">
                     <span>Discount</span>

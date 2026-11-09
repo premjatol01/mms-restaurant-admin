@@ -47,7 +47,7 @@ export default function ActiveOrdersTab() {
       order.orderNumber.toLowerCase().includes(search.toLowerCase()) || 
       getTableName(order.tableId).toLowerCase().includes(search.toLowerCase()) || 
       order.customer?.mobile?.includes(search);
-    const matchTable = !tableFilter || order.tableId === tableFilter;
+    const matchTable = !tableFilter || String(order.tableId) === String(tableFilter);
     const matchStatus = !statusFilter || order.status === statusFilter;
     return matchSearch && matchTable && matchStatus;
   });
@@ -112,7 +112,7 @@ export default function ActiveOrdersTab() {
         <EmptyState 
           title="No active orders" 
           description="New customer orders will appear here when customers place orders through the QR menu." 
-          actionLabel="+ Add Manual Order" 
+          actionLabel="Add Manual Order" 
           onAction={() => setShowManualOrder(true)} 
         />
       ) : filteredOrders.length === 0 ? (

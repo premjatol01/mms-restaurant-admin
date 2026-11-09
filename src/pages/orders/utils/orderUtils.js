@@ -66,7 +66,7 @@ export function applyCancellation(order, selections, { reason, comment } = {}) {
   const cancelled = [];
 
   const items = order.items.map((item) => {
-    const selection = selections.find((s) => s.itemId === item.id);
+    const selection = selections.find((s) => String(s.itemId) === String(item.id || item._id));
     if (!selection || !isItemCancellable(item)) return item;
 
     const quantity = Math.min(Math.max(0, selection.quantity), getActiveQty(item));
@@ -105,17 +105,36 @@ export function applyCancellation(order, selections, { reason, comment } = {}) {
 
 export const getSessionOrders = (session, orders) => {
   if (!session) return [];
-  const sessionOrderIds = new Set((session.orderIds || []).map((id) => String(id)));
+
+  // Check if session already holds populated orders
+  if (Array.isArray(session.orders) && session.orders.length > 0) {
+    return session.orders;
+  }
+  if (
+    Array.isArray(session.orderIds) &&
+    session.orderIds.length > 0 &&
+    typeof session.orderIds[0] === "object" &&
+    session.orderIds[0] !== null
+  ) {
+    return session.orderIds.map((o) => ({ ...o, id: o.id || o._id }));
+  }
+
+  const sessionOrderIds = new Set(
+    (session.orderIds || []).map((id) =>
+      typeof id === "object" && id !== null ? String(id._id || id.id || "") : String(id)
+    )
+  );
   const sessionIdStr = String(session.id || session._id || "");
-  return (orders || [])
-    .filter((o) => {
-      const orderIdStr = String(o.id || o._id || "");
-      const orderSessionIdStr = String(
-        typeof o.sessionId === "object" ? o.sessionId?._id || o.sessionId?.id : o.sessionId || ""
-      );
-      return sessionOrderIds.has(orderIdStr) || (sessionIdStr && orderSessionIdStr === sessionIdStr);
-    })
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  const matched = (orders || []).filter((o) => {
+    const orderIdStr = String(o.id || o._id || "");
+    const orderSessionIdStr = String(
+      typeof o.sessionId === "object" ? o.sessionId?._id || o.sessionId?.id : o.sessionId || ""
+    );
+    return sessionOrderIds.has(orderIdStr) || (sessionIdStr && orderSessionIdStr === sessionIdStr);
+  });
+
+  return matched.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 };
 
 export const getSessionSubtotal = (sessionOrders) =>
@@ -130,8 +149,7 @@ export const getSessionDiscount = (sessionOrders) =>
 
 export const getSessionGst = (sessionOrders, session = null) => {
   if (session && typeof session.gst === "number") return session.gst;
-  const subtotal = getSessionSubtotal(sessionOrders);
-  return Math.round(subtotal * 0.05);
+  return 0;
 };
 
 export const getSessionTotal = (sessionOrders, session = null) => {
@@ -140,7 +158,7 @@ export const getSessionTotal = (sessionOrders, session = null) => {
   }
   const subtotal = getSessionSubtotal(sessionOrders);
   const discount = getSessionDiscount(sessionOrders);
-  const gst = Math.round(subtotal * 0.05);
+  const gst = session && typeof session.gst === "number" ? session.gst : 0;
   return Math.max(0, subtotal + gst - discount);
 };
 

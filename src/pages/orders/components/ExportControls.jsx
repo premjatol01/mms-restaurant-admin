@@ -7,7 +7,10 @@ import Button from "../../../components/ui/Button";
 import { MONTHS } from "../constants";
 import { exportOrdersToExcel } from "../utils/exportOrdersToExcel";
 
-const MONTH_OPTIONS = MONTHS.map((label, index) => ({ value: String(index), label }));
+const MONTH_OPTIONS = [
+  { value: "all", label: "All Months" },
+  ...MONTHS.map((label, index) => ({ value: String(index), label }))
+];
 
 // Month + year pickers and the Excel export button.
 export default function ExportControls() {
@@ -20,22 +23,27 @@ export default function ExportControls() {
   // Current year, the two before it, plus any year that has orders.
   const yearOptions = useMemo(() => {
     const years = new Set([today.getFullYear(), today.getFullYear() - 1, today.getFullYear() - 2]);
-    orders.forEach((order) => years.add(new Date(order.createdAt).getFullYear()));
+    orders.forEach((order) => {
+      if (order.createdAt) years.add(new Date(order.createdAt).getFullYear());
+    });
     return [...years].sort((a, b) => b - a).map((y) => ({ value: String(y), label: String(y) }));
   }, [orders, today]);
 
   const handleExport = async () => {
     const { orders: allOrders, sessions, completedSessions, getTableName } = useOrdersStore.getState();
-    const selectedMonth = Number(month);
+    const isAllMonths = month === "all";
+    const selectedMonth = isAllMonths ? "all" : Number(month);
     const selectedYear = Number(year);
 
     const monthOrders = allOrders.filter((order) => {
       const created = new Date(order.createdAt);
-      return created.getMonth() === selectedMonth && created.getFullYear() === selectedYear;
+      if (created.getFullYear() !== selectedYear) return false;
+      if (!isAllMonths && created.getMonth() !== selectedMonth) return false;
+      return true;
     });
 
     if (monthOrders.length === 0) {
-      toast.error(`No orders found for ${MONTHS[selectedMonth]} ${selectedYear}.`);
+      toast.error(`No orders found for ${isAllMonths ? "the selected year" : MONTHS[selectedMonth]} ${selectedYear}.`);
       return;
     }
 
@@ -48,7 +56,9 @@ export default function ExportControls() {
         month: selectedMonth,
         year: selectedYear,
       });
-      toast.success(`Exported ${monthOrders.length} orders for ${MONTHS[selectedMonth]} ${selectedYear}.`);
+      toast.success(
+        `Exported ${monthOrders.length} orders for ${isAllMonths ? "the year" : MONTHS[selectedMonth]} ${selectedYear}.`
+      );
     } catch (error) {
       console.error("Orders export failed", error);
       toast.error("Couldn't create the Excel file. Please try again.");
