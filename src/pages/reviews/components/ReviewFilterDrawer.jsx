@@ -12,6 +12,11 @@ const STATUS_OPTIONS = [
   { value: "rejected", label: "Rejected" },
 ];
 
+const PORTFOLIO_OPTIONS = [
+  { value: "", label: "All Reviews" },
+  { value: "true", label: "Featured on Portfolio (Top 5 Only)" },
+];
+
 const RATING_OPTIONS = [
   { value: "", label: "All Ratings" },
   { value: "5", label: "5 Stars (Excellent)" },
@@ -43,6 +48,7 @@ export default function ReviewFilterDrawer({
 }) {
   const [draftStatus, setDraftStatus] = useState(filters.status || "");
   const [draftRating, setDraftRating] = useState(filters.rating || "");
+  const [draftPortfolioOnly, setDraftPortfolioOnly] = useState(filters.portfolioOnly || "");
   const [draftDatePreset, setDraftDatePreset] = useState(filters.datePreset || "");
   const [draftDateFrom, setDraftDateFrom] = useState(filters.dateFrom || "");
   const [draftDateTo, setDraftDateTo] = useState(filters.dateTo || "");
@@ -52,6 +58,7 @@ export default function ReviewFilterDrawer({
     if (isOpen) {
       setDraftStatus(filters.status || "");
       setDraftRating(filters.rating || "");
+      setDraftPortfolioOnly(filters.portfolioOnly || "");
       setDraftDatePreset(filters.datePreset || "");
       setDraftDateFrom(filters.dateFrom || "");
       setDraftDateTo(filters.dateTo || "");
@@ -120,6 +127,7 @@ export default function ReviewFilterDrawer({
     onApply({
       status: draftStatus,
       rating: draftRating,
+      portfolioOnly: draftPortfolioOnly,
       datePreset: draftDatePreset,
       dateFrom: draftDateFrom,
       dateTo: draftDateTo,
@@ -130,6 +138,7 @@ export default function ReviewFilterDrawer({
   const handleReset = () => {
     setDraftStatus("");
     setDraftRating("");
+    setDraftPortfolioOnly("");
     setDraftDatePreset("");
     setDraftDateFrom("");
     setDraftDateTo("");
@@ -167,6 +176,19 @@ export default function ReviewFilterDrawer({
             value={draftRating}
             onChange={setDraftRating}
             options={RATING_OPTIONS}
+            className="w-full"
+          />
+        </div>
+
+        {/* Portfolio Selection Filter */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-theme">
+            Portfolio Featured
+          </label>
+          <Select
+            value={draftPortfolioOnly}
+            onChange={setDraftPortfolioOnly}
+            options={PORTFOLIO_OPTIONS}
             className="w-full"
           />
         </div>

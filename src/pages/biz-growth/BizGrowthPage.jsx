@@ -48,10 +48,12 @@ export default function BizGrowthPage() {
           category: selectedCategory !== "all" ? selectedCategory : undefined,
           search: search.trim() || undefined,
         });
-        if (isMounted && res.data?.success) {
-          setItems(res.data.data.items || []);
-          if (res.data.data.categories) {
-            setCategories(res.data.data.categories);
+        const isSuccess = res?.data?.success ?? res?.success;
+        const dataPayload = res?.data?.data || res?.data || {};
+        if (isMounted && (isSuccess || dataPayload?.items)) {
+          setItems(dataPayload.items || []);
+          if (dataPayload.categories) {
+            setCategories(dataPayload.categories);
           }
         }
       } catch (err) {

@@ -3,14 +3,14 @@ import { reviewsApi } from "../api/reviews.api";
 
 export const PAGE_SIZE = 10;
 
-const EMPTY_FILTERS = { status: "", rating: "", datePreset: "", dateFrom: "", dateTo: "" };
+const EMPTY_FILTERS = { status: "", rating: "", datePreset: "", dateFrom: "", dateTo: "", portfolioOnly: "" };
 
 let requestSeq = 0; // ignore responses that arrive after a newer request was made
 
 export const useReviewsStore = create((set, get) => ({
   reviews: [], // the current page
   total: 0, // total reviews matching the current filters
-  stats: { total: 0, pending: 0, accepted: 0, rejected: 0 }, // counts across ALL reviews
+  stats: { total: 0, pending: 0, accepted: 0, rejected: 0, portfolioSelected: 0 }, // counts across ALL reviews
   filters: { ...EMPTY_FILTERS },
   page: 1, // the page being requested
   shownPage: 1, // the page the rows currently on screen belong to
@@ -80,6 +80,36 @@ export const useReviewsStore = create((set, get) => ({
       return {
         success: false,
         message: err?.response?.data?.message || err?.message || "Failed to update the review."
+      };
+    }
+  },
+
+  // Toggle review selection for portfolio website (max 5)
+  togglePortfolio: async (id) => {
+    try {
+      const res = await reviewsApi.togglePortfolio(id);
+      if (res.data?.success) {
+        const selected = res.data.data?.selectedForPortfolio;
+        const totalSelected = res.data.data?.totalSelected;
+        set((state) => ({
+          reviews: state.reviews.map((r) =>
+            (r.id === id || r._id === id) ? { ...r, selectedForPortfolio: selected } : r
+          ),
+          stats: {
+            ...state.stats,
+            portfolioSelected:
+              totalSelected !== undefined
+                ? totalSelected
+                : Math.max(0, (state.stats.portfolioSelected || 0) + (selected ? 1 : -1))
+          }
+        }));
+        return { success: true, message: res.data.message, selected };
+      }
+      return { success: false, message: res.data?.message || "Failed to update portfolio selection." };
+    } catch (err) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || err?.message || "Failed to update portfolio selection."
       };
     }
   },

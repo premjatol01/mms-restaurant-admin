@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, Clock, Eye, Filter, MessageSquare, RotateCcw, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Eye, Filter, MessageSquare, RotateCcw, XCircle, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useReviewsStore } from "../../store/reviewsStore";
 import Button from "../../components/ui/Button";
@@ -20,19 +20,26 @@ function SummaryCards({ stats }) {
     { label: "Pending", value: stats.pending, Icon: Clock, tile: "bg-yellow-100", icon: "text-yellow-600" },
     { label: "Accepted", value: stats.accepted, Icon: CheckCircle, tile: "bg-green-100", icon: "text-green-600" },
     { label: "Rejected", value: stats.rejected, Icon: XCircle, tile: "bg-red-100", icon: "text-red-600" },
+    {
+      label: "Portfolio Top 5",
+      value: `${stats.portfolioSelected || 0}/5 Picked`,
+      Icon: Star,
+      tile: "bg-amber-100",
+      icon: "text-amber-600 fill-amber-500"
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
       {cards.map(({ label, value, Icon, tile, icon }) => (
-        <div key={label} className="bg-surface rounded-xl border border-theme p-4">
+        <div key={label} className="bg-surface rounded-xl border border-theme p-3.5">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${tile}`}>
               <Icon className={icon} size={20} />
             </div>
-            <div>
-              <p className="text-xs text-secondary">{label}</p>
-              <p className="text-xl font-bold text-theme">{value}</p>
+            <div className="min-w-0">
+              <p className="text-xs text-secondary truncate">{label}</p>
+              <p className="text-lg font-bold text-theme truncate">{value}</p>
             </div>
           </div>
         </div>
@@ -75,7 +82,7 @@ function ErrorState({ message, onRetry }) {
 export default function ReviewsPage() {
   const {
     reviews, total, stats, filters, shownPage, pageSize, loading, loaded, error,
-    fetchReviews, setFilters, clearFilters, setPage, moderateReview,
+    fetchReviews, setFilters, clearFilters, setPage, moderateReview, togglePortfolio,
   } = useReviewsStore();
 
   const [confirm, setConfirm] = useState(null); // { review, action }
@@ -88,6 +95,7 @@ export default function ReviewsPage() {
   const activeFiltersCount = [
     filters.status,
     filters.rating,
+    filters.portfolioOnly,
     filters.datePreset || (filters.dateFrom || filters.dateTo),
   ].filter(Boolean).length;
 
@@ -99,6 +107,16 @@ export default function ReviewsPage() {
     if (result.success) {
       toast.success(SUCCESS_MESSAGES[confirm.action]);
       setConfirm(null);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleTogglePortfolio = async (review) => {
+    const reviewId = review.id || review._id;
+    const result = await togglePortfolio(reviewId);
+    if (result.success) {
+      toast.success(result.message);
     } else {
       toast.error(result.message);
     }
@@ -137,6 +155,7 @@ export default function ReviewsPage() {
           reviews={reviews}
           onAccept={(review) => setConfirm({ review, action: "accepted" })}
           onReject={(review) => setConfirm({ review, action: "rejected" })}
+          onTogglePortfolio={handleTogglePortfolio}
         />
         <Pagination page={shownPage} pageSize={pageSize} total={total} onPageChange={setPage} disabled={loading} itemName="reviews" />
       </div>
@@ -147,11 +166,17 @@ export default function ReviewsPage() {
     <div className="flex flex-col h-[calc(100vh-7rem)]">
       {/* Top Header Row: Info Line & Filter Button */}
       <div className="flex-none mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-surface border border-theme rounded-lg text-sm text-secondary flex-1">
-          <Eye size={16} className="flex-shrink-0 text-primary" />
-          <p>
-            Accepted reviews appear on your restaurant website and the customer ordering page. Rejected reviews stay hidden.
-          </p>
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface border border-theme rounded-lg text-sm text-secondary flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Eye size={16} className="flex-shrink-0 text-primary" />
+            <p className="truncate sm:whitespace-normal">
+              Accepted reviews appear on your website. Pick your top 5 favorite reviews below to feature directly on your portfolio page.
+            </p>
+          </div>
+          <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold shrink-0">
+            <Star size={12} className="fill-amber-500" />
+            <span>{stats.portfolioSelected || 0}/5 Selected for Portfolio</span>
+          </span>
         </div>
         <Button
           variant="secondary"

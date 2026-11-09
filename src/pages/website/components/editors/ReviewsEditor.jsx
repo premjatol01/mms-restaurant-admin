@@ -27,7 +27,7 @@ export default function ReviewsEditor({ section, onSave, onCancel }) {
       try {
         const res = await reviewsApi.list({ page: 1, pageSize: 4 });
         if (isMounted && res.data?.data) {
-          const list = res.data.data.reviews || [];
+          const list = res.data.data.items || res.data.data.reviews || [];
           const stats = res.data.data.stats || {};
           const avg = stats.averageRating || 0;
           setReviewsData({

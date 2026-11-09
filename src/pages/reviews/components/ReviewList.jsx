@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, Star } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import StarRating from "./StarRating";
 import ReviewStatusBadge from "./ReviewStatusBadge";
@@ -62,7 +62,7 @@ function Actions({ review, onAccept, onReject }) {
   );
 }
 
-function ReviewTable({ reviews, onAccept, onReject }) {
+function ReviewTable({ reviews, onAccept, onReject, onTogglePortfolio }) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto">
       <table className="w-full text-sm border-collapse text-left">
@@ -73,37 +73,94 @@ function ReviewTable({ reviews, onAccept, onReject }) {
             <th className="text-left px-4 py-3.5 font-medium text-theme">Review</th>
             <th className="text-left px-4 py-3.5 font-medium text-theme whitespace-nowrap">Submitted</th>
             <th className="text-left px-4 py-3.5 font-medium text-theme">Status</th>
+            <th className="text-center px-4 py-3.5 font-medium text-theme whitespace-nowrap">Portfolio (Top 5)</th>
             <th className="text-right px-5 py-3.5 font-medium text-theme">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {reviews.map((review) => (
-            <tr key={review.id || review._id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top transition-colors">
-              <td className="px-5 py-3.5"><CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} /></td>
-              <td className="px-4 py-3.5"><StarRating rating={review.rating} /></td>
-              <td className="px-4 py-3.5 max-w-md"><Comment text={review.comment} /></td>
-              <td className="px-4 py-3.5 whitespace-nowrap">
-                <p className="text-theme font-medium">{formatDate(review.submittedAt)}</p>
-                <p className="text-xs text-secondary">{formatTime(review.submittedAt)}</p>
-              </td>
-              <td className="px-4 py-3.5"><ReviewStatusBadge status={review.status} /></td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap"><Actions review={review} onAccept={onAccept} onReject={onReject} /></td>
-            </tr>
-          ))}
+          {reviews.map((review) => {
+            const isAccepted = review.status === "accepted";
+            const isSelected = Boolean(review.selectedForPortfolio);
+
+            return (
+              <tr key={review.id || review._id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 align-top transition-colors">
+                <td className="px-5 py-3.5"><CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} /></td>
+                <td className="px-4 py-3.5"><StarRating rating={review.rating} /></td>
+                <td className="px-4 py-3.5 max-w-md"><Comment text={review.comment} /></td>
+                <td className="px-4 py-3.5 whitespace-nowrap">
+                  <p className="text-theme font-medium">{formatDate(review.submittedAt)}</p>
+                  <p className="text-xs text-secondary">{formatTime(review.submittedAt)}</p>
+                </td>
+                <td className="px-4 py-3.5"><ReviewStatusBadge status={review.status} /></td>
+                <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                  {isAccepted ? (
+                    <button
+                      type="button"
+                      onClick={() => onTogglePortfolio && onTogglePortfolio(review)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-2xs ${
+                        isSelected
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40 hover:bg-amber-500/25"
+                          : "bg-surface text-secondary hover:text-theme border border-theme hover:bg-primary-light/40"
+                      }`}
+                      title={
+                        isSelected
+                          ? "Click to remove from top 5 portfolio reviews"
+                          : "Select to feature in top 5 reviews on your portfolio page"
+                      }
+                    >
+                      <Star
+                        size={13}
+                        className={isSelected ? "fill-amber-500 text-amber-500" : "text-secondary"}
+                      />
+                      <span>{isSelected ? "On Portfolio" : "Feature"}</span>
+                    </button>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] text-secondary/40 border border-theme/30 bg-surface/40 cursor-not-allowed"
+                      title="Accept this review first before featuring on portfolio"
+                    >
+                      <Star size={11} className="opacity-30" />
+                      <span>Accept first</span>
+                    </span>
+                  )}
+                </td>
+                <td className="px-5 py-3.5 text-right whitespace-nowrap"><Actions review={review} onAccept={onAccept} onReject={onReject} /></td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
-function ReviewCard({ review, onAccept, onReject }) {
+function ReviewCard({ review, onAccept, onReject, onTogglePortfolio }) {
+  const isAccepted = review.status === "accepted";
+  const isSelected = Boolean(review.selectedForPortfolio);
+
   return (
     <div className="bg-surface rounded-xl border border-theme p-4 space-y-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <CustomerName name={review.customerName} mobile={review.customerMobile} tableName={review.tableName} />
         <ReviewStatusBadge status={review.status} />
       </div>
-      <StarRating rating={review.rating} />
+      <div className="flex items-center justify-between gap-2">
+        <StarRating rating={review.rating} />
+        {isAccepted && (
+          <button
+            type="button"
+            onClick={() => onTogglePortfolio && onTogglePortfolio(review)}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              isSelected
+                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40"
+                : "bg-surface text-secondary border border-theme hover:bg-primary-light/40"
+            }`}
+          >
+            <Star size={12} className={isSelected ? "fill-amber-500 text-amber-500" : "text-secondary"} />
+            <span>{isSelected ? "On Portfolio" : "Feature on Portfolio"}</span>
+          </button>
+        )}
+      </div>
       {review.comment && <Comment text={review.comment} />}
       <div className="pt-2 border-t border-theme/60 flex items-center justify-between text-xs text-secondary">
         <span>{formatDate(review.submittedAt)}</span>
@@ -114,15 +171,15 @@ function ReviewCard({ review, onAccept, onReject }) {
 }
 
 // Table on medium screens and up, cards below.
-export default function ReviewList({ reviews, onAccept, onReject }) {
+export default function ReviewList({ reviews, onAccept, onReject, onTogglePortfolio }) {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="hidden md:flex flex-1 min-h-0 flex-col overflow-hidden">
-        <ReviewTable reviews={reviews} onAccept={onAccept} onReject={onReject} />
+        <ReviewTable reviews={reviews} onAccept={onAccept} onReject={onReject} onTogglePortfolio={onTogglePortfolio} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden overflow-y-auto p-3">
         {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} onAccept={onAccept} onReject={onReject} />
+          <ReviewCard key={review.id || review._id} review={review} onAccept={onAccept} onReject={onReject} onTogglePortfolio={onTogglePortfolio} />
         ))}
       </div>
     </div>
