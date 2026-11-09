@@ -7,16 +7,13 @@ import {
   QrCode, 
   Clock, 
   CheckCircle2, 
-  AlertCircle, 
   XCircle, 
   Paperclip, 
   Download, 
   Eye, 
   RefreshCw,
-  Search,
   ExternalLink,
   Sparkles,
-  FileText,
   X
 } from "lucide-react";
 import { useDesignRequestStore } from "../../store/designRequestStore";
@@ -111,43 +108,6 @@ export default function DesignRequestsPage() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full space-y-5">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface border border-theme rounded-2xl p-6 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Palette size={24} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-theme">Direct Designer Service</h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary-light text-primary uppercase">
-                Premium Support
-              </span>
-            </div>
-            <p className="text-sm text-secondary mt-1 max-w-2xl">
-              Request tailored menu designs and branded QR templates directly from our dedicated design team. Track each stage in real time and download finished assets here.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="secondary"
-            onClick={() => fetchRequests(true)}
-            title="Refresh requests"
-            className="shrink-0"
-          >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-
-          <Button onClick={() => handleOpenModal("Menu Design")}>
-            <Plus size={16} />
-            <span>Request Design</span>
-          </Button>
-        </div>
-      </div>
-
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface border border-theme rounded-xl p-4">
@@ -220,6 +180,11 @@ export default function DesignRequestsPage() {
               Clear
             </Button>
           )}
+
+          <Button onClick={() => handleOpenModal("Menu Design")}>
+            <Plus size={16} />
+            <span>Request Design</span>
+          </Button>
         </div>
       </div>
 
