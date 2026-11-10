@@ -63,7 +63,6 @@ export default function BasicInformationForm() {
       ...data,
       establishmentYear: data.establishmentYear ? Number(data.establishmentYear) : null,
     };
-    updateProfile(payload);
     const result = await saveProfile(payload);
     if (result.success) toast.success("Basic information updated successfully.");
     else toast.error(result.message);

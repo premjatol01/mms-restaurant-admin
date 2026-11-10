@@ -53,7 +53,6 @@ export default function GoogleReviewForm() {
 
   const save = async (link, message) => {
     const data = { googleReviewLink: link };
-    updateProfile(data);
     const result = await saveProfile(data);
     if (result.success) toast.success(message);
     else toast.error(result.message);

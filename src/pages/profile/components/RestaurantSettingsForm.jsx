@@ -66,7 +66,6 @@ export default function RestaurantSettingsForm() {
       acceptOrders: Boolean(settings.acceptOrders),
       showOnPublicWebsite: false,
     };
-    updateSection("settings", payload);
     const result = await saveProfile({ settings: payload });
     if (result.success) {
       toast.success("Restaurant settings updated successfully.");

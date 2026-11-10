@@ -40,7 +40,6 @@ export default function SocialLinksForm() {
   useEffect(() => { if (profile?.socialLinks) reset(profile.socialLinks); }, [profile, reset]);
 
   const onSubmit = async (data) => {
-    updateSection("socialLinks", data);
     const result = await saveProfile({ socialLinks: data });
     if (result.success) toast.success("Social links updated.");
     else toast.error(result.message);

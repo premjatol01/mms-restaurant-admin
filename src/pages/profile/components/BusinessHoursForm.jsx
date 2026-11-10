@@ -55,7 +55,6 @@ export default function BusinessHoursForm() {
   };
 
   const onSave = async () => {
-    updateProfile({ businessHours: hours });
     const result = await saveProfile({ businessHours: hours });
     if (result.success) toast.success("Business hours updated.");
     else toast.error(result.message);

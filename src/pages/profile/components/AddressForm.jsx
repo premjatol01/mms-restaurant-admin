@@ -78,7 +78,6 @@ export default function AddressForm() {
       country: String(data.country || "India").trim(),
     };
 
-    updateSection("address", payload);
     const result = await saveProfile({ address: payload });
     if (result.success) {
       toast.success("Restaurant address updated successfully.");

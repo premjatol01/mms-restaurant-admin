@@ -73,7 +73,6 @@ export default function ContactInformationForm() {
   }, [profile, reset]);
 
   const onSubmit = async (data) => {
-    updateSection("contact", data);
     const result = await saveProfile({ contact: data });
     if (result.success) toast.success("Contact information updated.");
     else toast.error(result.message);

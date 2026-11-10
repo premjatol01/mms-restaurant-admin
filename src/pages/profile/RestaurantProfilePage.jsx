@@ -105,22 +105,6 @@ export default function RestaurantProfilePage() {
 
   return (
     <div className="space-y-5">
-      {/* Header Actions (if changes are dirty) */}
-      {isDirty && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={handleDiscard}>
-            <RotateCcw size={14} /> Discard Changes
-          </Button>
-        </div>
-      )}
-
-      {isDirty && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-          <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
-          You have unsaved changes.
-        </div>
-      )}
-
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Sidebar nav */}
         <aside className="lg:w-56 flex-shrink-0">
