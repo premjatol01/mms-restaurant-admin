@@ -23,14 +23,9 @@ export default function EditorShell({ title, description, onBack, onSave, childr
 
       <div className="space-y-4">{children}</div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-theme">
-        <p className="text-xs text-secondary">
-          Changes will be saved to your <span className="font-semibold text-theme">preview draft</span>. Publish website to make them live.
-        </p>
-        <div className="flex gap-2 self-end sm:self-auto">
-          <Button variant="secondary" onClick={onBack}>Cancel</Button>
-          <Button onClick={onSave}>Save as Draft</Button>
-        </div>
+      <div className="flex justify-end gap-2 pt-4 border-t border-theme">
+        <Button variant="secondary" onClick={onBack}>Cancel</Button>
+        <Button onClick={onSave}>Save changes</Button>
       </div>
     </div>
   );

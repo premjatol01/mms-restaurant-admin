@@ -101,6 +101,27 @@ export const defaultSections = [
     }
   },
   {
+    id: "hours",
+    type: "hours",
+    title: "Business Hours",
+    description: "Opening days and operational time slots",
+    enabled: true,
+    order: 8,
+    content: {
+      title: "Opening Hours",
+      description: "Visit us during our operating hours. We look forward to serving you.",
+      businessHours: [
+        { day: "Monday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Tuesday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Wednesday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Thursday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Friday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Saturday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] },
+        { day: "Sunday", isOpen: true, slots: [{ open: "10:00", close: "23:00" }] }
+      ]
+    }
+  },
+  {
     id: "map",
     type: "map",
     title: "Map & Location",

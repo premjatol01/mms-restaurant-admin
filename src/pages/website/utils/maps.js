@@ -8,7 +8,16 @@ export function hasCoordinates(location) {
 
 export function formatAddress(location) {
   if (!location) return "";
-  return [location.addressLine, location.city, location.state, location.pincode, location.country]
+  const house = location.houseNumber || location.line1 || "";
+  const street = location.street || location.line2 || location.addressLine || "";
+  const area = location.area || "";
+  const landmark = location.landmark ? `Near ${location.landmark}` : "";
+  const city = location.city || "";
+  const state = location.state || "";
+  const pincode = location.pincode || "";
+  const country = location.country || "India";
+
+  return [house, street, area, landmark, city, state, pincode, country]
     .filter(hasValue)
     .map((v) => String(v).trim())
     .join(", ");
@@ -41,7 +50,10 @@ export function buildDirectionsUrl(location) {
 export async function geocodeAddress(location) {
   if (!location) return null;
 
-  const addressLine = String(location.addressLine ?? "").trim();
+  const houseNumber = String(location.houseNumber || location.line1 || "").trim();
+  const street = String(location.street || location.line2 || location.addressLine || "").trim();
+  const area = String(location.area || "").trim();
+  const landmark = String(location.landmark || "").trim();
   const city = String(location.city ?? "").trim();
   const state = String(location.state ?? "").trim();
   const pincode = String(location.pincode ?? "").trim();
@@ -49,60 +61,60 @@ export async function geocodeAddress(location) {
 
   const candidates = [];
 
-  // 1. Full combination if address line is provided
-  if (addressLine) {
-    const fullParts = [addressLine, city, state, pincode, country].filter(hasValue);
+  const streetDetails = [houseNumber, street, area].filter(hasValue).join(", ");
+
+  // 1. Full combination if detailed address is provided
+  const fullParts = [
+    streetDetails,
+    landmark ? `Near ${landmark}` : null,
+    city,
+    state,
+    pincode,
+    country
+  ].filter(hasValue);
+  if (fullParts.length > 0) {
     candidates.push(fullParts.join(", "));
+  }
 
-    // 2. addressLine + city + country
-    if (city) {
-      candidates.push([addressLine, city, country].join(", "));
-    }
+  // 2. street + city + state + country
+  if (streetDetails && city) {
+    candidates.push([streetDetails, city, state, country].filter(hasValue).join(", "));
+  }
 
-    // 3. Clean addressLine (strip shop/flat/plot/floor numbers like 'Shop 4', 'Plot 12', '#45', 'Near X')
-    const cleanStreet = addressLine
+  // 3. area + city + state + country
+  if (area && city) {
+    candidates.push([area, city, state, country].filter(hasValue).join(", "));
+  }
+
+  // 4. landmark + city + state + country
+  if (landmark && city) {
+    candidates.push([landmark, city, state, country].filter(hasValue).join(", "));
+  }
+
+  // 5. Clean street (remove Shop/Flat/Plot prefix) + city + state + country
+  if (street) {
+    const cleanStreet = street
       .replace(/^(shop|flat|plot|room|door|house|no\.?|#)\s*[\d\w-]+\s*,?/i, "")
       .replace(/(near|opp|opposite|behind|beside)\s+[^,]*,?/i, "")
       .trim();
 
-    if (cleanStreet && cleanStreet !== addressLine) {
-      if (city) {
-        candidates.push([cleanStreet, city, country].join(", "));
-      } else {
-        candidates.push([cleanStreet, country].join(", "));
-      }
-    }
-
-    // 4. If addressLine contains comma-separated sub-areas (e.g. 'Shop 4, Linking Road, Bandra West')
-    if (addressLine.includes(",")) {
-      const segments = addressLine.split(",").map((s) => s.trim()).filter(Boolean);
-      for (let i = segments.length - 1; i >= 0; i--) {
-        const seg = segments[i];
-        if (seg.length > 2 && !/^\d+$/.test(seg)) {
-          if (city) {
-            candidates.push([seg, city, country].join(", "));
-          } else {
-            candidates.push([seg, country].join(", "));
-          }
-        }
-      }
-    }
-
-    // 5. addressLine by itself (in case user entered "Bandra West Mumbai" or landmark in the street field)
-    candidates.push(addressLine);
-    if (!addressLine.toLowerCase().includes(country.toLowerCase())) {
-      candidates.push(`${addressLine}, ${country}`);
+    if (cleanStreet && cleanStreet !== street && city) {
+      candidates.push([cleanStreet, city, state, country].filter(hasValue).join(", "));
     }
   }
 
-  // 6. Valid 6-digit Pincode (very accurate for neighborhood post offices in India)
+  // 6. Valid 6-digit Pincode with city/state (very accurate in India)
   if (pincode && /^\d{6}$/.test(pincode)) {
+    if (city) {
+      candidates.push([city, pincode, state, country].filter(hasValue).join(", "));
+    }
     candidates.push(`${pincode}, ${country}`);
   }
 
-  // 7. If no street address was provided at all, search city + state
-  if (!addressLine && city) {
+  // 7. City + State + Country (e.g. Barmer, Rajasthan, India)
+  if (city) {
     candidates.push([city, state, country].filter(hasValue).join(", "));
+    candidates.push([city, country].filter(hasValue).join(", "));
   }
 
   // Deduplicate candidates preserving order

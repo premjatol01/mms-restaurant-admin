@@ -55,8 +55,15 @@ export function validateMap(content) {
   if (hasLat && !inRange(location.latitude, -90, 90)) errors.latitude = "Latitude must be between -90 and 90";
   if (hasLng && !inRange(location.longitude, -180, 180)) errors.longitude = "Longitude must be between -180 and 180";
 
-  if (isBlank(location.addressLine) && !(hasLat && hasLng)) {
+  if (isBlank(location.addressLine) && isBlank(location.houseNumber) && isBlank(location.street) && !(hasLat && hasLng)) {
     errors.addressLine = "Enter street address or search on map";
+  }
+
+  if (location.pincode && !isBlank(location.pincode)) {
+    const pin = String(location.pincode).trim();
+    if (!/^\d{6}$/.test(pin)) {
+      errors.pincode = "Enter a valid 6-digit PIN code";
+    }
   }
 
   return errors;

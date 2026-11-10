@@ -8,7 +8,6 @@ import BasicInformationForm from "./components/BasicInformationForm";
 import BrandingForm from "./components/BrandingForm";
 import ContactInformationForm from "./components/ContactInformationForm";
 import AddressForm from "./components/AddressForm";
-import BusinessHoursForm from "./components/BusinessHoursForm";
 import MenuMasterSection from "./components/MenuMasterSection";
 import TableConfigSection from "./components/TableConfigSection";
 import SubscriptionSection from "./components/SubscriptionSection";
@@ -21,7 +20,6 @@ const TABS = [
   { id: "branding", label: "Branding", icon: Image },
   { id: "contact", label: "Contact", icon: Phone },
   { id: "address", label: "Address", icon: MapPin },
-  { id: "hours", label: "Business Hours", icon: Clock },
   { id: "menu", label: "Menu Master", icon: LayoutGrid },
   { id: "tables", label: "Table Configuration", icon: Armchair },
   { id: "subscription", label: "Subscription", icon: CreditCard },
@@ -131,7 +129,6 @@ export default function RestaurantProfilePage() {
           {activeTab === "branding" && <BrandingForm />}
           {activeTab === "contact" && <ContactInformationForm />}
           {activeTab === "address" && <AddressForm />}
-          {activeTab === "hours" && <BusinessHoursForm />}
           {activeTab === "menu" && <MenuMasterSection />}
           {activeTab === "tables" && <TableConfigSection />}
           {activeTab === "subscription" && <SubscriptionSection />}

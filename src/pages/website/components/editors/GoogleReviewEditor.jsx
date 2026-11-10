@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Star, Check, X, Copy, ExternalLink, Sparkles, MessageSquareHeart } from "lucide-react";
+import { Star, Copy, ExternalLink, Sparkles, MessageSquareHeart } from "lucide-react";
 import { toast } from "sonner";
 import Input from "../../../../components/ui/Input";
 import Textarea from "../../../../components/ui/Textarea";
 import EditorShell from "../shared/EditorShell";
 import FormBlock from "../shared/FormBlock";
-import { checkboxClass } from "../shared/fieldStyles";
 
 const GOOGLE_HOST = /(^|\.)(google\.(com|co\.[a-z]{2}|com\.[a-z]{2}|[a-z]{2})|g\.page|goo\.gl|g\.co)$/i;
 
@@ -33,7 +32,6 @@ export default function GoogleReviewEditor({ section, onSave, onCancel }) {
   const [googleReviewLink, setGoogleReviewLink] = useState(
     section.content?.googleReviewLink || ""
   );
-  const [enabled, setEnabled] = useState(Boolean(section.enabled !== false));
 
   const trimmedLink = googleReviewLink.trim();
   const isValidLink = Boolean(trimmedLink && isGoogleLink(trimmedLink));
@@ -54,12 +52,11 @@ export default function GoogleReviewEditor({ section, onSave, onCancel }) {
       heading: trimmedHeading,
       description: trimmedDesc,
       buttonText: trimmedBtnText,
-      googleReviewLink: trimmedLink,
-      enabled
+      googleReviewLink: trimmedLink
     };
 
     onSave(updatedContent, {
-      enabled,
+      enabled: section.enabled,
       title: section.title || "Google Review",
       description: trimmedHeading
     });
@@ -151,52 +148,7 @@ export default function GoogleReviewEditor({ section, onSave, onCancel }) {
         </div>
       </FormBlock>
 
-      {/* ───────────────── 3. SECTION VISIBILITY ───────────────── */}
-      <FormBlock
-        title="Section Visibility"
-        description="Choose whether this banner should be visible on your live portfolio website."
-      >
-        <div
-          onClick={() => setEnabled((prev) => !prev)}
-          className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
-            enabled
-              ? "border-primary bg-primary-light/20 shadow-sm"
-              : "border-theme bg-surface hover:bg-surface-soft"
-          }`}
-        >
-          <div className="flex items-center gap-3.5">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              onClick={(e) => e.stopPropagation()}
-              className={checkboxClass}
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-sm text-theme">
-                  Enable Google Review Banner
-                </p>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    enabled
-                      ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                  }`}
-                >
-                  {enabled ? <Check size={12} /> : <X size={12} />}
-                  {enabled ? "Visible on Web" : "Hidden from Web"}
-                </span>
-              </div>
-              <p className="text-xs text-secondary mt-0.5">
-                When enabled, a prominent review banner is displayed in the middle of your portfolio website.
-              </p>
-            </div>
-          </div>
-        </div>
-      </FormBlock>
-
-      {/* ───────────────── 4. LIVE BANNER PREVIEW ───────────────── */}
+      {/* ───────────────── 3. LIVE BANNER PREVIEW ───────────────── */}
       <FormBlock
         title="Banner Preview"
         description="Preview of how this banner appears on your restaurant website."

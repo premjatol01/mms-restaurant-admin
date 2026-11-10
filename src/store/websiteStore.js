@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import { websiteApi } from "../api/website.api";
 import { defaultSections } from "../pages/website/data/sections";
 import { DEFAULT_WEBSITE_COLORS, BASE_DOMAIN } from "../pages/website/utils/constants";
@@ -137,8 +138,8 @@ export const useWebsiteStore = create((set, get) => ({
   // Update Section Content — saves as draft, marks hasDraft: true
   updateSection: async (sectionId, content, extra = {}) => {
     const enabled = extra.enabled !== undefined ? extra.enabled : content?.enabled;
-    const title = extra.title !== undefined ? extra.title : content?.sectionTitle;
-    const description = extra.description !== undefined ? extra.description : content?.sectionDescription;
+    const title = extra.title !== undefined ? extra.title : (content?.title || content?.sectionTitle);
+    const description = extra.description !== undefined ? extra.description : (content?.description || content?.sectionDescription);
 
     // Optimistic local update (admin sees their changes immediately in the builder)
     set((state) => ({
@@ -234,6 +235,9 @@ export const useWebsiteStore = create((set, get) => ({
 
     try {
       await websiteApi.toggleSection(sectionId, newEnabled);
+      toast.success(
+        `${section.title || "Section"} ${newEnabled ? "enabled" : "disabled"}`
+      );
     } catch (err) {
       console.error("Failed to toggle section:", err);
       set((state) => ({
@@ -241,6 +245,7 @@ export const useWebsiteStore = create((set, get) => ({
           s.id === sectionId ? { ...s, enabled: !newEnabled } : s
         ),
       }));
+      toast.error(`Failed to update ${section.title || "section"}`);
     }
   },
 

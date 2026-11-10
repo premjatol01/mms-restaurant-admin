@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Globe, MessageSquare, Copy, Check, Eye, ExternalLink, FileText } from "lucide-react";
+import { Globe, MessageSquare, Copy, Check, Eye, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../store/websiteStore";
 import { useMenuStore } from "../../store/menuStore";
@@ -41,15 +41,6 @@ export default function WebsitePage() {
     window.open(previewUrl, "_blank");
   };
 
-  const handleSaveDraft = async () => {
-    try {
-      await useWebsiteStore.getState().saveDraft();
-      toast.success("Draft saved! Preview updated. Click 'Preview' to view your changes.");
-    } catch {
-      toast.error("Failed to save draft.");
-    }
-  };
-
   const handlePublish = async () => {
     if (!restaurantSlug || !restaurantSlug.trim()) {
       toast.error("Please add and save a website subdomain before publishing.");
@@ -75,9 +66,15 @@ export default function WebsitePage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div
+      className={
+        activeTab === "inquiries"
+          ? "flex flex-col h-[calc(100vh-7rem)] space-y-3.5 overflow-hidden"
+          : "space-y-4"
+      }
+    >
       {/* Status Card */}
-      <div className="bg-surface border border-theme rounded-xl p-5">
+      <div className="flex-none bg-surface border border-theme rounded-xl p-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -135,15 +132,6 @@ export default function WebsitePage() {
               <Eye size={14} />
               Preview
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleSaveDraft}
-              title="Save changes to your preview draft"
-            >
-              <FileText size={14} />
-              Save as Draft
-            </Button>
             {websiteStatus === "published" && !hasDraft ? (
               <Button variant="secondary" size="sm" onClick={handleUnpublish}>
                 Unpublish
@@ -172,7 +160,7 @@ export default function WebsitePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-primary-light/20 p-1 rounded-lg w-fit">
+      <div className="flex-none flex gap-1 bg-primary-light/20 p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab("builder")}
           className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -198,7 +186,11 @@ export default function WebsitePage() {
       </div>
 
       {/* Content */}
-      {activeTab === "builder" ? <WebsiteBuilder /> : <InquiryList />}
+      {activeTab === "builder" ? (
+        <WebsiteBuilder />
+      ) : (
+        <InquiryList />
+      )}
 
       {/* Publish Confirmation Modal */}
       <PublishConfirmModal

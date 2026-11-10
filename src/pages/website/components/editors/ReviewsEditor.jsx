@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Star, MessageSquareQuote, Check, X, ShieldCheck, LoaderCircle } from "lucide-react";
+import { Star, MessageSquareQuote, ShieldCheck, LoaderCircle } from "lucide-react";
 import Input from "../../../../components/ui/Input";
 import Textarea from "../../../../components/ui/Textarea";
 import EditorShell from "../shared/EditorShell";
 import FormBlock from "../shared/FormBlock";
-import { checkboxClass } from "../shared/fieldStyles";
 import { reviewsApi } from "../../../../api/reviews.api";
 
 export default function ReviewsEditor({ section, onSave, onCancel }) {
@@ -14,7 +13,6 @@ export default function ReviewsEditor({ section, onSave, onCancel }) {
   const [description, setDescription] = useState(
     section.content?.description || section.description || "What our guests say about their dining experience"
   );
-  const [enabled, setEnabled] = useState(Boolean(section.enabled !== false));
 
   // Optional live preview data of actual guest reviews
   const [reviewsData, setReviewsData] = useState({ reviews: [], total: 0, averageRating: 0 });
@@ -55,12 +53,11 @@ export default function ReviewsEditor({ section, onSave, onCancel }) {
     const updatedContent = {
       ...section.content,
       title: trimmedTitle,
-      description: trimmedDesc,
-      enabled
+      description: trimmedDesc
     };
 
     onSave(updatedContent, {
-      enabled,
+      enabled: section.enabled,
       title: trimmedTitle,
       description: trimmedDesc
     });
@@ -96,52 +93,7 @@ export default function ReviewsEditor({ section, onSave, onCancel }) {
         </div>
       </FormBlock>
 
-      {/* ───────────────── 2. WEBSITE VISIBILITY (ENABLE / DISABLE) ───────────────── */}
-      <FormBlock
-        title="Section Visibility"
-        description="Choose whether the Customer Reviews section should be displayed on your live website."
-      >
-        <div
-          onClick={() => setEnabled((prev) => !prev)}
-          className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-4 ${
-            enabled
-              ? "border-primary bg-primary-light/20 shadow-sm"
-              : "border-theme bg-surface hover:bg-surface-soft"
-          }`}
-        >
-          <div className="flex items-center gap-3.5">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              onClick={(e) => e.stopPropagation()}
-              className={checkboxClass}
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-sm text-theme">
-                  Enable Reviews Section on Website
-                </p>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    enabled
-                      ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                  }`}
-                >
-                  {enabled ? <Check size={12} /> : <X size={12} />}
-                  {enabled ? "Visible on Web" : "Hidden from Web"}
-                </span>
-              </div>
-              <p className="text-xs text-secondary mt-0.5">
-                When enabled, genuine guest reviews and star ratings are prominently featured on your portfolio page.
-              </p>
-            </div>
-          </div>
-        </div>
-      </FormBlock>
-
-      {/* ───────────────── 3. LIVE REVIEWS PREVIEW ───────────────── */}
+      {/* ───────────────── 2. LIVE REVIEWS PREVIEW ───────────────── */}
       <FormBlock
         title="Diner Feedback Overview"
         description="Real-time ratings and recent feedback collected from your diners."

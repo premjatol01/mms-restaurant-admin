@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../../store/websiteStore";
 import SubdomainSettings from "./SubdomainSettings";
@@ -14,6 +15,7 @@ import InquiryEditor from "./editors/InquiryEditor";
 import FooterEditor from "./editors/FooterEditor";
 import ReviewsEditor from "./editors/ReviewsEditor";
 import GoogleReviewEditor from "./editors/GoogleReviewEditor";
+import HoursEditor from "./editors/HoursEditor";
 
 const EDITORS = {
   hero: HeroEditor,
@@ -23,6 +25,7 @@ const EDITORS = {
   googleReview: GoogleReviewEditor,
   gallery: GalleryEditor,
   reviews: ReviewsEditor,
+  hours: HoursEditor,
   map: MapEditor,
   inquiry: InquiryEditor,
   footer: FooterEditor
@@ -30,15 +33,34 @@ const EDITORS = {
 
 export default function WebsiteBuilder() {
   const { sections, updateSection } = useWebsiteStore();
-  const [editingId, setEditingId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editingId = searchParams.get("section") || searchParams.get("edit") || null;
 
   const sortedSections = useMemo(() => [...sections].sort((a, b) => a.order - b.order), [sections]);
   const editingSection = sections.find((s) => s.id === editingId) ?? null;
 
+  const handleStartEdit = (sectionId) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("section", sectionId);
+      return next;
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("section");
+      next.delete("edit");
+      return next;
+    });
+  };
+
   const handleSaveSection = (content, extra) => {
+    if (!editingSection) return;
     updateSection(editingSection.id, content, extra);
-    toast.success(`${editingSection.title} saved as draft! Preview updated.`);
-    setEditingId(null);
+    toast.success(`${editingSection.title} saved`);
+    // Keep user on the section editor (do not reset editingId)
   };
 
   // Editing a section takes over the builder; Back or Cancel returns to the list.
@@ -47,7 +69,7 @@ export default function WebsiteBuilder() {
     if (Editor) {
       return (
         <div className="bg-surface border border-theme rounded-xl p-5">
-          <Editor section={editingSection} onSave={handleSaveSection} onCancel={() => setEditingId(null)} />
+          <Editor section={editingSection} onSave={handleSaveSection} onCancel={handleCancelEdit} />
         </div>
       );
     }
@@ -67,7 +89,7 @@ export default function WebsiteBuilder() {
           <SectionCard
             key={section.id}
             section={section}
-            onEdit={(s) => setEditingId(s.id)}
+            onEdit={(s) => handleStartEdit(s.id)}
           />
         ))}
       </div>
