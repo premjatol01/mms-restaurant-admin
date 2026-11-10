@@ -1,13 +1,32 @@
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, AlertTriangle } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import RoleAccessDenied from "../components/RoleAccessDenied";
 import { useAuth } from "../hooks/useAuth";
+import { apiClient } from "../api/client";
 
 export default function AdminLayout() {
   const { isAuthenticated, isLoggingOut, user } = useAuth();
+  const [maintenanceInfo, setMaintenanceInfo] = useState(null);
   const marketingWebUrl = import.meta.env.VITE_MARKETING_WEBSITE_URL || "http://localhost:3000";
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      apiClient
+        .get("/platform-settings")
+        .then((res) => {
+          const data = res?.data?.data || res?.data;
+          if (data?.maintenanceEnabled || data?.platformStatus === "Maintenance") {
+            setMaintenanceInfo(data);
+          } else {
+            setMaintenanceInfo(null);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   // When logging out, show clean transition loader (prevents access denied screen flash)
   if (isLoggingOut) {
@@ -56,6 +75,16 @@ export default function AdminLayout() {
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header />
+        {maintenanceInfo && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-2.5 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                <strong>Platform Maintenance Notice:</strong> Super Admin has activated platform maintenance mode. Customer ordering portals and public restaurant pages are displaying the maintenance notice.
+              </span>
+            </div>
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
