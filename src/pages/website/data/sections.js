@@ -136,10 +136,14 @@ export const defaultSections = [
       zoom: 15,
       showDirections: true,
       location: {
-        addressLine: "123 Food Street",
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
+        houseNumber: "",
+        street: "",
+        area: "",
+        landmark: "",
+        addressLine: "",
+        city: "",
+        state: "Rajasthan",
+        pincode: "",
         country: "India",
         latitude: "",
         longitude: ""

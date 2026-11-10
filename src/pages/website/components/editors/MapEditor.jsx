@@ -13,96 +13,7 @@ import { validateMap } from "../../utils/validation";
 import { buildViewUrl, geocodeAddress, reverseGeocode, formatAddress } from "../../utils/maps";
 import { useProfileStore } from "../../../../store/profileStore";
 import LocationMapPicker from "./LocationMapPicker";
-
-const INDIAN_STATES = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-  "Andaman and Nicobar Islands",
-  "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Jammu and Kashmir",
-  "Ladakh",
-  "Lakshadweep",
-  "Puducherry"
-].map((s) => ({ value: s, label: s }));
-
-const COUNTRY_OPTIONS = [
-  { value: "India", label: "India" },
-  { value: "Other", label: "Other" }
-];
-
-const selectCustomStyles = {
-  control: (base, state) => ({
-    ...base,
-    backgroundColor: "transparent",
-    borderColor: state.isFocused ? "var(--color-primary, #f29191)" : "var(--color-border, #e2e8f0)",
-    borderRadius: "0.5rem",
-    minHeight: "38px",
-    boxShadow: state.isFocused ? "0 0 0 1px var(--color-primary, #f29191)" : "none",
-    "&:hover": {
-      borderColor: "var(--color-primary, #f29191)",
-    },
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "0.5rem",
-    zIndex: 9999,
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isSelected
-      ? "#f29191"
-      : state.isFocused
-      ? "rgba(242, 145, 145, 0.15)"
-      : "transparent",
-    color: state.isSelected ? "#ffffff" : "#1f2937",
-    cursor: "pointer",
-    fontSize: "0.875rem",
-  }),
-  singleValue: (base) => ({
-    ...base,
-    color: "inherit",
-    fontSize: "0.875rem",
-  }),
-  input: (base) => ({
-    ...base,
-    color: "inherit",
-  }),
-  placeholder: (base) => ({
-    ...base,
-    color: "#9ca3af",
-    fontSize: "0.875rem",
-  }),
-};
+import { INDIAN_STATES, COUNTRY_OPTIONS, selectCustomStyles } from "../../../../constants/addressConstants";
 
 export default function MapEditor({ section, onSave, onCancel }) {
   const profile = useProfileStore((s) => s.profile);
@@ -114,14 +25,14 @@ export default function MapEditor({ section, onSave, onCancel }) {
     return {
       ...initialContent,
       location: {
-        houseNumber: loc.houseNumber || loc.line1 || profileAddr.line1 || "",
-        street: loc.street || loc.line2 || profileAddr.line2 || loc.addressLine || "",
-        area: loc.area || profileAddr.area || "",
-        landmark: loc.landmark || profileAddr.landmark || "",
-        city: loc.city || profileAddr.city || "",
-        state: loc.state || profileAddr.state || "Rajasthan",
-        pincode: loc.pincode || profileAddr.pincode || "",
-        country: loc.country || profileAddr.country || "India",
+        houseNumber: loc.houseNumber !== undefined ? loc.houseNumber : (loc.line1 !== undefined ? loc.line1 : (profileAddr.line1 || "")),
+        street: loc.street !== undefined ? loc.street : (loc.line2 !== undefined ? loc.line2 : (profileAddr.line2 !== undefined ? profileAddr.line2 : "")),
+        area: loc.area !== undefined ? loc.area : (profileAddr.area || ""),
+        landmark: loc.landmark !== undefined ? loc.landmark : (profileAddr.landmark || ""),
+        city: loc.city !== undefined ? loc.city : (profileAddr.city || ""),
+        state: loc.state !== undefined ? loc.state : (profileAddr.state || "Rajasthan"),
+        pincode: loc.pincode !== undefined ? loc.pincode : (profileAddr.pincode || ""),
+        country: loc.country !== undefined ? loc.country : (profileAddr.country || "India"),
         latitude: loc.latitude || "",
         longitude: loc.longitude || ""
       }
@@ -132,18 +43,18 @@ export default function MapEditor({ section, onSave, onCancel }) {
   const [searching, setSearching] = useState(false);
   const [pinnedPlaceName, setPinnedPlaceName] = useState("");
 
-  // Sync from profile if initial location is empty
+  // Sync from profile only if initial location is completely uninitialized
   useEffect(() => {
     if (profileAddr && Object.keys(profileAddr).length > 0) {
       setContent((prev) => {
         const cur = prev.location || {};
-        if (!cur.city && !cur.street && !cur.houseNumber) {
+        if (!cur.city && !cur.pincode) {
           return {
             ...prev,
             location: {
               ...cur,
               houseNumber: profileAddr.line1 || cur.houseNumber || "",
-              street: profileAddr.line2 || cur.street || "",
+              street: profileAddr.line2 !== undefined ? profileAddr.line2 : (cur.street || ""),
               area: profileAddr.area || cur.area || "",
               landmark: profileAddr.landmark || cur.landmark || "",
               city: profileAddr.city || cur.city || "",
@@ -228,8 +139,8 @@ export default function MapEditor({ section, onSave, onCancel }) {
 
   const handleSave = () => {
     const loc = content.location || {};
-    const houseNumber = String(loc.houseNumber || "").trim();
-    const street = String(loc.street || "").trim();
+    const houseNumber = String(loc.houseNumber !== undefined ? loc.houseNumber : (loc.line1 || "")).trim();
+    const street = String(loc.street !== undefined ? loc.street : (loc.line2 || "")).trim();
     const area = String(loc.area || "").trim();
     const landmark = String(loc.landmark || "").trim();
     const city = String(loc.city || "").trim();
@@ -237,25 +148,23 @@ export default function MapEditor({ section, onSave, onCancel }) {
     const pincode = String(loc.pincode || "").trim();
     const country = String(loc.country || "India").trim();
 
-    const nextErrors = {};
-    if (!city) {
-      nextErrors.city = "City is required";
-    }
-    if (pincode && country === "India" && !/^\d{6}$/.test(pincode)) {
-      nextErrors.pincode = "Please enter a valid 6-digit PIN code";
-    }
-
     const fullAddressLine = [
       houseNumber,
       street,
       area,
-      landmark ? `Near ${landmark}` : null
+      landmark ? `Near ${landmark}` : null,
+      city,
+      state,
+      pincode,
+      country
     ].filter(Boolean).join(", ");
 
     const updatedLocation = {
       ...loc,
       houseNumber,
+      line1: houseNumber,
       street,
+      line2: street,
       area,
       landmark,
       city,
@@ -270,29 +179,11 @@ export default function MapEditor({ section, onSave, onCancel }) {
       location: updatedLocation
     };
 
-    const combinedErrors = { ...validateMap(updatedContent), ...nextErrors };
-    setErrors(combinedErrors);
+    const validationErrors = validateMap(updatedContent);
+    setErrors(validationErrors);
 
-    if (Object.keys(combinedErrors).length === 0) {
+    if (Object.keys(validationErrors).length === 0) {
       onSave(updatedContent);
-
-      // Keep Profile Module & Super Admin address in exact sync
-      try {
-        useProfileStore.getState().saveProfile({
-          address: {
-            line1: houseNumber,
-            line2: street,
-            area,
-            landmark,
-            city,
-            state,
-            pincode,
-            country
-          }
-        });
-      } catch (e) {
-        console.warn("Could not sync address to profile store:", e);
-      }
     }
   };
 
@@ -375,8 +266,10 @@ export default function MapEditor({ section, onSave, onCancel }) {
           </div>
 
           <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5">
+              City <span className="text-red-500">*</span>
+            </label>
             <Input
-              label="City"
               value={location.city || ""}
               onChange={setLocationField("city")}
               placeholder="e.g. Barmer, Jaipur"
@@ -386,7 +279,7 @@ export default function MapEditor({ section, onSave, onCancel }) {
 
           <div>
             <label className="block text-xs font-semibold text-theme mb-1.5">
-              State
+              State <span className="text-red-500">*</span>
             </label>
             <Select
               options={INDIAN_STATES}
@@ -400,10 +293,12 @@ export default function MapEditor({ section, onSave, onCancel }) {
           </div>
 
           <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5">
+              PIN Code <span className="text-red-500">*</span>
+            </label>
             <Input
-              label="PIN Code"
               value={location.pincode || ""}
-              onChange={setLocationField("pincode")}
+              onChange={(e) => setLocationField("pincode")(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="e.g. 344001 (6 digits)"
               maxLength={6}
             />
@@ -412,7 +307,7 @@ export default function MapEditor({ section, onSave, onCancel }) {
 
           <div>
             <label className="block text-xs font-semibold text-theme mb-1.5">
-              Country
+              Country <span className="text-red-500">*</span>
             </label>
             <Select
               options={COUNTRY_OPTIONS}

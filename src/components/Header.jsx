@@ -12,7 +12,7 @@ const ROUTE_TITLES = {
   "/offers-promos": { title: "Offers & Promos", desc: "Manage discounts and offers" },
   "/website": { title: "Website", desc: "Manage your online presence" },
   "/reviews": { title: "Reviews", desc: "Manage customer reviews" },
-  "/account": { title: "Account", desc: "Manage your account" },
+  "/account": { title: "Account & Profile", desc: "Manage administrator credentials, personal address & security" },
   "/settings": { title: "Settings", desc: "Application settings" },
 };
 

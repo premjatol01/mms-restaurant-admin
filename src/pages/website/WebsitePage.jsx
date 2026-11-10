@@ -11,7 +11,7 @@ import InquiryList from "./components/InquiryList";
 
 export default function WebsitePage() {
   const [activeTab, setActiveTab] = useState("builder");
-  const { websiteStatus, hasDraft, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile } = useWebsiteStore();
+  const { websiteStatus, hasDraft, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile, loading, restaurantId } = useWebsiteStore();
   const [copied, setCopied] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
@@ -19,6 +19,15 @@ export default function WebsitePage() {
     loadProfile();
     useMenuStore.getState().fetchMenuData();
   }, [loadProfile]);
+
+  if (loading && !restaurantId) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center h-[calc(100vh-7rem)]">
+        <div className="inline-block w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm text-secondary">Loading website settings...</p>
+      </div>
+    );
+  }
 
   const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const websiteUrl = restaurantSlug

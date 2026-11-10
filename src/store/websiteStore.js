@@ -19,7 +19,7 @@ export const useWebsiteStore = create((set, get) => ({
   address: "",
   websiteColors: { ...DEFAULT_WEBSITE_COLORS },
   sections: [...defaultSections],
-  loading: false,
+  loading: true,
 
   // Inquiries
   inquiries: [],

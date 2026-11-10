@@ -18,6 +18,7 @@ const WebsitePage = lazy(() => import("./pages/website/WebsitePage"));
 const ReviewsPage = lazy(() => import("./pages/reviews/ReviewsPage"));
 const SubscriptionPage = lazy(() => import("./pages/subscription/SubscriptionPage"));
 const BizGrowthPage = lazy(() => import("./pages/biz-growth/BizGrowthPage"));
+const AccountPage = lazy(() => import("./pages/account/AccountPage"));
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
 
 // Simple inline fallback shown while a lazy page chunk loads
@@ -154,7 +155,7 @@ export default function App() {
                 path="/account"
                 element={
                   <Suspense fallback={<PageLoader />}>
-                    <PlaceholderPage title="Account" />
+                    <AccountPage />
                   </Suspense>
                 }
               />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Store,
 } from "lucide-react";
@@ -39,25 +40,43 @@ function SkeletonLoader() {
 
 export default function RestaurantProfilePage() {
   const { profile, loading, error, isDirty, fetchProfile, discardChanges } = useProfileStore();
-  const [activeTab, setActiveTab] = useState("basic");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pendingTab, setPendingTab] = useState(null);
   const [showUnsaved, setShowUnsaved] = useState(false);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  const validTabIds = TABS.map((t) => t.id);
+  const rawSection = searchParams.get("section") || searchParams.get("tab");
+  const activeTab = validTabIds.includes(rawSection) ? rawSection : "basic";
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (!searchParams.get("section") && !searchParams.get("tab")) {
+      setSearchParams({ section: "basic" }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleTabChange = (tabId) => {
     if (isDirty) {
       setPendingTab(tabId);
       setShowUnsaved(true);
     } else {
-      setActiveTab(tabId);
+      setSearchParams({ section: tabId });
     }
   };
 
-  const handleStay = () => { setShowUnsaved(false); setPendingTab(null); };
+  const handleStay = () => {
+    setShowUnsaved(false);
+    setPendingTab(null);
+  };
+
   const handleLeave = () => {
     discardChanges();
-    setActiveTab(pendingTab);
+    if (pendingTab) {
+      setSearchParams({ section: pendingTab });
+    }
     setPendingTab(null);
     setShowUnsaved(false);
     toast.info("Changes discarded.");

@@ -69,7 +69,12 @@ export default function WebsiteBuilder() {
     if (Editor) {
       return (
         <div className="bg-surface border border-theme rounded-xl p-5">
-          <Editor section={editingSection} onSave={handleSaveSection} onCancel={handleCancelEdit} />
+          <Editor
+            key={editingSection._id || editingSection.id}
+            section={editingSection}
+            onSave={handleSaveSection}
+            onCancel={handleCancelEdit}
+          />
         </div>
       );
     }
