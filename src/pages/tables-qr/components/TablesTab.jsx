@@ -19,7 +19,7 @@ import { buildTableQRUrl } from "../utils/qrLink";
 import { downloadQRCode, downloadAllQRCodes } from "../utils/qrDownload";
 
 export default function TablesTab() {
-  const { tables, qrCodes, updateTable } = useTablesQRStore();
+  const { tables, qrCodes, updateTable, maxTables, planName } = useTablesQRStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [draftStatus, setDraftStatus] = useState("");
@@ -30,6 +30,23 @@ export default function TablesTab() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleOpenAddTable = () => {
+    if (tables.length >= (maxTables || 50)) {
+      toast.error(`You have reached the limit of ${maxTables || 50} tables for your ${planName || "Standard"} plan.`);
+      return;
+    }
+    setEditTable(null);
+    setShowForm(true);
+  };
+
+  const handleOpenBulkAdd = () => {
+    if (tables.length >= (maxTables || 50)) {
+      toast.error(`You have reached the limit of ${maxTables || 50} tables for your ${planName || "Standard"} plan.`);
+      return;
+    }
+    setShowBulkModal(true);
+  };
 
   // Pagination State
   const [pagination, setPagination] = useState({ page: 1, limit: 10 });
@@ -146,12 +163,28 @@ export default function TablesTab() {
           {downloadingAll ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           {downloadingAll ? "Preparing ZIP..." : "Download All QR Codes"}
         </Button>
-        <Button variant="secondary" onClick={() => setShowBulkModal(true)}>
+        <Button variant="secondary" onClick={handleOpenBulkAdd}>
           <Layers size={16} /> Bulk Add Tables
         </Button>
-        <Button onClick={() => { setEditTable(null); setShowForm(true); }}>
+        <Button onClick={handleOpenAddTable}>
           <Plus size={16} /> Add Table
         </Button>
+      </div>
+
+      {/* Table Capacity Banner */}
+      <div className="flex-none mb-3 flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-surface border border-theme rounded-lg text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-theme">Capacity:</span>
+          <span className="text-secondary font-medium">
+            {tables.length} / {maxTables || 50} Tables Used
+          </span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+            {planName || "Standard"} Plan
+          </span>
+        </div>
+        <div className="text-secondary">
+          <span className="font-semibold text-primary">{Math.max(0, (maxTables || 50) - tables.length)}</span> table slots available
+        </div>
       </div>
 
       {hasFilters && (

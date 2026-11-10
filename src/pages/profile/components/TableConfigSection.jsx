@@ -29,9 +29,14 @@ export default function TableConfigSection() {
     createTables, 
     qrTemplates, 
     fetchQrTemplates,
-    maxTables = 15,
-    planName = "Basic"
+    maxTables: storeMaxTables,
+    planName: storePlanName,
+    profile,
+    fetchProfile
   } = useProfileStore();
+
+  const maxTables = storeMaxTables || profile?.subscription?.maxTables || profile?.subscription?.package?.maxTables || 50;
+  const planName = storePlanName || profile?.subscription?.packageName || "Standard";
 
   const [saving, setSaving] = useState(false);
   const [count, setCount] = useState("");
@@ -43,7 +48,8 @@ export default function TableConfigSection() {
   useEffect(() => { 
     fetchTables(); 
     fetchQrTemplates();
-  }, [fetchTables, fetchQrTemplates]);
+    if (!profile) fetchProfile();
+  }, [fetchTables, fetchQrTemplates, profile, fetchProfile]);
 
   // Set default qrType: prefer first available template if any, else "normal"
   useEffect(() => {

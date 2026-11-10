@@ -87,7 +87,15 @@ export const useProfileStore = create((set, get) => ({
     try {
       const { data } = await profileApi.get();
       const profile = data.data || defaultProfile;
-      set({ profile, originalProfile: profile, loading: false });
+      const maxTables = profile.subscription?.maxTables || profile.subscription?.package?.maxTables || 50;
+      const planName = profile.subscription?.packageName || profile.subscription?.package?.name || "Standard";
+      set({ 
+        profile, 
+        originalProfile: profile, 
+        maxTables: maxTables,
+        planName: planName,
+        loading: false 
+      });
     } catch (err) {
       const message = err?.response?.data?.message || "Failed to load profile.";
       set({ loading: false, error: message });
@@ -425,16 +433,18 @@ export const useProfileStore = create((set, get) => ({
   // ---------- Tables ----------
   tables: [], 
   tablesLoaded: false,
-  maxTables: 15,
-  planName: "Basic",
+  maxTables: 50,
+  planName: "Standard",
 
   fetchTables: async () => {
     try {
       const { data } = await profileApi.getTables();
+      const resolvedMax = data.maxTables || get().profile?.subscription?.maxTables || get().profile?.subscription?.package?.maxTables || 50;
+      const resolvedPlan = data.planName || get().profile?.subscription?.packageName || "Standard";
       set({ 
         tables: data.data || [], 
-        maxTables: data.maxTables || 15,
-        planName: data.planName || "Basic",
+        maxTables: resolvedMax,
+        planName: resolvedPlan,
         tablesLoaded: true 
       });
     } catch (error) {
@@ -484,17 +494,22 @@ export const useProfileStore = create((set, get) => ({
   subscriptionLoading: false,
 
   fetchSubscription: async () => {
-
-
     set({ subscriptionLoading: true });
     try {
-      const res = await subscriptionApi.getOverview();
-      const currentSub = res?.data?.subscription;
-      const tableCount = (get().tables || []).length;
+      const [subRes, tablesRes] = await Promise.all([
+        subscriptionApi.getOverview(),
+        profileApi.getTables().catch(() => null)
+      ]);
+      const currentSub = subRes?.data?.subscription;
+      const tablesList = tablesRes?.data?.data || get().tables || [];
+      const tableCount = tablesList.length;
+      const subMaxTables = currentSub?.maxTables || tablesRes?.data?.maxTables || get().profile?.subscription?.maxTables || 50;
+      const subPlanName = currentSub?.packageName || tablesRes?.data?.planName || get().profile?.subscription?.packageName || "Standard";
+
       if (currentSub) {
         set({
           subscription: {
-            planName: currentSub.packageName || "No Active Plan",
+            planName: subPlanName,
             packageId: currentSub.packageId,
             status: currentSub.status || "active",
             price: currentSub.price,
@@ -505,15 +520,18 @@ export const useProfileStore = create((set, get) => ({
             daysRemaining: currentSub.daysRemaining,
             isExpired: currentSub.isExpired,
             isExpiring: currentSub.isExpiring,
-            maxTables: currentSub.maxTables || 0,
+            maxTables: subMaxTables,
             features: currentSub.features || [],
             usage: {
               tables: {
                 used: tableCount,
-                limit: currentSub.maxTables || 15,
+                limit: subMaxTables,
               },
             },
           },
+          tables: tablesList.length ? tablesList : get().tables,
+          maxTables: subMaxTables,
+          planName: subPlanName,
           subscriptionLoading: false,
         });
       } else {

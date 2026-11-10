@@ -9,7 +9,7 @@ import FormSection from "../../../components/ui/FormSection";
 import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function TableForm({ isOpen, onClose, editTable }) {
-  const { tables, qrCodes, qrTemplates, fetchQRTemplates, addTable, updateTable, generateQRCodes } = useTablesQRStore();
+  const { tables, qrCodes, qrTemplates, fetchQRTemplates, addTable, updateTable, generateQRCodes, maxTables, planName } = useTablesQRStore();
 
   const [form, setForm] = useState({ tableId: "", status: "active", selectedTemplateId: null });
   const [errors, setErrors] = useState({});
@@ -100,6 +100,8 @@ export default function TableForm({ isOpen, onClose, editTable }) {
       )
     ) {
       errs.tableId = "Table number already exists";
+    } else if (!editTable && tables.length >= (maxTables || 50)) {
+      errs.tableId = `Table limit reached (${maxTables || 50} max for ${planName || "Standard"} plan)`;
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;

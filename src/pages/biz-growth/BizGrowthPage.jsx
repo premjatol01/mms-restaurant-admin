@@ -23,10 +23,10 @@ import VideoPlayerModal from "./modals/VideoPlayerModal";
 
 const TABS = [
   { id: "all", label: "All Resources", icon: null },
-  { id: "youtube", label: "Video Masterclasses", icon: Video, color: "text-red-500", badgeBg: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 border-red-200" },
-  { id: "blog", label: "Articles & Guides", icon: FileText, color: "text-blue-500", badgeBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border-blue-200" },
-  { id: "news", label: "Industry News", icon: Newspaper, color: "text-emerald-500", badgeBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border-emerald-200" },
-  { id: "social", label: "Social Media & Marketing", icon: Share2, color: "text-purple-500", badgeBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border-purple-200" },
+  { id: "youtube", label: "Video Masterclasses", icon: Video, color: "text-red-600", badgeBg: "bg-red-50 text-red-700 border-red-200/60" },
+  { id: "blog", label: "Articles & Guides", icon: FileText, color: "text-blue-600", badgeBg: "bg-blue-50 text-blue-700 border-blue-200/60" },
+  { id: "news", label: "Industry News", icon: Newspaper, color: "text-emerald-600", badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
+  { id: "social", label: "Social Media & Marketing", icon: Share2, color: "text-purple-600", badgeBg: "bg-purple-50 text-purple-700 border-purple-200/60" },
 ];
 
 export default function BizGrowthPage() {
@@ -88,7 +88,7 @@ export default function BizGrowthPage() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-primary-soft/40 via-surface to-surface border border-theme rounded-2xl p-6 sm:p-8">
+      <div className="bg-gradient-to-r from-primary-soft/40 via-surface to-surface border border-theme-faded rounded-2xl p-6 sm:p-8">
         <div className="max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
             <TrendingUp size={14} />
@@ -200,7 +200,7 @@ export default function BizGrowthPage() {
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
                   active
                     ? "bg-primary text-white border-primary shadow-sm"
-                    : "bg-surface border-theme text-secondary hover:text-theme hover:bg-primary-soft/20"
+                    : "bg-surface border-theme-faded text-secondary hover:text-theme hover:bg-primary-soft/20"
                 }`}
               >
                 {Icon && <Icon size={16} className={active ? "text-white" : tab.color} />}
@@ -227,7 +227,7 @@ export default function BizGrowthPage() {
               onClick={() => setSelectedCategory("all")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 selectedCategory === "all"
-                  ? "bg-theme text-theme border border-theme shadow-xs font-bold"
+                  ? "bg-theme text-theme border border-theme-faded shadow-xs font-bold"
                   : "text-secondary hover:text-theme bg-surface-soft hover:bg-primary-light"
               }`}
             >
@@ -240,7 +240,7 @@ export default function BizGrowthPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   selectedCategory === cat
-                    ? "bg-theme text-theme border border-theme shadow-xs font-bold"
+                    ? "bg-theme text-theme border border-theme-faded shadow-xs font-bold"
                     : "text-secondary hover:text-theme bg-surface-soft hover:bg-primary-light"
                 }`}
               >
@@ -285,7 +285,7 @@ export default function BizGrowthPage() {
             return (
               <div
                 key={id}
-                className="bg-surface rounded-2xl border border-theme overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                className="bg-surface rounded-2xl border border-theme-faded overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
               >
                 <div>
                   {/* Thumbnail / Header */}

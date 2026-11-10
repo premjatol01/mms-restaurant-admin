@@ -12,6 +12,8 @@ export const useTablesQRStore = create((set, get) => ({
   tables: [],
   qrCodes: [],
   qrTemplates: [],
+  maxTables: 50,
+  planName: "Standard",
   loading: false,
   error: null,
   loaded: false,
@@ -28,6 +30,8 @@ export const useTablesQRStore = create((set, get) => ({
       set({ 
         tables: (tablesRes.data?.data || []).map(norm),
         qrCodes: (qrsRes.data?.data || []).map(norm),
+        maxTables: tablesRes.data?.maxTables || 50,
+        planName: tablesRes.data?.planName || "Standard",
         loading: false,
         loaded: true
       });
@@ -164,6 +168,8 @@ export const useTablesQRStore = create((set, get) => ({
       set({ 
         tables: (tablesRes.data?.data || []).map(norm),
         qrCodes: (qrsRes.data?.data || []).map(norm),
+        maxTables: tablesRes.data?.maxTables || 50,
+        planName: tablesRes.data?.planName || "Standard",
       });
     } catch (err) {
       console.error("Failed to refresh data", err);

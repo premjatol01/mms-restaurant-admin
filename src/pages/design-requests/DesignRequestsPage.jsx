@@ -27,22 +27,22 @@ import { getImageUrl } from "../../utils/getImageUrl";
 const STATUS_CONFIG = {
   pending: {
     label: "Pending Review",
-    badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/50",
+    badgeClass: "bg-amber-50 text-amber-800 border-amber-200/60",
     icon: Clock,
   },
   in_progress: {
     label: "In Progress",
-    badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800/50",
+    badgeClass: "bg-blue-50 text-blue-800 border-blue-200/60",
     icon: RefreshCw,
   },
   completed: {
     label: "Completed & Ready",
-    badgeClass: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800/50",
+    badgeClass: "bg-green-50 text-green-800 border-green-200/60",
     icon: CheckCircle2,
   },
   rejected: {
     label: "Declined",
-    badgeClass: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border-red-200 dark:border-red-800/50",
+    badgeClass: "bg-red-50 text-red-800 border-red-200/60",
     icon: XCircle,
   },
 };
@@ -110,12 +110,12 @@ export default function DesignRequestsPage() {
     <div className="flex-1 min-h-0 flex flex-col h-full space-y-5">
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface border border-theme rounded-xl p-4">
+        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
           <p className="text-xs font-medium text-secondary">Total Requests</p>
           <p className="text-2xl font-bold text-theme mt-1">{metrics.total}</p>
         </div>
 
-        <div className="bg-surface border border-theme rounded-xl p-4">
+        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-secondary">Menu Designs</p>
             <UtensilsCrossed size={16} className="text-blue-500" />
@@ -123,7 +123,7 @@ export default function DesignRequestsPage() {
           <p className="text-2xl font-bold text-theme mt-1">{metrics.menuCount}</p>
         </div>
 
-        <div className="bg-surface border border-theme rounded-xl p-4">
+        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-secondary">QR Template Designs</p>
             <QrCode size={16} className="text-purple-500" />
@@ -131,12 +131,12 @@ export default function DesignRequestsPage() {
           <p className="text-2xl font-bold text-theme mt-1">{metrics.qrCount}</p>
         </div>
 
-        <div className="bg-surface border border-theme rounded-xl p-4">
+        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-secondary">Completed & Ready</p>
             <CheckCircle2 size={16} className="text-green-500" />
           </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{metrics.completedCount}</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">{metrics.completedCount}</p>
         </div>
       </div>
 
@@ -191,12 +191,12 @@ export default function DesignRequestsPage() {
       {/* Requests List */}
       <div className="flex-1 min-h-0">
         {loading && requests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-16 bg-surface border border-theme rounded-2xl text-center">
+          <div className="flex flex-col items-center justify-center p-16 bg-surface border border-theme-faded rounded-2xl text-center">
             <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
             <p className="text-sm text-secondary">Loading your design requests...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
-          <div className="bg-surface border border-theme rounded-2xl p-12 text-center">
+          <div className="bg-surface border border-theme-faded rounded-2xl p-12 text-center">
             <EmptyState
               icon={Palette}
               title={search || typeFilter || statusFilter ? "No matching requests found" : "No design requests yet"}
@@ -220,16 +220,16 @@ export default function DesignRequestsPage() {
               return (
                 <div
                   key={req.id}
-                  className="bg-surface border border-theme rounded-2xl p-5 shadow-xs transition-all hover:border-theme/80 space-y-4"
+                  className="bg-surface border border-theme-faded rounded-2xl p-5 shadow-xs transition-all hover:border-theme/60 space-y-4"
                 >
                   {/* Card Top Row */}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
                           isMenu
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                            : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                            ? "bg-blue-50/80 text-blue-700 border-blue-200/50"
+                            : "bg-purple-50/80 text-purple-700 border-purple-200/50"
                         }`}
                       >
                         {isMenu ? <UtensilsCrossed size={14} /> : <QrCode size={14} />}
@@ -280,16 +280,16 @@ export default function DesignRequestsPage() {
 
                   {/* COMPLETED RESULT & CONFIRMATION SECTION */}
                   {req.status === "completed" && (
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4.5 space-y-3.5">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4.5 space-y-3.5">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 size={18} className="text-green-600 dark:text-green-400 shrink-0" />
-                          <h4 className="text-sm font-bold text-green-800 dark:text-green-300">
+                          <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+                          <h4 className="text-sm font-bold text-green-800">
                             Design Completed & Ready for Download
                           </h4>
                         </div>
                         {req.completedAt && (
-                          <span className="text-xs text-green-700 dark:text-green-400">
+                          <span className="text-xs text-green-700">
                             Fulfilled on {format(new Date(req.completedAt), "d MMM yyyy")}
                           </span>
                         )}
@@ -297,8 +297,8 @@ export default function DesignRequestsPage() {
 
                       {/* Designer Remarks / Confirmation Message */}
                       {req.adminRemarks && (
-                        <div className="text-xs text-theme/90 bg-white/70 dark:bg-black/30 border border-green-500/20 rounded-lg p-3">
-                          <p className="font-semibold text-green-800 dark:text-green-300 mb-0.5">
+                        <div className="text-xs text-theme/90 bg-white border border-green-500/20 rounded-lg p-3">
+                          <p className="font-semibold text-green-800 mb-0.5">
                             Designer Confirmation Note:
                           </p>
                           <p className="italic">{req.adminRemarks}</p>
@@ -307,12 +307,12 @@ export default function DesignRequestsPage() {
 
                       {/* Completed Asset Display */}
                       {hasCompletedAsset ? (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface border border-theme rounded-xl p-3.5 shadow-xs">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
                           <div className="flex items-center gap-3 min-w-0">
                             {/* Thumbnail */}
                             <div
                               onClick={() => setPreviewImage(getImageUrl(req.completedAttachment.url))}
-                              className="w-14 h-14 rounded-lg border border-theme overflow-hidden bg-primary-light flex items-center justify-center shrink-0 cursor-pointer group relative"
+                              className="w-14 h-14 rounded-lg border border-theme-faded overflow-hidden bg-primary-light flex items-center justify-center shrink-0 cursor-pointer group relative"
                               title="Click to preview full size"
                             >
                               <img

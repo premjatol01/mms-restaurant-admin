@@ -24,10 +24,10 @@ export default function SubscriptionOverviewCard({
 }) {
   if (!subscription) return null;
 
-  const planName = subscription.packageName || subscription.planName || "Basic";
+  const planName = subscription.packageName || subscription.planName || "Standard";
   const amount = subscription.price || subscription.amount || 0;
   const durationDisplay = subscription.durationDisplay || (subscription.duration ? `${subscription.duration} Days` : "30 Days");
-  const maxTables = subscription.maxTables || 15;
+  const maxTables = subscription.maxTables || (planName.toLowerCase().includes("standard") ? 50 : 15);
   const daysRemaining = subscription.daysRemaining ?? 0;
   const isExpired = subscription.status === "expired" || subscription.isExpired;
   const isExpiring = subscription.status === "expiring" || subscription.isExpiring;

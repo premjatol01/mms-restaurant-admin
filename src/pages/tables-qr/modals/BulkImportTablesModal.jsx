@@ -8,7 +8,7 @@ import { useProfileStore } from "../../../store/profileStore";
 import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function BulkImportTablesModal({ isOpen, onClose }) {
-  const { tables, qrTemplates, fetchQRTemplates, createBulkTables } = useTablesQRStore();
+  const { tables, qrTemplates, fetchQRTemplates, createBulkTables, maxTables: storeMaxTables, planName: storePlanName } = useTablesQRStore();
   const profile = useProfileStore((state) => state.profile);
   const fetchProfile = useProfileStore((state) => state.fetchProfile);
 
@@ -23,7 +23,8 @@ export default function BulkImportTablesModal({ isOpen, onClose }) {
     }
   }, [isOpen, fetchQRTemplates, profile, fetchProfile]);
 
-  const maxTables = profile?.subscription?.package?.maxTables || 15;
+  const maxTables = storeMaxTables || profile?.subscription?.maxTables || profile?.subscription?.package?.maxTables || 50;
+  const planName = storePlanName || profile?.subscription?.packageName || "Standard";
   const currentCount = tables.length;
   const remainingAllowed = Math.max(0, maxTables - currentCount);
 
@@ -83,7 +84,7 @@ export default function BulkImportTablesModal({ isOpen, onClose }) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-primary-light/15 border border-primary/20">
           <div>
             <p className="text-xs font-semibold text-secondary uppercase tracking-wider">
-              Table Capacity & Allocation
+              {planName} Plan · Table Capacity & Allocation
             </p>
             <p className="text-sm font-bold text-theme mt-0.5">
               {currentCount} Active Tables · {remainingAllowed} Remaining Allowed (Limit: {maxTables})
