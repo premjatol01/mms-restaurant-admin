@@ -37,7 +37,7 @@ export default function WebsiteBuilder() {
 
   const handleSaveSection = (content, extra) => {
     updateSection(editingSection.id, content, extra);
-    toast.success(`${editingSection.title} saved`);
+    toast.success(`${editingSection.title} saved as draft! Preview updated.`);
     setEditingId(null);
   };
 

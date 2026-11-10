@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { Globe, MessageSquare, Copy, ExternalLink, Check } from "lucide-react";
+import { Globe, MessageSquare, Copy, Check, Eye, ExternalLink, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useWebsiteStore } from "../../store/websiteStore";
 import { useMenuStore } from "../../store/menuStore";
 import Button from "../../components/ui/Button";
 import PublishConfirmModal from "./modals/PublishConfirmModal";
-import { BASE_DOMAIN } from "./utils/constants";
+import { MAIN_WEBSITE_DOMAIN } from "./utils/constants";
 import WebsiteBuilder from "./components/WebsiteBuilder";
 import InquiryList from "./components/InquiryList";
 
 export default function WebsitePage() {
   const [activeTab, setActiveTab] = useState("builder");
-  const { websiteStatus, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile } = useWebsiteStore();
+  const { websiteStatus, hasDraft, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile } = useWebsiteStore();
   const [copied, setCopied] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
@@ -20,9 +20,9 @@ export default function WebsitePage() {
     useMenuStore.getState().fetchMenuData();
   }, [loadProfile]);
 
-  const protocol = import.meta.env.DEV ? "http" : "https";
+  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const websiteUrl = restaurantSlug
-    ? `${protocol}://${restaurantSlug}.${BASE_DOMAIN}`
+    ? `${protocol}//${restaurantSlug}.${MAIN_WEBSITE_DOMAIN}`
     : "(no subdomain set)";
 
   const handleCopyUrl = () => {
@@ -30,6 +30,24 @@ export default function WebsitePage() {
     navigator.clipboard.writeText(websiteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePreview = () => {
+    if (!restaurantSlug) {
+      toast.error("Please add and save a website subdomain first.");
+      return;
+    }
+    const previewUrl = `${protocol}//${restaurantSlug}.${MAIN_WEBSITE_DOMAIN}/preview`;
+    window.open(previewUrl, "_blank");
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      await useWebsiteStore.getState().saveDraft();
+      toast.success("Draft saved! Preview updated. Click 'Preview' to view your changes.");
+    } catch {
+      toast.error("Failed to save draft.");
+    }
   };
 
   const handlePublish = async () => {
@@ -40,7 +58,7 @@ export default function WebsitePage() {
     }
     try {
       await publishWebsite();
-      toast.success("Website published successfully! It is now live.");
+      toast.success("Website published successfully! All changes are now live.");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to publish website. Please try again.");
     }
@@ -74,27 +92,59 @@ export default function WebsitePage() {
                 }`} />
                 {websiteStatus === "published" ? "Published" : "Draft"}
               </span>
+              {hasDraft && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  Unpublished changes
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-secondary">Website URL</span>
               <code className="text-sm text-theme bg-primary-light/30 px-2 py-1 rounded">{websiteUrl}</code>
               {restaurantSlug && (
-                <button 
-                  onClick={handleCopyUrl}
-                  className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors"
-                  title="Copy URL"
-                >
-                  {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                </button>
+                <>
+                  <button 
+                    onClick={handleCopyUrl}
+                    className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors"
+                    title="Copy URL"
+                  >
+                    {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                  </button>
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 text-secondary hover:text-primary hover:bg-primary-light rounded transition-colors"
+                    title="Open live website"
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                </>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" disabled title="Preview is currently disabled">
-              <ExternalLink size={14} />
-              Preview Website
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handlePreview}
+              disabled={!restaurantSlug}
+              title={!restaurantSlug ? "Set a subdomain first" : "Preview your draft changes"}
+            >
+              <Eye size={14} />
+              Preview
             </Button>
-            {websiteStatus === "published" ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSaveDraft}
+              title="Save changes to your preview draft"
+            >
+              <FileText size={14} />
+              Save as Draft
+            </Button>
+            {websiteStatus === "published" && !hasDraft ? (
               <Button variant="secondary" size="sm" onClick={handleUnpublish}>
                 Unpublish
               </Button>
@@ -109,7 +159,12 @@ export default function WebsitePage() {
                   setShowPublishConfirm(true);
                 }}
               >
-                Publish Website
+                {hasDraft ? "Publish Changes" : "Publish Website"}
+              </Button>
+            )}
+            {websiteStatus === "published" && hasDraft && (
+              <Button variant="secondary" size="sm" onClick={handleUnpublish}>
+                Unpublish
               </Button>
             )}
           </div>

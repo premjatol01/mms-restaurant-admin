@@ -12,7 +12,13 @@ import { MAX_GALLERY_IMAGES } from "../../utils/constants";
 import { getImageUrl } from "../../../../utils/getImageUrl";
 
 export default function GalleryEditor({ section, onSave, onCancel }) {
-  const [content, setContent] = useState(section.content);
+  const [content, setContent] = useState(() => ({
+    ...section.content,
+    images: (section.content?.images || []).map((img) => ({
+      ...img,
+      id: img.id || img._id || makeId("img")
+    }))
+  }));
   const [errors, setErrors] = useState({});
   const [uploadErrors, setUploadErrors] = useState([]);
   const [uploading, setUploading] = useState(false);

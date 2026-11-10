@@ -20,6 +20,8 @@ export const websiteApi = {
 
   unpublishWebsite: () => apiClient.post("/restaurant/website/unpublish"),
 
+  saveDraft: () => apiClient.post("/restaurant/website/draft"),
+
   // Sections (Fixed natural ordering - reordering removed)
   getSections: () => apiClient.get("/restaurant/website/sections"),
 

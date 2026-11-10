@@ -8,12 +8,13 @@ import { labelClass } from "./shared/fieldStyles";
 import SubdomainConfirmModal from "../modals/SubdomainConfirmModal";
 import { checkSubdomainAvailability } from "../utils/subdomain";
 import { validateSubdomain } from "../utils/validation";
-import { BASE_DOMAIN, SUBDOMAIN_MAX } from "../utils/constants";
+import { SUBDOMAIN_MAX, MAIN_WEBSITE_DOMAIN } from "../utils/constants";
 import { websiteApi } from "../../../api/website.api";
 import { tablesApi } from "../../../api/tables.api";
 import { useProfileStore } from "../../../store/profileStore";
 
-const toUrl = (slug) => `http://${slug || "your-restaurant"}.${BASE_DOMAIN}`;
+const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "https:" : "http:";
+const toUrl = (slug) => slug ? `${protocol}//${slug}.${MAIN_WEBSITE_DOMAIN}` : `${protocol}//your-restaurant.${MAIN_WEBSITE_DOMAIN}`;
 
 export default function SubdomainSettings() {
   const { restaurantSlug, websiteStatus, updateSubdomain, unpublishWebsite } = useWebsiteStore();
@@ -142,7 +143,7 @@ export default function SubdomainSettings() {
             aria-invalid={Boolean(error)}
           />
           <span className="flex items-center px-3 text-sm text-secondary bg-secondary-soft border-l border-theme whitespace-nowrap">
-            .{BASE_DOMAIN}
+            .{MAIN_WEBSITE_DOMAIN}
           </span>
         </div>
         <FieldError message={error} />
@@ -156,7 +157,7 @@ export default function SubdomainSettings() {
         {!error && availability === "available" && (
           <p className="mt-1 flex items-center gap-1.5 text-xs text-green-600">
             <CircleCheck size={14} />
-            {slug}.{BASE_DOMAIN} is available
+            "{slug}.{MAIN_WEBSITE_DOMAIN}" is available
           </p>
         )}
         {!error && availability === "taken" && (

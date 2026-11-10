@@ -7,6 +7,8 @@ import { useProfileStore } from "./profileStore";
 export const useWebsiteStore = create((set, get) => ({
   // Website config
   websiteStatus: "draft",
+  hasDraft: false,
+  restaurantId: null,
   restaurantName: "",
   restaurantSlug: "",
   baseDomain: BASE_DOMAIN,
@@ -67,6 +69,8 @@ export const useWebsiteStore = create((set, get) => ({
 
         set({
           websiteStatus: config?.websiteStatus || "draft",
+          hasDraft: config?.hasDraft || false,
+          restaurantId: config?.restaurantId?.toString() || null,
           restaurantName: config?.restaurantName || "",
           restaurantSlug:
             config?.restaurantSlug ||
@@ -115,7 +119,7 @@ export const useWebsiteStore = create((set, get) => ({
   // Save Website Colors to backend
   updateWebsiteColors: async (colors) => {
     const updated = { ...get().websiteColors, ...colors };
-    set({ websiteColors: updated });
+    set({ websiteColors: updated, hasDraft: true });
 
     try {
       await websiteApi.updateConfig({ websiteColors: updated });
@@ -130,14 +134,15 @@ export const useWebsiteStore = create((set, get) => ({
     return `http://${restaurantSlug}.${baseDomain}`;
   },
 
-  // Update Section Content and attributes (enabled, title, description) in backend
+  // Update Section Content — saves as draft, marks hasDraft: true
   updateSection: async (sectionId, content, extra = {}) => {
     const enabled = extra.enabled !== undefined ? extra.enabled : content?.enabled;
     const title = extra.title !== undefined ? extra.title : content?.sectionTitle;
     const description = extra.description !== undefined ? extra.description : content?.sectionDescription;
 
-    // Optimistic local update
+    // Optimistic local update (admin sees their changes immediately in the builder)
     set((state) => ({
+      hasDraft: true,
       sections: state.sections.map((s) =>
         s.id === sectionId
           ? {
@@ -220,8 +225,8 @@ export const useWebsiteStore = create((set, get) => ({
 
     const newEnabled = !section.enabled;
 
-    // Optimistic local update
     set((state) => ({
+      hasDraft: true,
       sections: state.sections.map((s) =>
         s.id === sectionId ? { ...s, enabled: newEnabled } : s
       ),
@@ -231,7 +236,6 @@ export const useWebsiteStore = create((set, get) => ({
       await websiteApi.toggleSection(sectionId, newEnabled);
     } catch (err) {
       console.error("Failed to toggle section:", err);
-      // Revert if error
       set((state) => ({
         sections: state.sections.map((s) =>
           s.id === sectionId ? { ...s, enabled: !newEnabled } : s
@@ -242,12 +246,12 @@ export const useWebsiteStore = create((set, get) => ({
 
   // Publish / Unpublish website
   publishWebsite: async () => {
-    set({ websiteStatus: "published" });
+    set({ websiteStatus: "published", hasDraft: false });
     try {
       await websiteApi.publishWebsite();
     } catch (err) {
       console.error("Failed to publish website:", err);
-      set({ websiteStatus: "draft" });
+      set({ websiteStatus: "draft", hasDraft: true });
       throw err;
     }
   },
@@ -259,6 +263,16 @@ export const useWebsiteStore = create((set, get) => ({
     } catch (err) {
       console.error("Failed to unpublish website:", err);
       set({ websiteStatus: "published" });
+      throw err;
+    }
+  },
+
+  saveDraft: async () => {
+    set({ hasDraft: true });
+    try {
+      await websiteApi.saveDraft();
+    } catch (err) {
+      console.error("Failed to save draft:", err);
       throw err;
     }
   },

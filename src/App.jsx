@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layouts/AdminLayout";
@@ -25,6 +25,31 @@ function PageLoader() {
   return (
     <div className="flex-1 flex items-center justify-center min-h-[200px]">
       <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
+// Fallback redirect for restaurant website / preview URLs opened on the admin port (:3002)
+function RestaurantWebsiteRedirect() {
+  useEffect(() => {
+    const mainDomain =
+      import.meta.env.VITE_MAIN_WEBSITE_DOMAIN ||
+      import.meta.env.VITE_BASE_DOMAIN ||
+      "localhost:3000";
+    const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const slug = pathParts[0] || "restaurant";
+    const restOfPath = pathParts.slice(1).join("/");
+    const destination = `${protocol}//${slug}.${mainDomain}${restOfPath ? `/${restOfPath}` : ""}${window.location.search}${window.location.hash}`;
+    window.location.replace(destination);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center p-6">
+        <div className="w-8 h-8 mx-auto mb-3 border-2 border-[#d9480f] border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium text-gray-700">Redirecting to restaurant website...</p>
+      </div>
     </div>
   );
 }
@@ -143,6 +168,10 @@ export default function App() {
               />
             </Route>
           </Route>
+          {/* Public website fallback routes if accessed via admin port (:3002) */}
+          <Route path="/restaurant" element={<RestaurantWebsiteRedirect />} />
+          <Route path="/restaurant/*" element={<RestaurantWebsiteRedirect />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

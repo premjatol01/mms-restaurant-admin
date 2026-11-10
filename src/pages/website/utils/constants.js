@@ -1,6 +1,11 @@
 // Shared constants for the Website module.
 
-export const BASE_DOMAIN = import.meta.env.VITE_BASE_DOMAIN || "localhost:3000";
+export const MAIN_WEBSITE_DOMAIN =
+  import.meta.env.VITE_MAIN_WEBSITE_DOMAIN ||
+  import.meta.env.VITE_BASE_DOMAIN ||
+  "localhost:3000";
+
+export const BASE_DOMAIN = MAIN_WEBSITE_DOMAIN;
 
 export const SUBDOMAIN_MIN = 3;
 export const SUBDOMAIN_MAX = 30;
