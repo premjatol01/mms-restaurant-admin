@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { ordersApi } from "../api/orders.api";
 import { useTablesQRStore } from "./tablesQRStore";
 import { useProfileStore } from "./profileStore";
+import { formatTableName } from "../utils/formatTableName";
 import { TABLE_NAMES } from "../pages/orders/data/ordersData";
 import {
   applyCancellation,
@@ -284,27 +285,29 @@ export const useOrdersStore = create((set, get) => ({
 
   getTableName: (tableId) => {
     if (!tableId) return "Unknown Table";
+    let raw = "";
     if (typeof tableId === "object") {
-      return (
+      raw =
         tableId.tableNo ||
         tableId.tableId ||
-        (tableId.number ? `Table ${tableId.number}` : "Table")
+        (tableId.number ? `Table ${tableId.number}` : "Table");
+    } else {
+      const tables = useTablesQRStore.getState().tables || [];
+      const found = tables.find(
+        (t) =>
+          String(t.id) === String(tableId) ||
+          String(t._id) === String(tableId) ||
+          String(t.tableId) === String(tableId)
       );
+      if (found) {
+        raw =
+          found.tableNo ||
+          found.tableId ||
+          (found.number ? `Table ${found.number}` : String(tableId));
+      } else {
+        raw = TABLE_NAMES[tableId] || String(tableId);
+      }
     }
-    const tables = useTablesQRStore.getState().tables || [];
-    const found = tables.find(
-      (t) =>
-        String(t.id) === String(tableId) ||
-        String(t._id) === String(tableId) ||
-        String(t.tableId) === String(tableId)
-    );
-    if (found) {
-      return (
-        found.tableNo ||
-        found.tableId ||
-        (found.number ? `Table ${found.number}` : String(tableId))
-      );
-    }
-    return TABLE_NAMES[tableId] || String(tableId);
+    return formatTableName(raw);
   },
 }));

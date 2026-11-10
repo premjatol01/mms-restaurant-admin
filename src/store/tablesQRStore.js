@@ -62,6 +62,23 @@ export const useTablesQRStore = create((set, get) => ({
     }
   },
 
+  createBulkTables: async ({ count, templateId }) => {
+    try {
+      const payload = {
+        count: Number(count),
+        templateId: templateId === "normal" || templateId === "plain" ? null : templateId,
+      };
+      const res = await tablesApi.createTable(payload);
+      await get().refreshData();
+      return { success: true, data: res.data?.data, created: count };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || "Failed to create tables",
+      };
+    }
+  },
+
   updateTable: async (id, data) => {
     try {
       await tablesApi.updateTable(id, data);

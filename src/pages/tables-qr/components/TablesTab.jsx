@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight } from "lucide-react";
+import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
 import SearchInput from "../../../components/ui/SearchInput";
@@ -11,6 +11,8 @@ import Pagination from "../../../components/ui/Pagination";
 import TableForm from "./TableForm";
 import DeleteConfirmDialog from "../modals/DeleteConfirmDialog";
 import AssignQRDialog from "../modals/AssignQRDialog";
+import BulkImportTablesModal from "../modals/BulkImportTablesModal";
+import { formatTableName } from "../../../utils/formatTableName";
 import { defaultQRLayouts } from "../data/tablesQRData";
 import { getAssignedPairs } from "../utils/qrRules";
 import { buildTableQRUrl } from "../utils/qrLink";
@@ -25,6 +27,7 @@ export default function TablesTab() {
   const [editTable, setEditTable] = useState(null);
   const [deleteTable, setDeleteTable] = useState(null);
   const [assignQR, setAssignQR] = useState(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
 
@@ -33,10 +36,11 @@ export default function TablesTab() {
 
   const filteredTables = useMemo(() => {
     return tables.filter((table) => {
+      const formatted = formatTableName(table.tableNo || table.tableId || "").toLowerCase();
       const label = (table.tableNo || table.tableId || "").toLowerCase();
       const id = (table.tableId || "").toLowerCase();
       const q = search.toLowerCase();
-      const matchSearch = !search || label.includes(q) || id.includes(q);
+      const matchSearch = !search || formatted.includes(q) || label.includes(q) || id.includes(q);
       const matchStatus = !statusFilter || table.status === statusFilter;
       return matchSearch && matchStatus;
     });
@@ -142,6 +146,9 @@ export default function TablesTab() {
           {downloadingAll ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
           {downloadingAll ? "Preparing ZIP..." : "Download All QR Codes"}
         </Button>
+        <Button variant="secondary" onClick={() => setShowBulkModal(true)}>
+          <Layers size={16} /> Bulk Add Tables
+        </Button>
         <Button onClick={() => { setEditTable(null); setShowForm(true); }}>
           <Plus size={16} /> Add Table
         </Button>
@@ -191,7 +198,7 @@ export default function TablesTab() {
                     return (
                       <tr key={table.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 transition-colors">
                         <td className="px-5 py-3.5 font-semibold text-theme">
-                          <span>{table.tableNo || table.tableId}</span>
+                          <span>{formatTableName(table.tableNo || table.tableId)}</span>
                         </td>
                         <td className="px-4 py-3.5">
                           {qr ? (
@@ -253,7 +260,7 @@ export default function TablesTab() {
       {deleteTable && (
         <DeleteConfirmDialog
           title="Delete Table?"
-          message={`Are you sure you want to delete "${deleteTable.tableId}"? Its QR code will be released and can be assigned to another table.`}
+          message={`Are you sure you want to delete "${formatTableName(deleteTable.tableNo || deleteTable.tableId)}"? Its QR code will be released and can be assigned to another table.`}
           onConfirm={async () => {
             try {
               await useTablesQRStore.getState().deleteTable(deleteTable.id);
@@ -267,6 +274,11 @@ export default function TablesTab() {
           onCancel={() => setDeleteTable(null)}
         />
       )}
+
+      <BulkImportTablesModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+      />
 
       {assignQR && (
         <AssignQRDialog

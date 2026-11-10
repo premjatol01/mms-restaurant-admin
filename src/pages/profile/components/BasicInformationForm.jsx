@@ -12,12 +12,24 @@ import { RESTAURANT_TYPES } from "../../../constants/restaurantTypes";
 
 const CUISINE_TYPES = ["Indian", "Chinese", "Italian", "Mexican", "Continental", "North Indian", "South Indian", "Rajasthani", "Fast Food", "Desserts"];
 
+const currentYear = new Date().getFullYear();
+
 const schema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
   tagline: z.string().max(100, "Max 100 characters").optional(),
   restaurantType: z.string().min(1, "Restaurant type is required"),
   cuisineTypes: z.array(z.string()).min(1, "Select at least one cuisine"),
-  establishmentYear: z.string().optional(),
+  establishmentYear: z
+    .union([z.number(), z.string()])
+    .optional()
+    .transform((val) => {
+      if (val === "" || val === undefined || val === null) return null;
+      const num = Number(val);
+      return isNaN(num) ? null : num;
+    })
+    .refine((val) => val === null || (val >= 1800 && val <= currentYear), {
+      message: `Year must be between 1800 and ${currentYear}`,
+    }),
 });
 
 export default function BasicInformationForm() {
@@ -47,8 +59,12 @@ export default function BasicInformationForm() {
   const cuisineValues = watch("cuisineTypes") || [];
 
   const onSubmit = async (data) => {
-    updateProfile(data);
-    const result = await saveProfile(data);
+    const payload = {
+      ...data,
+      establishmentYear: data.establishmentYear ? Number(data.establishmentYear) : null,
+    };
+    updateProfile(payload);
+    const result = await saveProfile(payload);
     if (result.success) toast.success("Basic information updated successfully.");
     else toast.error(result.message);
   };

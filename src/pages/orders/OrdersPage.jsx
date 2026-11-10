@@ -12,6 +12,7 @@ import AnimatedCount from "./components/AnimatedCount";
 import OrderDetailsDrawer from "./components/OrderDetailsDrawer";
 import CancelOrderModal from "./modals/CancelOrderModal";
 import { formatCurrency } from "./utils/orderUtils";
+import { formatTableName } from "../../utils/formatTableName";
 
 const TABS = [
   { id: "pending", label: "Pending Orders" },
@@ -103,7 +104,8 @@ export default function OrdersPage() {
       connectAdminSocket(rId, {
         onOrderCreated: (data) => {
           const orderNum = data?.order?.orderNumber || "New";
-          const tableNum = data?.table?.tableNo ? ` (Table ${data.table.tableNo})` : "";
+          const rawNum = data?.table?.tableNo || data?.table?.tableId;
+          const tableNum = rawNum ? ` (${formatTableName(rawNum)})` : "";
           toast.success(`⚡ New QR Order ${orderNum}${tableNum} placed!`, {
             duration: 6000,
           });

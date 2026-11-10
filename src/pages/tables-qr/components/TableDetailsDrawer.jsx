@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { X, QrCode, Eye, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
+import { formatTableName } from "../../../utils/formatTableName";
 import Button from "../../../components/ui/Button";
 
 export default function TableDetailsDrawer({ table, qr, onClose, onAssign }) {
@@ -21,7 +23,7 @@ export default function TableDetailsDrawer({ table, qr, onClose, onAssign }) {
         <div className="absolute inset-0 bg-black/50" onClick={onClose} />
         <div className="relative bg-surface w-full max-w-md h-full flex flex-col shadow-2xl">
           <div className="flex items-center justify-between px-6 py-4 border-b border-theme">
-            <h2 className="text-lg font-semibold text-theme">{table.tableId}</h2>
+            <h2 className="text-lg font-semibold text-theme">{formatTableName(table?.tableNo || table?.tableId)}</h2>
             <button onClick={onClose} className="p-1 text-secondary hover:text-theme rounded"><X size={20} /></button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-6">

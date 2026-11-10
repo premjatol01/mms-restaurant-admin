@@ -71,8 +71,10 @@ export default function TableForm({ isOpen, onClose, editTable }) {
   useEffect(() => {
     if (!isOpen) return;
     if (editTable) {
+      const rawNum = liveEditTable?.tableNo || liveEditTable?.tableId || editTable.tableNo || editTable.tableId || "";
+      const cleanNum = String(rawNum).replace(/^table\s*/i, "").trim();
       setForm({
-        tableId: liveEditTable?.tableNo || liveEditTable?.tableId || editTable.tableNo || editTable.tableId || "",
+        tableId: cleanNum,
         status: liveEditTable?.status || editTable.status || "active",
         selectedTemplateId: initialTemplateId,
       });
@@ -88,16 +90,16 @@ export default function TableForm({ isOpen, onClose, editTable }) {
 
   const validate = () => {
     const errs = {};
-    const tableNo = form.tableId.trim();
-    if (!tableNo) errs.tableId = "Table No. is required";
+    const tableNo = form.tableId.replace(/^table\s*/i, "").trim();
+    if (!tableNo) errs.tableId = "Table Number is required";
     else if (
       tables.some(
         (t) =>
-          (t.tableNo || t.tableId).trim().toLowerCase() === tableNo.toLowerCase() &&
+          (t.tableNo || t.tableId || "").replace(/^table\s*/i, "").trim().toLowerCase() === tableNo.toLowerCase() &&
           String(t.id || t._id) !== String(editTable?.id || editTable?._id)
       )
     ) {
-      errs.tableId = "Table No. already exists";
+      errs.tableId = "Table number already exists";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -105,7 +107,7 @@ export default function TableForm({ isOpen, onClose, editTable }) {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    const tableNo = form.tableId.trim();
+    const tableNo = form.tableId.replace(/^table\s*/i, "").trim();
     setIsSubmitting(true);
 
     try {
@@ -171,14 +173,22 @@ export default function TableForm({ isOpen, onClose, editTable }) {
       <div className="space-y-6">
         <FormSection title="Table Details">
           <div className="space-y-4">
-            <Input
-              label="Table No."
-              required
-              placeholder="e.g., Table 12"
-              value={form.tableId}
-              onChange={(e) => setForm({ ...form, tableId: e.target.value })}
-              error={errors.tableId}
-            />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-theme block">Table Number <span className="text-red-500">*</span></label>
+              <div className="relative flex rounded-xl border border-theme bg-surface overflow-hidden focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
+                <span className="inline-flex items-center px-3.5 bg-primary-light/30 border-r border-theme text-sm font-bold text-primary select-none">
+                  Table
+                </span>
+                <input
+                  type="text"
+                  placeholder="e.g. 1, 2, 12..."
+                  value={form.tableId}
+                  onChange={(e) => setForm({ ...form, tableId: e.target.value.replace(/^table\s*/i, "") })}
+                  className="flex-1 px-3.5 py-2.5 bg-transparent text-sm text-theme outline-none font-medium placeholder:text-secondary/50"
+                />
+              </div>
+              {errors.tableId && <p className="text-xs text-red-500 mt-1">{errors.tableId}</p>}
+            </div>
             <div>
               <label className="text-sm font-medium text-theme block mb-2">Status</label>
               <div className="flex gap-4">

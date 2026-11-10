@@ -197,59 +197,83 @@ export default function MenuItemsTab({ onShowAIPrompt, onShowDesigner }) {
                     </td>
                   </tr>
                 ) : (
-                  paginatedItems.map((item) => (
-                    <tr key={item.id} className="border-b border-theme last:border-0 hover:bg-primary-light/10 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary font-medium flex-shrink-0 overflow-hidden border border-theme/40 shadow-sm">
-                            {item.image || item.imageUrl ? (
-                              <img
-                                src={getImageUrl(item.image || item.imageUrl)}
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
-                            ) : (
-                              <UtensilsCrossed size={18} />
-                            )}
+                  paginatedItems.map((item) => {
+                    const isZeroPrice = !item.price || Number(item.price) === 0;
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`border-b last:border-0 transition-colors ${
+                          isZeroPrice
+                            ? "bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 border-amber-300/30"
+                            : "border-theme hover:bg-primary-light/10"
+                        }`}
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary font-medium flex-shrink-0 overflow-hidden border border-theme/40 shadow-sm">
+                              {item.image || item.imageUrl ? (
+                                <img
+                                  src={getImageUrl(item.image || item.imageUrl)}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <UtensilsCrossed size={18} />
+                              )}
+                            </div>
+                            <div>
+                              <span className="font-semibold text-theme">{item.name}</span>
+                              {isZeroPrice && (
+                                <span className="ml-2 inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                                  ₹0 Price
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="font-semibold text-theme">{item.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-theme">{getCategoryName(item.categoryId)}</td>
-                      <td className="px-4 py-3.5 text-theme font-medium">₹{item.price}</td>
-                      <td className="px-4 py-3.5 text-secondary hidden md:table-cell max-w-xs truncate">{item.description}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${item.status === "available" ? "bg-green-500/15 text-green-600 dark:text-green-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
-                          {item.status === "available" ? "Available" : "Unavailable"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePopular(item)}
-                          aria-label={item.isPopular ? `Remove ${item.name} from popular items` : `Mark ${item.name} as popular`}
-                          title={item.isPopular ? "Remove from popular" : "Mark as popular"}
-                          className="p-1.5 rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
-                        >
-                          <Star
-                            size={18}
-                            className={item.isPopular ? "text-amber-500" : "text-secondary"}
-                            fill={item.isPopular ? "currentColor" : "none"}
+                        </td>
+                        <td className="px-4 py-3.5 text-theme">{getCategoryName(item.categoryId)}</td>
+                        <td className="px-4 py-3.5 text-theme font-medium">
+                          {isZeroPrice ? (
+                            <span className="font-bold text-amber-700 dark:text-amber-400">₹0</span>
+                          ) : (
+                            `₹${item.price}`
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-secondary hidden md:table-cell max-w-xs truncate">{item.description}</td>
+                        <td className="px-4 py-3.5">
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${item.status === "available" ? "bg-green-500/15 text-green-600 dark:text-green-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                            {item.status === "available" ? "Available" : "Unavailable"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePopular(item)}
+                            aria-label={item.isPopular ? `Remove ${item.name} from popular items` : `Mark ${item.name} as popular`}
+                            title={item.isPopular ? "Remove from popular" : "Mark as popular"}
+                            className="p-1.5 rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
+                          >
+                            <Star
+                              size={18}
+                              className={item.isPopular ? "text-amber-500" : "text-secondary"}
+                              fill={item.isPopular ? "currentColor" : "none"}
+                            />
+                          </button>
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <ActionsMenu
+                            onEdit={() => { setEditItem(item); setShowForm(true); }}
+                            onToggle={() => handleToggleStatus(item)}
+                            onDelete={() => setDeleteItem(item)}
                           />
-                        </button>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <ActionsMenu
-                          onEdit={() => { setEditItem(item); setShowForm(true); }}
-                          onToggle={() => handleToggleStatus(item)}
-                          onDelete={() => setDeleteItem(item)}
-                        />
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

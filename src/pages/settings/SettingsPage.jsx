@@ -25,7 +25,7 @@ const GST_PRESETS = [
 export default function SettingsPage() {
   const profile = useProfileStore((state) => state.profile);
   const fetchProfile = useProfileStore((state) => state.fetchProfile);
-  const updateProfile = useProfileStore((state) => state.updateProfile);
+  const saveProfile = useProfileStore((state) => state.saveProfile);
 
   const [saving, setSaving] = useState(false);
   const [gstEnabled, setGstEnabled] = useState(false);
@@ -67,11 +67,11 @@ export default function SettingsPage() {
         },
       };
 
-      const res = await updateProfile(payload);
-      if (res?.success || res?.data) {
+      const res = await saveProfile(payload);
+      if (res?.success) {
         toast.success("Settings updated successfully!");
       } else {
-        toast.success("Settings saved successfully!");
+        toast.error(res?.message || "Failed to update settings");
       }
     } catch (err) {
       console.error("Failed to save settings:", err);

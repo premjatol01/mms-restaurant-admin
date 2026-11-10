@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
 import { useMenuStore } from "../../../store/menuStore";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
+import { formatTableName } from "../../../utils/formatTableName";
 import Drawer from "../../../components/ui/Drawer";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
@@ -17,7 +18,7 @@ export default function ManualOrderDrawer({ isOpen, onClose }) {
   const tables = useMemo(() => {
     return tablesList.map((t) => ({
       value: t.id,
-      label: t.tableNo || t.tableId || (t.number ? `Table ${t.number}` : "Table"),
+      label: formatTableName(t.tableNo || t.tableId || t.number),
     }));
   }, [tablesList]);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Settings, Store,
+  Armchair, Clock, CreditCard, Image, LayoutGrid, MapPin, Phone, RotateCcw, Store,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
@@ -12,7 +12,6 @@ import BusinessHoursForm from "./components/BusinessHoursForm";
 import MenuMasterSection from "./components/MenuMasterSection";
 import TableConfigSection from "./components/TableConfigSection";
 import SubscriptionSection from "./components/SubscriptionSection";
-import RestaurantSettingsForm from "./components/RestaurantSettingsForm";
 
 import UnsavedChangesModal from "./modals/UnsavedChangesModal";
 import Button from "../../components/ui/Button";
@@ -26,7 +25,6 @@ const TABS = [
   { id: "menu", label: "Menu Master", icon: LayoutGrid },
   { id: "tables", label: "Table Configuration", icon: Armchair },
   { id: "subscription", label: "Subscription", icon: CreditCard },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 function SkeletonLoader() {
@@ -137,7 +135,6 @@ export default function RestaurantProfilePage() {
           {activeTab === "menu" && <MenuMasterSection />}
           {activeTab === "tables" && <TableConfigSection />}
           {activeTab === "subscription" && <SubscriptionSection />}
-          {activeTab === "settings" && <RestaurantSettingsForm />}
         </div>
       </div>
 
