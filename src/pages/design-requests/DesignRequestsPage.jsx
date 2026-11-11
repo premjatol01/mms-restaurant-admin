@@ -95,9 +95,10 @@ export default function DesignRequestsPage() {
     const total = requests.length;
     const menuCount = requests.filter((r) => r.requestType === "Menu Design" || !r.requestType).length;
     const qrCount = requests.filter((r) => r.requestType === "QR Template Design").length;
+    const bannerCount = requests.filter((r) => r.requestType === "Offer Banner Design" || r.requestType === "Offer Banner").length;
     const completedCount = requests.filter((r) => r.status === "completed").length;
     const inProgressCount = requests.filter((r) => r.status === "in_progress" || r.status === "pending").length;
-    return { total, menuCount, qrCount, completedCount, inProgressCount };
+    return { total, menuCount, qrCount, bannerCount, completedCount, inProgressCount };
   }, [requests]);
 
   const clearFilters = () => {
@@ -109,34 +110,42 @@ export default function DesignRequestsPage() {
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full space-y-5">
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
           <p className="text-xs font-medium text-secondary">Total Requests</p>
-          <p className="text-2xl font-bold text-theme mt-1">{metrics.total}</p>
+          <p className="text-xl font-bold text-theme mt-1">{metrics.total}</p>
         </div>
 
-        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
+        <div className="bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-secondary">Menu Designs</p>
             <UtensilsCrossed size={16} className="text-blue-500" />
           </div>
-          <p className="text-2xl font-bold text-theme mt-1">{metrics.menuCount}</p>
+          <p className="text-xl font-bold text-theme mt-1">{metrics.menuCount}</p>
         </div>
 
-        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
+        <div className="bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-secondary">QR Template Designs</p>
+            <p className="text-xs font-medium text-secondary">QR Templates</p>
             <QrCode size={16} className="text-purple-500" />
           </div>
-          <p className="text-2xl font-bold text-theme mt-1">{metrics.qrCount}</p>
+          <p className="text-xl font-bold text-theme mt-1">{metrics.qrCount}</p>
         </div>
 
-        <div className="bg-surface border border-theme-faded rounded-xl p-4 shadow-xs">
+        <div className="bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-secondary">Offer Banners</p>
+            <Sparkles size={16} className="text-amber-500" />
+          </div>
+          <p className="text-xl font-bold text-theme mt-1">{metrics.bannerCount}</p>
+        </div>
+
+        <div className="bg-surface border border-theme-faded rounded-xl p-3.5 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-secondary">Completed & Ready</p>
             <CheckCircle2 size={16} className="text-green-500" />
           </div>
-          <p className="text-2xl font-bold text-green-600 mt-1">{metrics.completedCount}</p>
+          <p className="text-xl font-bold text-green-600 mt-1">{metrics.completedCount}</p>
         </div>
       </div>
 
@@ -158,6 +167,7 @@ export default function DesignRequestsPage() {
               { value: "", label: "All Request Types" },
               { value: "Menu Design", label: "Menu Design" },
               { value: "QR Template Design", label: "QR Template Design" },
+              { value: "Offer Banner Design", label: "Offer Banner Design" },
             ]}
             className="w-full sm:w-48"
           />
@@ -214,7 +224,8 @@ export default function DesignRequestsPage() {
             {filteredRequests.map((req) => {
               const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
               const StatusIcon = statusCfg.icon;
-              const isMenu = req.requestType === "Menu Design" || !req.requestType;
+              const isBanner = req.requestType === "Offer Banner Design" || req.requestType === "Offer Banner";
+              const isMenu = req.requestType === "Menu Design" || (!req.requestType && !isBanner);
               const hasCompletedAsset = req.status === "completed" && req.completedAttachment?.url;
 
               return (
@@ -227,12 +238,14 @@ export default function DesignRequestsPage() {
                     <div className="flex items-center gap-2">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
-                          isMenu
+                          isBanner
+                            ? "bg-amber-50/80 text-amber-700 border-amber-200/50"
+                            : isMenu
                             ? "bg-blue-50/80 text-blue-700 border-blue-200/50"
                             : "bg-purple-50/80 text-purple-700 border-purple-200/50"
                         }`}
                       >
-                        {isMenu ? <UtensilsCrossed size={14} /> : <QrCode size={14} />}
+                        {isBanner ? <Sparkles size={14} /> : isMenu ? <UtensilsCrossed size={14} /> : <QrCode size={14} />}
                         {req.requestType || "Menu Design"}
                       </span>
 

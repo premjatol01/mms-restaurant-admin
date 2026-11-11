@@ -9,11 +9,41 @@ import {
   Sparkles, 
   UtensilsCrossed,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  MessageCircle,
+  Share2,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileStore } from "../../store/profileStore";
 import Button from "../../components/ui/Button";
+
+const InstagramIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-600">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
+
+const FacebookIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+  </svg>
+);
+
+const TwitterIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-sky-500">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+  </svg>
+);
+
+const YoutubeIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
+    <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path>
+    <polygon points="10 15 15 12 10 9 10 15"></polygon>
+  </svg>
+);
 
 const GST_PRESETS = [
   { label: "0% (Exempt)", value: 0 },
@@ -36,6 +66,14 @@ export default function SettingsPage() {
   const [acceptOrders, setAcceptOrders] = useState(true);
   const [isActive, setIsActive] = useState(true);
 
+  const [socialLinks, setSocialLinks] = useState({
+    instagram: "",
+    facebook: "",
+    twitter: "",
+    youtube: "",
+    whatsapp: "",
+  });
+
   // Sync state from profile
   useEffect(() => {
     if (!profile) {
@@ -47,6 +85,13 @@ export default function SettingsPage() {
       setChargeType(profile.gstSettings?.chargeType || "exclusive");
       setAcceptOrders(profile.settings?.acceptOrders !== false);
       setIsActive(profile.settings?.isActive !== false);
+      setSocialLinks({
+        instagram: profile.socialLinks?.instagram || "",
+        facebook: profile.socialLinks?.facebook || "",
+        twitter: profile.socialLinks?.twitter || "",
+        youtube: profile.socialLinks?.youtube || "",
+        whatsapp: profile.socialLinks?.whatsapp || "",
+      });
     }
   }, [profile, fetchProfile]);
 
@@ -64,6 +109,13 @@ export default function SettingsPage() {
         settings: {
           acceptOrders: Boolean(acceptOrders),
           isActive: Boolean(isActive),
+        },
+        socialLinks: {
+          instagram: socialLinks.instagram?.trim() || "",
+          facebook: socialLinks.facebook?.trim() || "",
+          twitter: socialLinks.twitter?.trim() || "",
+          youtube: socialLinks.youtube?.trim() || "",
+          whatsapp: socialLinks.whatsapp?.trim() || "",
         },
       };
 
@@ -324,6 +376,113 @@ export default function SettingsPage() {
               />
               <div className="w-11 h-6 bg-theme/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Media Links Configuration */}
+      <section className="bg-surface rounded-2xl border border-theme shadow-sm p-6 space-y-5">
+        <div className="flex items-center gap-3 pb-3 border-b border-theme/60">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <Share2 size={20} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-theme">Social Media Channels</h2>
+            <p className="text-xs text-secondary mt-0.5">
+              Connect your social profiles to show clickable icons on the customer table ordering portal.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Instagram */}
+          <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
+              <InstagramIcon />
+              Instagram Profile URL
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={socialLinks.instagram}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, instagram: e.target.value }))}
+                placeholder="https://instagram.com/yourrestaurant"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <p className="text-[11px] text-secondary mt-1">Direct link to your Instagram page or username handle.</p>
+          </div>
+
+          {/* Facebook */}
+          <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
+              <FacebookIcon />
+              Facebook Page URL
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={socialLinks.facebook}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, facebook: e.target.value }))}
+                placeholder="https://facebook.com/yourrestaurant"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <p className="text-[11px] text-secondary mt-1">Facebook page or official business profile.</p>
+          </div>
+
+          {/* Twitter / X */}
+          <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
+              <TwitterIcon />
+              Twitter / X Profile URL
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={socialLinks.twitter}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, twitter: e.target.value }))}
+                placeholder="https://x.com/yourrestaurant"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <p className="text-[11px] text-secondary mt-1">Twitter/X handle or URL.</p>
+          </div>
+
+          {/* YouTube */}
+          <div>
+            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
+              <YoutubeIcon />
+              YouTube Channel URL
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={socialLinks.youtube}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, youtube: e.target.value }))}
+                placeholder="https://youtube.com/@yourrestaurant"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <p className="text-[11px] text-secondary mt-1">Food showcase or kitchen tour video channel.</p>
+          </div>
+
+          {/* WhatsApp */}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
+              <MessageCircle size={14} className="text-green-600" />
+              WhatsApp Contact / Chat Link
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={socialLinks.whatsapp}
+                onChange={(e) => setSocialLinks((prev) => ({ ...prev, whatsapp: e.target.value }))}
+                placeholder="e.g. 9876543210 or https://wa.me/919876543210"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <p className="text-[11px] text-secondary mt-1">10-digit WhatsApp number or wa.me chat link for diners to reach staff.</p>
           </div>
         </div>
       </section>

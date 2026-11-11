@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Tag, CheckCircle, XCircle, Trash2, Eye, Plus } from "lucide-react";
+import { Tag, CheckCircle, XCircle, Trash2, Eye, Plus, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { useOffersStore } from "../../store/offersStore";
 import SearchInput from "../../components/ui/SearchInput";
@@ -9,6 +9,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import Pagination from "../../components/ui/Pagination";
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import CreateOfferDrawer from "./components/CreateOfferDrawer";
+import ContactDesignerModal from "../menu/modals/ContactDesignerModal";
 
 const formatCount = (n) => Number(n ?? 0).toLocaleString("en-IN");
 const formatInr = (n) => `₹${Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -255,6 +256,7 @@ export default function OffersPromosPage() {
   const [draftStatus, setDraftStatus] = useState("");
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showDesignerModal, setShowDesignerModal] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -390,10 +392,20 @@ export default function OffersPromosPage() {
             </span>
           )}
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus size={16} className="mr-1.5" />
-          Create Offer
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="secondary"
+            onClick={() => setShowDesignerModal(true)}
+            className="flex items-center gap-1.5"
+          >
+            <Palette size={16} />
+            Contact Designer for Banner
+          </Button>
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus size={16} className="mr-1.5" />
+            Create Offer
+          </Button>
+        </div>
       </div>
 
       {/* Main Full-Height Table Card */}
@@ -459,6 +471,15 @@ export default function OffersPromosPage() {
         <CreateOfferDrawer
           isOpen={showCreate}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {/* Contact Designer Modal */}
+      {showDesignerModal && (
+        <ContactDesignerModal
+          isOpen={showDesignerModal}
+          onClose={() => setShowDesignerModal(false)}
+          initialRequestType="Offer Banner Design"
         />
       )}
 

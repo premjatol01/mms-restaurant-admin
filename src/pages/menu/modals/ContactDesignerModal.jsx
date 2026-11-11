@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Palette, Upload, FileText, X, Send, UtensilsCrossed, QrCode } from "lucide-react";
+import { Palette, Upload, FileText, X, Send, UtensilsCrossed, QrCode, Tag, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useDesignRequestStore } from "../../../store/designRequestStore";
 import Textarea from "../../../components/ui/Textarea";
@@ -112,7 +112,7 @@ export default function ContactDesignerModal({ isOpen, onClose, initialRequestTy
           <label className="block text-sm font-medium text-theme mb-2">
             Request Type <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => setRequestType("Menu Design")}
@@ -128,7 +128,7 @@ export default function ContactDesignerModal({ isOpen, onClose, initialRequestTy
                 </div>
                 <span className="text-sm font-semibold text-theme">Menu Design</span>
               </div>
-              <p className="text-xs text-secondary mt-1">Food & beverage menus, pricing cards, specials</p>
+              <p className="text-xs text-secondary mt-1">Food menus, pricing cards & specials</p>
             </button>
 
             <button
@@ -144,9 +144,27 @@ export default function ContactDesignerModal({ isOpen, onClose, initialRequestTy
                 <div className={`p-1.5 rounded-lg ${requestType === "QR Template Design" ? "bg-primary text-white" : "bg-primary-light text-primary"}`}>
                   <QrCode size={16} />
                 </div>
-                <span className="text-sm font-semibold text-theme">QR Template Design</span>
+                <span className="text-sm font-semibold text-theme">QR Template</span>
               </div>
-              <p className="text-xs text-secondary mt-1">Table standees, tent cards, branded QR cards</p>
+              <p className="text-xs text-secondary mt-1">Table standees, tent cards & branded QR</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRequestType("Offer Banner Design")}
+              className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 cursor-pointer ${
+                requestType === "Offer Banner Design"
+                  ? "border-primary bg-primary-light/40 ring-2 ring-primary/20"
+                  : "border-theme bg-surface hover:bg-primary-light/10"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${requestType === "Offer Banner Design" ? "bg-primary text-white" : "bg-primary-light text-primary"}`}>
+                  <Sparkles size={16} />
+                </div>
+                <span className="text-sm font-semibold text-theme">Offer Banner</span>
+              </div>
+              <p className="text-xs text-secondary mt-1">Promo banners, discount posters & hero ads</p>
             </button>
           </div>
         </div>
@@ -155,7 +173,7 @@ export default function ContactDesignerModal({ isOpen, onClose, initialRequestTy
         <div>
           <Input
             label="Request Title (Optional)"
-            placeholder="e.g. Summer Beverage Menu or Table Standee QR Card"
+            placeholder="e.g. Summer Beverage Menu or Weekend 20% Off Banner"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
@@ -168,7 +186,9 @@ export default function ContactDesignerModal({ isOpen, onClose, initialRequestTy
             required
             rows={4}
             placeholder={
-              requestType === "QR Template Design"
+              requestType === "Offer Banner Design"
+                ? "e.g. A high-converting 16:9 banner for our '20% OFF on Orders Above ₹1000' promotion. Emphasize our signature biryani and cocktails with festive colors..."
+                : requestType === "QR Template Design"
                 ? "e.g. A vertical table tent QR code card matching our restaurant's dark green and gold branding, including our logo and WiFi details..."
                 : "e.g. A 2-page A4 menu with modern clean layout, highlighted chef specials, and allergen icons. Our brand colors are navy blue and gold..."
             }
