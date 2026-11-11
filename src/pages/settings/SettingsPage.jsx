@@ -110,13 +110,6 @@ export default function SettingsPage() {
           acceptOrders: Boolean(acceptOrders),
           isActive: Boolean(isActive),
         },
-        socialLinks: {
-          instagram: socialLinks.instagram?.trim() || "",
-          facebook: socialLinks.facebook?.trim() || "",
-          twitter: socialLinks.twitter?.trim() || "",
-          youtube: socialLinks.youtube?.trim() || "",
-          whatsapp: socialLinks.whatsapp?.trim() || "",
-        },
       };
 
       const res = await saveProfile(payload);
@@ -376,113 +369,6 @@ export default function SettingsPage() {
               />
               <div className="w-11 h-6 bg-theme/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Media Links Configuration */}
-      <section className="bg-surface rounded-2xl border border-theme shadow-sm p-6 space-y-5">
-        <div className="flex items-center gap-3 pb-3 border-b border-theme/60">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <Share2 size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-theme">Social Media Channels</h2>
-            <p className="text-xs text-secondary mt-0.5">
-              Connect your social profiles to show clickable icons on the customer table ordering portal.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Instagram */}
-          <div>
-            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
-              <InstagramIcon />
-              Instagram Profile URL
-            </label>
-            <div className="relative">
-              <input
-                type="url"
-                value={socialLinks.instagram}
-                onChange={(e) => setSocialLinks((prev) => ({ ...prev, instagram: e.target.value }))}
-                placeholder="https://instagram.com/yourrestaurant"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <p className="text-[11px] text-secondary mt-1">Direct link to your Instagram page or username handle.</p>
-          </div>
-
-          {/* Facebook */}
-          <div>
-            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
-              <FacebookIcon />
-              Facebook Page URL
-            </label>
-            <div className="relative">
-              <input
-                type="url"
-                value={socialLinks.facebook}
-                onChange={(e) => setSocialLinks((prev) => ({ ...prev, facebook: e.target.value }))}
-                placeholder="https://facebook.com/yourrestaurant"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <p className="text-[11px] text-secondary mt-1">Facebook page or official business profile.</p>
-          </div>
-
-          {/* Twitter / X */}
-          <div>
-            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
-              <TwitterIcon />
-              Twitter / X Profile URL
-            </label>
-            <div className="relative">
-              <input
-                type="url"
-                value={socialLinks.twitter}
-                onChange={(e) => setSocialLinks((prev) => ({ ...prev, twitter: e.target.value }))}
-                placeholder="https://x.com/yourrestaurant"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <p className="text-[11px] text-secondary mt-1">Twitter/X handle or URL.</p>
-          </div>
-
-          {/* YouTube */}
-          <div>
-            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
-              <YoutubeIcon />
-              YouTube Channel URL
-            </label>
-            <div className="relative">
-              <input
-                type="url"
-                value={socialLinks.youtube}
-                onChange={(e) => setSocialLinks((prev) => ({ ...prev, youtube: e.target.value }))}
-                placeholder="https://youtube.com/@yourrestaurant"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <p className="text-[11px] text-secondary mt-1">Food showcase or kitchen tour video channel.</p>
-          </div>
-
-          {/* WhatsApp */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-theme mb-1.5 flex items-center gap-1.5">
-              <MessageCircle size={14} className="text-green-600" />
-              WhatsApp Contact / Chat Link
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={socialLinks.whatsapp}
-                onChange={(e) => setSocialLinks((prev) => ({ ...prev, whatsapp: e.target.value }))}
-                placeholder="e.g. 9876543210 or https://wa.me/919876543210"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-theme bg-surface text-theme text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-            <p className="text-[11px] text-secondary mt-1">10-digit WhatsApp number or wa.me chat link for diners to reach staff.</p>
           </div>
         </div>
       </section>

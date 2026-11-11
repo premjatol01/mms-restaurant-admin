@@ -19,6 +19,7 @@ export const menuApi = {
   getItems: (params) => apiClient.get("/menu/items", { params }),
   createItem: (data) => apiClient.post("/menu/items", data),
   updateItem: (id, data) => apiClient.put(`/menu/items/${id}`, data),
+  setBestsellerItems: (itemIds) => apiClient.put("/menu/items/bestsellers", { itemIds }),
   deleteItem: (id) => apiClient.delete(`/menu/items/${id}`),
 
   // Combos

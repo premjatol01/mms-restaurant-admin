@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Globe,
@@ -6,11 +6,12 @@ import {
   Flame,
   Tag,
   Bell,
-  RotateCcw,
   ExternalLink,
   Save,
   Check,
   Copy,
+  SlidersHorizontal,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePortalHandlerStore } from "../../store/portalHandlerStore";
@@ -19,6 +20,7 @@ import BestSellingTab from "./components/BestSellingTab";
 import PortalOffersTab from "./components/PortalOffersTab";
 import SocialMediaTab from "./components/SocialMediaTab";
 import RequestWaiterTab from "./components/RequestWaiterTab";
+import OrderingOperationsTab from "./components/OrderingOperationsTab";
 import Button from "../../components/ui/Button";
 
 const TABS = [
@@ -27,6 +29,7 @@ const TABS = [
   { id: "offers", label: "Offers Management", icon: Tag, badge: "Promos" },
   { id: "waiter", label: "Request Waiter Handler", icon: Bell, badge: "Service" },
   { id: "social", label: "Social Media & Wi-Fi", icon: Globe, badge: "Connect" },
+  { id: "operations", label: "Ordering & Operations", icon: SlidersHorizontal, badge: "Controls" },
 ];
 
 export default function PortalHandlerPage() {
@@ -36,12 +39,17 @@ export default function PortalHandlerPage() {
     setActiveTab,
     isDirty,
     saving,
-    saveChanges,
-    resetToDefaults,
+    publishChanges,
+    fetchPortalData,
   } = usePortalHandlerStore();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
+
+  // Load latest settings, categories, and bestsellers from backend on mount
+  useEffect(() => {
+    fetchPortalData();
+  }, [fetchPortalData]);
 
   // Sync tab with URL search params (section=...) like RestaurantProfilePage
   const currentSection = searchParams.get("section") || activeTab || "categories";
@@ -57,26 +65,27 @@ export default function PortalHandlerPage() {
     "localhost:3000";
   const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const subdomain = portalData?.general?.subdomain || "spicegarden";
-  const portalUrl = `${protocol}//${subdomain}.${mainDomain}/menu/table-04`;
+  // Dummy table preview URL to test portal changes without a physical QR code table
+  const previewPortalUrl = `${protocol}//${subdomain}.${mainDomain}/menu/preview`;
 
   const handleCopyUrl = () => {
-    navigator.clipboard.writeText(portalUrl);
+    navigator.clipboard.writeText(previewPortalUrl);
     setCopied(true);
-    toast.success("Portal URL copied to clipboard!");
+    toast.success("Portal preview URL copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handlePreviewPortal = () => {
-    window.open(portalUrl, "_blank");
+    window.open(previewPortalUrl, "_blank");
   };
 
-  const handleSave = async () => {
-    await saveChanges();
+  const handlePublish = async () => {
+    await publishChanges();
   };
 
   return (
     <div className="space-y-5">
-      {/* Single Row Top Bar: Website/Portal URL + Action Buttons (Reset, Preview Portal, Saved) */}
+      {/* Single Row Top Bar: Portal Preview URL + Action Buttons (Preview Portal, Publish Changes) */}
       <div className="bg-surface rounded-xl border border-theme px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
         {/* Left: Website / Portal URL */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -85,15 +94,15 @@ export default function PortalHandlerPage() {
           </div>
           <div className="flex items-center gap-2 min-w-0 bg-surface-soft border border-theme px-3 py-1.5 rounded-lg flex-1 max-w-xl">
             <span className="text-[11px] font-semibold text-secondary shrink-0">
-              Portal URL:
+              Portal Preview:
             </span>
             <span className="text-xs font-mono font-medium text-theme truncate">
-              {portalUrl}
+              {previewPortalUrl}
             </span>
             <button
               type="button"
               onClick={handleCopyUrl}
-              title="Copy Portal URL"
+              title="Copy Portal Preview URL"
               className="p-1 rounded text-secondary hover:text-primary hover:bg-surface transition-colors cursor-pointer shrink-0 ml-auto"
             >
               {copied ? (
@@ -109,23 +118,14 @@ export default function PortalHandlerPage() {
           </span>
         </div>
 
-        {/* Right: Single Row Action Buttons */}
+        {/* Right: Single Row Action Buttons (Preview Portal, Publish Changes) */}
         <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={RotateCcw}
-            onClick={resetToDefaults}
-            title="Reset to Demo Defaults"
-          >
-            Reset
-          </Button>
-
           <Button
             variant="outline"
             size="sm"
             icon={ExternalLink}
             onClick={handlePreviewPortal}
+            title="Preview live customer menu portal with dummy table"
           >
             Preview Portal
           </Button>
@@ -133,12 +133,12 @@ export default function PortalHandlerPage() {
           <Button
             variant="primary"
             size="sm"
-            icon={isDirty ? Save : Check}
+            icon={isDirty ? UploadCloud : Check}
             loading={saving}
             disabled={saving}
-            onClick={handleSave}
+            onClick={handlePublish}
           >
-            {isDirty ? "Save Changes" : "Saved"}
+            {isDirty ? "Publish Changes" : "Changes Live"}
           </Button>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function PortalHandlerPage() {
       {/* Main Section Tabs Layout (like RestaurantProfilePage) */}
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Section Navigation Sidebar */}
-        <aside className="lg:w-60 flex-shrink-0">
+        <aside className="lg:w-64 flex-shrink-0">
           <nav className="bg-surface rounded-xl border border-theme overflow-hidden shadow-xs">
             {TABS.map(({ id, label, icon: Icon, badge }) => (
               <button
@@ -185,6 +185,7 @@ export default function PortalHandlerPage() {
           {currentSection === "offers" && <PortalOffersTab />}
           {currentSection === "waiter" && <RequestWaiterTab />}
           {currentSection === "social" && <SocialMediaTab />}
+          {currentSection === "operations" && <OrderingOperationsTab />}
         </div>
       </div>
     </div>
