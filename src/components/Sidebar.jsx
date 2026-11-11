@@ -18,6 +18,7 @@ import {
   LogOut,
   CreditCard,
   TrendingUp,
+  Smartphone,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
@@ -26,6 +27,7 @@ const navItems = [
   { label: "Restaurant Profile", icon: Store, path: "/profile" },
   { label: "Menu", icon: UtensilsCrossed, path: "/menu" },
   { label: "Tables & QR", icon: QrCode, path: "/tables" },
+  { label: "Portal Handler", icon: Smartphone, path: "/portal-handler" },
   { label: "Design Requests", icon: Palette, path: "/design-requests" },
   { label: "Orders", icon: ClipboardList, path: "/orders" },
   { label: "Subscription", icon: CreditCard, path: "/subscription" },
