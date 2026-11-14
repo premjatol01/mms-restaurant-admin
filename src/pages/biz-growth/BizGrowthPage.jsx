@@ -87,87 +87,87 @@ export default function BizGrowthPage() {
   return (
     <div className="space-y-6">
       {/* Featured Resource Spotlight (If available) */}
-        { featuredItem && (
-          <div className="bg-surface rounded-2xl border border-primary/25 overflow-hidden shadow-sm hover:shadow-md transition-all">
-            <div className="flex flex-col lg:flex-row items-stretch">
-              {/* Thumbnail */}
-              <div
-                className="lg:w-2/5 aspect-video lg:aspect-auto min-h-[220px] bg-surface-soft relative overflow-hidden group cursor-pointer"
-                onClick={() => handleCardClick(featuredItem)}
-              >
-                <img
-                  src={
-                    featuredItem.thumbnail
-                      ? featuredItem.thumbnail.startsWith("http")
-                        ? featuredItem.thumbnail
-                        : `http://localhost:5000${featuredItem.thumbnail}`
-                      : "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80"
-                  }
-                  alt={featuredItem.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
-                  {featuredItem.type === "youtube" ? (
-                    <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Play size={20} className="fill-current ml-0.5" />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-white/90 text-primary flex items-center justify-center shadow-lg">
-                      <BookOpen size={18} />
-                    </div>
+      {featuredItem && (
+        <div className="bg-surface rounded-2xl border border-primary/25 overflow-hidden shadow-sm hover:shadow-md transition-all">
+          <div className="flex flex-col lg:flex-row items-stretch lg:h-[260px]">
+            {/* Thumbnail */}
+            <div
+              className="lg:w-2/5 aspect-video lg:aspect-auto h-48 lg:h-full bg-surface-soft relative overflow-hidden group cursor-pointer shrink-0"
+              onClick={() => handleCardClick(featuredItem)}
+            >
+              <img
+                src={
+                  featuredItem.thumbnail
+                    ? featuredItem.thumbnail.startsWith("http")
+                      ? featuredItem.thumbnail
+                      : `http://localhost:5000${featuredItem.thumbnail}`
+                    : "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80"
+                }
+                alt={featuredItem.title}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
+                {featuredItem.type === "youtube" ? (
+                  <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Play size={20} className="fill-current ml-0.5" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-white/90 text-primary flex items-center justify-center shadow-lg">
+                    <BookOpen size={18} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Featured Content */}
+            <div className="lg:w-3/5 p-5 sm:p-6 flex flex-col justify-between space-y-3 h-full overflow-hidden">
+              <div className="space-y-2 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                    <Sparkles size={11} />
+                    Featured Growth Pick
+                  </span>
+                  <span className="text-xs text-secondary font-medium truncate">
+                    &bull; {featuredItem.category || "Strategy"}
+                  </span>
+                  {featuredItem.readTime && (
+                    <span className="text-xs text-secondary flex items-center gap-1 font-medium shrink-0">
+                      <Clock size={12} />
+                      {featuredItem.readTime}
+                    </span>
                   )}
                 </div>
+
+                <h2
+                  onClick={() => handleCardClick(featuredItem)}
+                  className="text-lg sm:text-xl font-bold text-theme hover:text-primary transition-colors cursor-pointer line-clamp-2 leading-snug"
+                >
+                  {featuredItem.title}
+                </h2>
+
+                <p className="text-xs sm:text-sm text-secondary leading-relaxed line-clamp-2">
+                  {featuredItem.description}
+                </p>
               </div>
 
-              {/* Featured Content */}
-              <div className="lg:w-3/5 p-6 sm:p-8 flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      <Sparkles size={11} />
-                      Featured Growth Pick
-                    </span>
-                    <span className="text-xs text-secondary font-medium">
-                      &bull; {featuredItem.category || "Strategy"}
-                    </span>
-                    {featuredItem.readTime && (
-                      <span className="text-xs text-secondary flex items-center gap-1 font-medium">
-                        <Clock size={12} />
-                        {featuredItem.readTime}
-                      </span>
-                    )}
-                  </div>
+              <div className="pt-2 flex items-center justify-between border-t border-theme/60 shrink-0">
+                <span className="text-xs text-secondary font-medium truncate max-w-[200px]">
+                  By {featuredItem.sourceName || "Tablly Growth Team"}
+                </span>
 
-                  <h2
-                    onClick={() => handleCardClick(featuredItem)}
-                    className="text-xl sm:text-2xl font-bold text-theme hover:text-primary transition-colors cursor-pointer"
-                  >
-                    {featuredItem.title}
-                  </h2>
-
-                  <p className="text-xs sm:text-sm text-secondary leading-relaxed line-clamp-3">
-                    {featuredItem.description}
-                  </p>
-                </div>
-
-                <div className="pt-2 flex items-center justify-between border-t border-theme/60">
-                  <span className="text-xs text-secondary font-medium">
-                    By {featuredItem.sourceName || "Tablly Growth Team"}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCardClick(featuredItem)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs sm:text-sm transition-all shadow-sm shadow-primary/20 cursor-pointer"
-                  >
-                    <span>{featuredItem.type === "youtube" ? "Watch Masterclass" : "Read Full Guide"}</span>
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCardClick(featuredItem)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs sm:text-sm transition-all shadow-sm shadow-primary/20 cursor-pointer shrink-0"
+                >
+                  <span>{featuredItem.type === "youtube" ? "Watch Masterclass" : "Read Full Guide"}</span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Tabs & Search Controls */}
       <div className="space-y-4">
