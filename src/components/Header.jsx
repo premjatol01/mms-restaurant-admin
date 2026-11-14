@@ -1,5 +1,5 @@
-import { Bell } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import NotificationDropdown from "./NotificationDropdown";
 
 const ROUTE_TITLES = {
   "/": { title: "Dashboard", desc: "Overview of your restaurant" },
@@ -31,10 +31,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-primary-light hover:text-theme transition-colors">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-        </button>
+        <NotificationDropdown />
       </div>
     </header>
   );

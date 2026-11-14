@@ -51,7 +51,20 @@ export function connectAdminSocket(restaurantId, callbacks = {}) {
     socket.on("session:completed", callbacks.onSessionCompleted);
   }
 
+  if (callbacks.onNotification) {
+    socket.on("notification:new", callbacks.onNotification);
+  }
+
   return socket;
+}
+
+/**
+ * Registers or updates a listener for real-time notifications.
+ */
+export function onNewNotification(callback) {
+  if (!socket) return;
+  socket.off("notification:new", callback);
+  socket.on("notification:new", callback);
 }
 
 /**
