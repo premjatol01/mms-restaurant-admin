@@ -12,6 +12,7 @@ import {
   Copy,
   SlidersHorizontal,
   UploadCloud,
+  Gamepad2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePortalHandlerStore } from "../../store/portalHandlerStore";
@@ -20,6 +21,7 @@ import BestSellingTab from "./components/BestSellingTab";
 import PortalOffersTab from "./components/PortalOffersTab";
 import SocialMediaTab from "./components/SocialMediaTab";
 import RequestWaiterTab from "./components/RequestWaiterTab";
+import TableGamesTab from "./components/TableGamesTab";
 import OrderingOperationsTab from "./components/OrderingOperationsTab";
 import Button from "../../components/ui/Button";
 
@@ -29,6 +31,7 @@ const TABS = [
   { id: "offers", label: "Offers Management", icon: Tag, badge: "Promos" },
   { id: "waiter", label: "Request Waiter Handler", icon: Bell, badge: "Service" },
   { id: "social", label: "Social Media & Wi-Fi", icon: Globe, badge: "Connect" },
+  { id: "games", label: "Table Games", icon: Gamepad2, badge: "3 Games" },
   { id: "operations", label: "Ordering & Operations", icon: SlidersHorizontal, badge: "Controls" },
 ];
 
@@ -185,6 +188,7 @@ export default function PortalHandlerPage() {
           {currentSection === "offers" && <PortalOffersTab />}
           {currentSection === "waiter" && <RequestWaiterTab />}
           {currentSection === "social" && <SocialMediaTab />}
+          {currentSection === "games" && <TableGamesTab />}
           {currentSection === "operations" && <OrderingOperationsTab />}
         </div>
       </div>

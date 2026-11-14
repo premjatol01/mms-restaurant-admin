@@ -105,6 +105,99 @@ const DEFAULT_PORTAL_DATA = {
     enableFloatingCart: true,
     enableGames: true,
   },
+
+  // 7. Table Games Handler (Foodie Trivia, Dare & Spin, Table Tic-Tac-Toe)
+  tableGames: {
+    enabled: true,
+    trivia: {
+      enabled: true,
+      title: "Foodie Trivia Showdown",
+      tagline: "Test culinary trivia with table mates",
+      status: "Active",
+      timerSeconds: 15,
+      questions: [
+        {
+          id: "q-1",
+          question: "Which country is the historical birthplace of French Fries?",
+          options: ["France", "Belgium", "USA", "Germany"],
+          correctIndex: 1,
+          explanation: "Historians believe fries originated in Belgium, where villagers fried small fish, and when the river froze, fried potatoes instead!"
+        },
+        {
+          id: "q-2",
+          question: "Which spice is the most expensive in the world by weight?",
+          options: ["Vanilla", "Saffron", "Cardamom", "Star Anise"],
+          correctIndex: 1,
+          explanation: "Saffron is harvested by hand from the stigma of Crocus sativus flowers — it takes 75,000 flowers to make one pound!"
+        },
+        {
+          id: "q-3",
+          question: "What ingredient causes bread dough to rise and become airy?",
+          options: ["Baking Soda", "Yeast", "Cornstarch", "Sugar"],
+          correctIndex: 1,
+          explanation: "Yeast consumes sugars in dough and releases carbon dioxide gas bubbles, which expands and rises the dough."
+        },
+        {
+          id: "q-4",
+          question: "What gives traditional Italian pesto sauce its vibrant green color?",
+          options: ["Spinach", "Fresh Basil", "Oregano", "Green Bell Pepper"],
+          correctIndex: 1,
+          explanation: "Classic Genovese pesto is made with crushed fresh sweet basil leaves, pine nuts, garlic, parmesan, and olive oil."
+        },
+        {
+          id: "q-5",
+          question: "Which fruit has all of its seeds on the outside of its skin?",
+          options: ["Strawberry", "Kiwi", "Blueberry", "Raspberry"],
+          correctIndex: 0,
+          explanation: "Strawberries are the only fruit that bear their seeds on the outside — an average strawberry has around 200 seeds!"
+        },
+        {
+          id: "q-6",
+          question: "Which country is the world's largest producer of Olive Oil?",
+          options: ["Italy", "Greece", "Spain", "Portugal"],
+          correctIndex: 2,
+          explanation: "Spain produces roughly 45% of the total olive oil supply in the world, with Andalusia leading the harvest."
+        },
+        {
+          id: "q-7",
+          question: "Real Japanese Wasabi is traditionally prepared from which plant part?",
+          options: ["Mustard leaves", "Wasabia japonica rhizome root", "Green radishes", "Ginger stalk"],
+          correctIndex: 1,
+          explanation: "Authentic wasabi is grated from the underground stem (rhizome) of Wasabia japonica, known for its rapid, sinus-clearing aroma."
+        },
+        {
+          id: "q-8",
+          question: "What gives Earl Grey tea its distinct citrus aroma and flavor?",
+          options: ["Bergamot orange oil", "Lemon peel", "Grapefruit zest", "Yuzu extract"],
+          correctIndex: 0,
+          explanation: "Earl Grey is black tea infused with cold-pressed oil from the rind of the fragrant bergamot citrus fruit."
+        }
+      ]
+    },
+    dareSpin: {
+      enabled: true,
+      title: "Table Dare & Spin",
+      tagline: "Spin the wheel for fun dinner challenges",
+      status: "Active",
+      dares: [
+        { id: "d-1", text: "Food Critic: Review your last bite or sip like a 3-star Michelin chef for 30 seconds.", color: "#EF4444" },
+        { id: "d-2", text: "Chef's Compliment: Give a genuine, creative compliment to the person sitting across from you.", color: "#F59E0B" },
+        { id: "d-3", text: "Table Selfie: Take a silly group selfie with everyone at the table right now!", color: "#10B981" },
+        { id: "d-4", text: "Mystery Order: The player to your left gets to pick your next dessert or side dish.", color: "#3B82F6" },
+        { id: "d-5", text: "Food Confession: Share the weirdest food combination you secretly enjoy.", color: "#8B5CF6" },
+        { id: "d-6", text: "Accent Time: Say your favorite food order in a dramatic French or Italian accent.", color: "#EC4899" },
+        { id: "d-7", text: "No Hands: Eat your next French fry, chip, or nacho using only your mouth — no hands!", color: "#F97316" },
+        { id: "d-8", text: "Quick Trivia: The person on your right asks you any question — get it right or tell a funny secret.", color: "#14B8A6" },
+      ]
+    },
+    ticTacToe: {
+      enabled: true,
+      title: "Table Tic-Tac-Toe",
+      tagline: "Quick matches while waiting for your order",
+      status: "Active",
+      mode: "pvp", // 'pvp' (Pass & Play) or 'bot' (Play vs Chef Bot)
+    }
+  },
 };
 
 const STORAGE_KEY = "tablly_portal_handler_settings_v3";
@@ -140,6 +233,22 @@ const loadStoredData = () => {
         operations: {
           ...DEFAULT_PORTAL_DATA.operations,
           ...(parsed.operations || {}),
+        },
+        tableGames: {
+          ...DEFAULT_PORTAL_DATA.tableGames,
+          ...(parsed.tableGames || {}),
+          trivia: {
+            ...DEFAULT_PORTAL_DATA.tableGames.trivia,
+            ...(parsed.tableGames?.trivia || {}),
+          },
+          dareSpin: {
+            ...DEFAULT_PORTAL_DATA.tableGames.dareSpin,
+            ...(parsed.tableGames?.dareSpin || {}),
+          },
+          ticTacToe: {
+            ...DEFAULT_PORTAL_DATA.tableGames.ticTacToe,
+            ...(parsed.tableGames?.ticTacToe || {}),
+          },
         },
       };
     }
@@ -277,6 +386,22 @@ export const usePortalHandlerStore = create((set, get) => ({
           enableGames: ps.operations?.enableGames !== undefined ? ps.operations.enableGames : current.operations.enableGames,
           enableCart: ps.operations?.enableCart !== undefined ? ps.operations.enableCart : current.operations.enableCart,
         },
+        tableGames: {
+          ...current.tableGames,
+          enabled: ps.tableGames?.enabled !== undefined ? ps.tableGames.enabled : current.tableGames.enabled,
+          trivia: {
+            ...current.tableGames.trivia,
+            ...(ps.tableGames?.trivia || {}),
+          },
+          dareSpin: {
+            ...current.tableGames.dareSpin,
+            ...(ps.tableGames?.dareSpin || {}),
+          },
+          ticTacToe: {
+            ...current.tableGames.ticTacToe,
+            ...(ps.tableGames?.ticTacToe || {}),
+          },
+        },
       };
 
       set({ portalData: mergedData, isDirty: false, loading: false });
@@ -346,6 +471,31 @@ export const usePortalHandlerStore = create((set, get) => ({
             enableFloatingCart: Boolean(state.operations.enableFloatingCart),
             enableGames: Boolean(state.operations.enableGames),
             enableCart: Boolean(state.operations.enableCart),
+          },
+          tableGames: {
+            enabled: Boolean(state.tableGames?.enabled),
+            trivia: {
+              enabled: Boolean(state.tableGames?.trivia?.enabled),
+              title: state.tableGames?.trivia?.title || "Foodie Trivia Showdown",
+              tagline: state.tableGames?.trivia?.tagline || "Test culinary trivia with table mates",
+              status: state.tableGames?.trivia?.status || "Active",
+              timerSeconds: Math.max(5, Number(state.tableGames?.trivia?.timerSeconds) || 15),
+              questions: state.tableGames?.trivia?.questions || [],
+            },
+            dareSpin: {
+              enabled: Boolean(state.tableGames?.dareSpin?.enabled),
+              title: state.tableGames?.dareSpin?.title || "Table Dare & Spin",
+              tagline: state.tableGames?.dareSpin?.tagline || "Spin the wheel for fun dinner challenges",
+              status: state.tableGames?.dareSpin?.status || "Active",
+              dares: state.tableGames?.dareSpin?.dares || [],
+            },
+            ticTacToe: {
+              enabled: Boolean(state.tableGames?.ticTacToe?.enabled),
+              title: state.tableGames?.ticTacToe?.title || "Table Tic-Tac-Toe",
+              tagline: state.tableGames?.ticTacToe?.tagline || "Quick matches while waiting for your order",
+              status: state.tableGames?.ticTacToe?.status || "Active",
+              mode: state.tableGames?.ticTacToe?.mode || "pvp",
+            },
           },
         },
       };
@@ -641,5 +791,145 @@ export const usePortalHandlerStore = create((set, get) => ({
       },
       isDirty: true,
     }));
+  },
+
+  // 7. Table Games Handler Updates
+  toggleTableGamesMaster: () => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: {
+          ...state.portalData.tableGames,
+          enabled: !state.portalData.tableGames.enabled,
+        },
+      },
+      isDirty: true,
+    }));
+  },
+
+  toggleGameEnabled: (gameKey) => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: {
+          ...state.portalData.tableGames,
+          [gameKey]: {
+            ...state.portalData.tableGames[gameKey],
+            enabled: !state.portalData.tableGames[gameKey]?.enabled,
+          },
+        },
+      },
+      isDirty: true,
+    }));
+  },
+
+  updateGameField: (gameKey, field, value) => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: {
+          ...state.portalData.tableGames,
+          [gameKey]: {
+            ...state.portalData.tableGames[gameKey],
+            [field]: value,
+          },
+        },
+      },
+      isDirty: true,
+    }));
+  },
+
+  addTriviaQuestion: (questionObj) => {
+    set((state) => {
+      const existing = state.portalData.tableGames?.trivia?.questions || [];
+      const newQuestion = {
+        id: `q-${Date.now()}`,
+        ...questionObj,
+      };
+      return {
+        portalData: {
+          ...state.portalData,
+          tableGames: {
+            ...state.portalData.tableGames,
+            trivia: {
+              ...state.portalData.tableGames.trivia,
+              questions: [...existing, newQuestion],
+            },
+          },
+        },
+        isDirty: true,
+      };
+    });
+    toast.success("Trivia question added!");
+  },
+
+  deleteTriviaQuestion: (questionId) => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: {
+          ...state.portalData.tableGames,
+          trivia: {
+            ...state.portalData.tableGames.trivia,
+            questions: (state.portalData.tableGames.trivia.questions || []).filter((q) => q.id !== questionId),
+          },
+        },
+      },
+      isDirty: true,
+    }));
+    toast.info("Trivia question removed.");
+  },
+
+  addDare: (text, color = "#EF4444") => {
+    set((state) => {
+      const existing = state.portalData.tableGames?.dareSpin?.dares || [];
+      const newDare = {
+        id: `d-${Date.now()}`,
+        text,
+        color,
+      };
+      return {
+        portalData: {
+          ...state.portalData,
+          tableGames: {
+            ...state.portalData.tableGames,
+            dareSpin: {
+              ...state.portalData.tableGames.dareSpin,
+              dares: [...existing, newDare],
+            },
+          },
+        },
+        isDirty: true,
+      };
+    });
+    toast.success("New dinner dare added to wheel!");
+  },
+
+  deleteDare: (dareId) => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: {
+          ...state.portalData.tableGames,
+          dareSpin: {
+            ...state.portalData.tableGames.dareSpin,
+            dares: (state.portalData.tableGames.dareSpin.dares || []).filter((d) => d.id !== dareId),
+          },
+        },
+      },
+      isDirty: true,
+    }));
+    toast.info("Dare removed from wheel.");
+  },
+
+  resetDefaultGames: () => {
+    set((state) => ({
+      portalData: {
+        ...state.portalData,
+        tableGames: JSON.parse(JSON.stringify(DEFAULT_PORTAL_DATA.tableGames)),
+      },
+      isDirty: true,
+    }));
+    toast.success("Table games settings restored to factory defaults!");
   },
 }));
