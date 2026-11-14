@@ -12,6 +12,9 @@ const ROUTE_TITLES = {
   "/offers-promos": { title: "Offers & Promos", desc: "Manage discounts and offers" },
   "/website": { title: "Website", desc: "Manage your online presence" },
   "/reviews": { title: "Reviews", desc: "Manage customer reviews" },
+  "/biz-growth": { title: "Biz Growth", desc: "Masterclasses, playbooks, and strategies to grow and scale your restaurant" },
+  "/portal-handler": { title: "Portal Handler", desc: "Configure customer portal and landing behavior" },
+  "/design-requests": { title: "Design Requests", desc: "Request and track custom QR and branding designs" },
   "/account": { title: "Account & Profile", desc: "Manage administrator credentials, personal address & security" },
   "/settings": { title: "Settings", desc: "Application settings" },
 };

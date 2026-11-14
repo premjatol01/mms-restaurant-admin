@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp,
   Search,
   Video,
   FileText,
@@ -81,110 +80,94 @@ export default function BizGrowthPage() {
     // Track view in backend
     const id = item._id || item.id;
     if (id) {
-      bizGrowthApi.getById(id).catch(() => {});
+      bizGrowthApi.getById(id).catch(() => { });
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-primary-soft/40 via-surface to-surface border border-theme-faded rounded-2xl p-6 sm:p-8">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
-            <TrendingUp size={14} />
-            <span>Biz Growth Hub</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-theme tracking-tight">
-            Grow & Scale Your Restaurant Business
-          </h1>
-          <p className="text-xs sm:text-sm text-secondary leading-relaxed">
-            Curated video masterclasses, menu engineering strategies, operational playbooks, and industry trends to help you increase average order value and bring repeat diners.
-          </p>
-        </div>
-      </div>
-
       {/* Featured Resource Spotlight (If available) */}
-      {featuredItem && activeTab === "all" && !search && selectedCategory === "all" && (
-        <div className="bg-surface rounded-2xl border border-primary/25 overflow-hidden shadow-sm hover:shadow-md transition-all">
-          <div className="flex flex-col lg:flex-row items-stretch">
-            {/* Thumbnail */}
-            <div
-              className="lg:w-2/5 aspect-video lg:aspect-auto min-h-[220px] bg-surface-soft relative overflow-hidden group cursor-pointer"
-              onClick={() => handleCardClick(featuredItem)}
-            >
-              <img
-                src={
-                  featuredItem.thumbnail
-                    ? featuredItem.thumbnail.startsWith("http")
-                      ? featuredItem.thumbnail
-                      : `http://localhost:5000${featuredItem.thumbnail}`
-                    : "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80"
-                }
-                alt={featuredItem.title}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
-                {featuredItem.type === "youtube" ? (
-                  <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                    <Play size={20} className="fill-current ml-0.5" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-xl bg-white/90 text-primary flex items-center justify-center shadow-lg">
-                    <BookOpen size={18} />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Featured Content */}
-            <div className="lg:w-3/5 p-6 sm:p-8 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    <Sparkles size={11} />
-                    Featured Growth Pick
-                  </span>
-                  <span className="text-xs text-secondary font-medium">
-                    &bull; {featuredItem.category || "Strategy"}
-                  </span>
-                  {featuredItem.readTime && (
-                    <span className="text-xs text-secondary flex items-center gap-1 font-medium">
-                      <Clock size={12} />
-                      {featuredItem.readTime}
-                    </span>
+        { featuredItem && (
+          <div className="bg-surface rounded-2xl border border-primary/25 overflow-hidden shadow-sm hover:shadow-md transition-all">
+            <div className="flex flex-col lg:flex-row items-stretch">
+              {/* Thumbnail */}
+              <div
+                className="lg:w-2/5 aspect-video lg:aspect-auto min-h-[220px] bg-surface-soft relative overflow-hidden group cursor-pointer"
+                onClick={() => handleCardClick(featuredItem)}
+              >
+                <img
+                  src={
+                    featuredItem.thumbnail
+                      ? featuredItem.thumbnail.startsWith("http")
+                        ? featuredItem.thumbnail
+                        : `http://localhost:5000${featuredItem.thumbnail}`
+                      : "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80"
+                  }
+                  alt={featuredItem.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
+                  {featuredItem.type === "youtube" ? (
+                    <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Play size={20} className="fill-current ml-0.5" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-white/90 text-primary flex items-center justify-center shadow-lg">
+                      <BookOpen size={18} />
+                    </div>
                   )}
                 </div>
-
-                <h2
-                  onClick={() => handleCardClick(featuredItem)}
-                  className="text-xl sm:text-2xl font-bold text-theme hover:text-primary transition-colors cursor-pointer"
-                >
-                  {featuredItem.title}
-                </h2>
-
-                <p className="text-xs sm:text-sm text-secondary leading-relaxed line-clamp-3">
-                  {featuredItem.description}
-                </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-between border-t border-theme/60">
-                <span className="text-xs text-secondary font-medium">
-                  By {featuredItem.sourceName || "Tablly Growth Team"}
-                </span>
+              {/* Featured Content */}
+              <div className="lg:w-3/5 p-6 sm:p-8 flex flex-col justify-between space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <Sparkles size={11} />
+                      Featured Growth Pick
+                    </span>
+                    <span className="text-xs text-secondary font-medium">
+                      &bull; {featuredItem.category || "Strategy"}
+                    </span>
+                    {featuredItem.readTime && (
+                      <span className="text-xs text-secondary flex items-center gap-1 font-medium">
+                        <Clock size={12} />
+                        {featuredItem.readTime}
+                      </span>
+                    )}
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleCardClick(featuredItem)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs sm:text-sm transition-all shadow-sm shadow-primary/20 cursor-pointer"
-                >
-                  <span>{featuredItem.type === "youtube" ? "Watch Masterclass" : "Read Full Guide"}</span>
-                  <ArrowRight size={15} />
-                </button>
+                  <h2
+                    onClick={() => handleCardClick(featuredItem)}
+                    className="text-xl sm:text-2xl font-bold text-theme hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {featuredItem.title}
+                  </h2>
+
+                  <p className="text-xs sm:text-sm text-secondary leading-relaxed line-clamp-3">
+                    {featuredItem.description}
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-theme/60">
+                  <span className="text-xs text-secondary font-medium">
+                    By {featuredItem.sourceName || "Tablly Growth Team"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCardClick(featuredItem)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-xs sm:text-sm transition-all shadow-sm shadow-primary/20 cursor-pointer"
+                  >
+                    <span>{featuredItem.type === "youtube" ? "Watch Masterclass" : "Read Full Guide"}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Tabs & Search Controls */}
       <div className="space-y-4">
@@ -197,11 +180,10 @@ export default function BizGrowthPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${
-                  active
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 border ${active
                     ? "bg-primary text-white border-primary shadow-sm"
                     : "bg-surface border-theme-faded text-secondary hover:text-theme hover:bg-primary-soft/20"
-                }`}
+                  }`}
               >
                 {Icon && <Icon size={16} className={active ? "text-white" : tab.color} />}
                 <span>{tab.label}</span>
@@ -225,11 +207,10 @@ export default function BizGrowthPage() {
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                selectedCategory === "all"
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${selectedCategory === "all"
                   ? "bg-theme text-theme border border-theme-faded shadow-xs font-bold"
                   : "text-secondary hover:text-theme bg-surface-soft hover:bg-primary-light"
-              }`}
+                }`}
             >
               All Topics
             </button>
@@ -238,11 +219,10 @@ export default function BizGrowthPage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedCategory === cat
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${selectedCategory === cat
                     ? "bg-theme text-theme border border-theme-faded shadow-xs font-bold"
                     : "text-secondary hover:text-theme bg-surface-soft hover:bg-primary-light"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -372,8 +352,8 @@ export default function BizGrowthPage() {
                       {item.type === "youtube"
                         ? "Watch Video"
                         : item.type === "social"
-                        ? "View Link"
-                        : "Read Article"}
+                          ? "View Link"
+                          : "Read Article"}
                     </span>
                     {item.type === "youtube" ? <Play size={12} className="fill-current" /> : <ExternalLink size={12} />}
                   </button>
