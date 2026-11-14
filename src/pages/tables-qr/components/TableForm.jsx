@@ -128,7 +128,7 @@ export default function TableForm({ isOpen, onClose, editTable }) {
             });
           } else {
             // Update to selected template or 'plain'
-            const tplParam = form.selectedTemplateId === "plain" ? null : form.selectedTemplateId;
+            const tplParam = form.selectedTemplateId === "plain" ? "plain" : form.selectedTemplateId;
             await updateTable(editTable.id, {
               tableNo,
               tableId: editTable.tableId,

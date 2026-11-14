@@ -14,7 +14,7 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
     assignQRToTable, unassignQRFromTable, generateQRCodes
   } = useTablesQRStore();
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("plain");
   const [showDesigner, setShowDesigner] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -29,17 +29,19 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
     fetchQRTemplates();
   }, [fetchQRTemplates]);
 
-  // Auto-select first active template when they load
+  // If table already has a template, initialize with that template, otherwise "plain"
   useEffect(() => {
-    if (activeTemplates.length > 0 && selectedTemplateId === null) {
-      setSelectedTemplateId(activeTemplates[0].id);
+    if (currentQR?.templateId) {
+      const tId = typeof currentQR.templateId === "object" ? currentQR.templateId._id || currentQR.templateId.id : currentQR.templateId;
+      if (tId) setSelectedTemplateId(String(tId));
     }
-  }, [activeTemplates.length]);
+  }, [currentQR]);
 
   const handleAssign = async () => {
     setIsAssigning(true);
     try {
-      const qrs = await generateQRCodes(1, selectedTemplateId || null);
+      const tplParam = selectedTemplateId === "plain" ? null : selectedTemplateId;
+      const qrs = await generateQRCodes(1, tplParam);
       if (qrs && qrs.length > 0) {
         await assignQRToTable(liveTable.id, qrs[0].id);
         toast.success("QR code assigned successfully.");
@@ -119,66 +121,60 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
           </div>
 
           {/* Template grid */}
-          {activeTemplates.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed border-theme rounded-xl">
-              <QrCode size={32} className="mx-auto text-secondary mb-2" />
-              <p className="text-sm font-medium text-theme">No templates available</p>
-              <p className="text-xs text-secondary mt-1">
-                Ask your super admin to add QR templates, or click <strong>Assign</strong> below to generate a plain QR.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-0.5">
-              {/* Plain QR tile */}
+          <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-0.5">
+            {/* Plain QR tile */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplateId("plain")}
+              className={`border-2 rounded-xl p-2 transition-all text-center cursor-pointer ${
+                selectedTemplateId === "plain" || !selectedTemplateId
+                  ? "border-primary bg-primary-light/30 ring-2 ring-primary/20"
+                  : "border-theme hover:border-primary/40"
+              }`}
+            >
+              <div className="w-full aspect-square rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1.5">
+                <QrCode size={32} className="text-secondary" />
+              </div>
+              <p className="text-[11px] font-medium text-theme leading-tight">Plain QR</p>
+            </button>
+
+            {/* Template tiles */}
+            {activeTemplates.map((tpl) => (
               <button
+                key={tpl.id}
                 type="button"
-                onClick={() => setSelectedTemplateId(null)}
-                className={`border-2 rounded-xl p-2 transition-all text-center ${
-                  selectedTemplateId === null
-                    ? "border-primary bg-primary-light/30"
+                onClick={() => setSelectedTemplateId(tpl.id)}
+                className={`border-2 rounded-xl p-2 transition-all text-center cursor-pointer ${
+                  selectedTemplateId === tpl.id
+                    ? "border-primary bg-primary-light/30 ring-2 ring-primary/20"
                     : "border-theme hover:border-primary/40"
                 }`}
               >
-                <div className="w-full aspect-square rounded-lg bg-gray-100 flex items-center justify-center mb-1.5">
-                  <QrCode size={32} className="text-gray-400" />
-                </div>
-                <p className="text-[11px] font-medium text-theme leading-tight">Plain QR</p>
+                <img
+                  src={getImageUrl(tpl.imagePath)}
+                  alt={tpl.name}
+                  className="w-full aspect-square object-cover rounded-lg mb-1.5 bg-gray-50"
+                />
+                <p className="text-[11px] font-medium text-theme leading-tight truncate">{tpl.name}</p>
               </button>
+            ))}
+          </div>
 
-              {/* Template tiles */}
-              {activeTemplates.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  onClick={() => setSelectedTemplateId(tpl.id)}
-                  className={`border-2 rounded-xl p-2 transition-all text-center ${
-                    selectedTemplateId === tpl.id
-                      ? "border-primary bg-primary-light/30"
-                      : "border-theme hover:border-primary/40"
-                  }`}
-                >
-                  <img
-                    src={getImageUrl(tpl.imagePath)}
-                    alt={tpl.name}
-                    className="w-full aspect-square object-cover rounded-lg mb-1.5 bg-gray-50"
-                  />
-                  <p className="text-[11px] font-medium text-theme leading-tight truncate">{tpl.name}</p>
-                </button>
-              ))}
-            </div>
+          {activeTemplates.length === 0 && (
+            <p className="text-xs text-secondary mt-1">
+              No custom templates available. Assigning will generate a high-res standalone Plain QR.
+            </p>
           )}
 
           {/* Selected label */}
-          {activeTemplates.length > 0 && (
-            <p className="text-xs text-secondary">
-              Selected:{" "}
-              <span className="font-medium text-theme">
-                {selectedTemplateId
-                  ? activeTemplates.find((t) => t.id === selectedTemplateId)?.name || "Unknown"
-                  : "Plain QR (no template)"}
-              </span>
-            </p>
-          )}
+          <p className="text-xs text-secondary">
+            Selected:{" "}
+            <span className="font-medium text-theme">
+              {selectedTemplateId && selectedTemplateId !== "plain"
+                ? activeTemplates.find((t) => t.id === selectedTemplateId)?.name || "Template"
+                : "Plain QR (no template)"}
+            </span>
+          </p>
 
           {/* Actions */}
           <div className="flex gap-3 pt-2 border-t border-theme">
