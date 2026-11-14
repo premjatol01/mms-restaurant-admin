@@ -31,6 +31,7 @@ const navItems = [
   { label: "Tables & QR", icon: QrCode, path: "/tables", featureKey: "table_sessions" },
   { label: "Portal Handler", icon: Smartphone, path: "/portal-handler" },
   { label: "Orders", icon: ClipboardList, path: "/orders", featureKey: "live_orders" },
+  { label: "Staff & RBAC", icon: Users, path: "/staff", featureKey: "multi_staff", tag: "ENT" },
   { label: "Subscription", icon: CreditCard, path: "/subscription" },
   { label: "Offers & Promos", icon: Tag, path: "/offers-promos", featureKey: "offers_promos", tag: "PRO" },
   { label: "Design Requests", icon: Palette, path: "/design-requests", featureKey: "design_requests", tag: "ENT" },

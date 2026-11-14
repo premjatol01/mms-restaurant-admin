@@ -14,6 +14,7 @@ const TablesAndQRPage = lazy(() => import("./pages/tables-qr/TablesAndQRPage"));
 const PortalHandlerPage = lazy(() => import("./pages/portal-handler/PortalHandlerPage"));
 const DesignRequestsPage = lazy(() => import("./pages/design-requests/DesignRequestsPage"));
 const OrdersPage = lazy(() => import("./pages/orders/OrdersPage"));
+const StaffPage = lazy(() => import("./pages/staff/StaffPage"));
 const OffersPromosPage = lazy(() => import("./pages/offers-promos/OffersPromosPage"));
 const WebsitePage = lazy(() => import("./pages/website/WebsitePage"));
 const ReviewsPage = lazy(() => import("./pages/reviews/ReviewsPage"));
@@ -117,6 +118,14 @@ export default function App() {
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <OrdersPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/staff"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <StaffPage />
                   </Suspense>
                 }
               />
