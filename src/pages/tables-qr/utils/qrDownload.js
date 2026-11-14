@@ -30,7 +30,7 @@ function fillRoundRect(ctx, x, y, w, h, r) {
   ctx.fill();
 }
 
-/** Fetches the backend-stored QR image (with template overlay) and returns a Blob. */
+/** Fetches the backend-stored QR image and ensures it is returned as a universally supported PNG Blob. */
 async function fetchRemoteImage(imageUrl) {
   const rawBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const baseUrl = rawBase.replace(/\/api\/?$/, "");
@@ -38,7 +38,40 @@ async function fetchRemoteImage(imageUrl) {
   const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${cleanPath}`;
   const res = await fetch(fullUrl);
   if (!res.ok) throw new Error(`Failed to fetch QR image: ${res.status}`);
-  return res.blob();
+  const blob = await res.blob();
+
+  // If blob is already confirmed image/png, return it directly
+  if (blob.type === "image/png") {
+    return blob;
+  }
+
+  // Otherwise, transcode to standard PNG via canvas so all Windows/Mac image viewers open it seamlessly
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const blobUrl = URL.createObjectURL(blob);
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(blobUrl);
+        canvas.toBlob((pngBlob) => {
+          resolve(pngBlob || blob);
+        }, "image/png");
+      } catch (err) {
+        URL.revokeObjectURL(blobUrl);
+        resolve(blob);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      resolve(blob);
+    };
+    img.src = blobUrl;
+  });
 }
 
 /** Draws a plain canvas QR card and returns a PNG Blob (fallback when no imageUrl). */
