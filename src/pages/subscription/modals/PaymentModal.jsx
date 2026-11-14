@@ -34,9 +34,10 @@ export default function PaymentModal({ isOpen, onClose, targetPackage, selectedP
   const packageName = targetPackage.name;
   const packageId = targetPackage._id || targetPackage.id;
   const price = selectedPricing?.price ?? targetPackage.price ?? 0;
-  const duration = selectedPricing?.duration ?? targetPackage.duration ?? "1_month";
+  const duration = selectedPricing?.duration ?? targetPackage.duration ?? "30_days";
   const durationDays = selectedPricing?.durationDays ?? targetPackage.durationDays ?? 30;
   const durationDisplay = selectedPricing?.durationDisplay ?? targetPackage.durationDisplay ?? `${durationDays} Days`;
+  const isTrial = Number(price) === 0 || packageName.toLowerCase().includes("trial");
 
   const upiId = paymentConfig?.paymentUpiId || "tablly@upi";
   const accountName = paymentConfig?.paymentAccountName || "Tablly Technologies";
@@ -86,14 +87,16 @@ export default function PaymentModal({ isOpen, onClose, targetPackage, selectedP
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!screenshotFile) {
+    if (!isTrial && !screenshotFile) {
       setFileError("Please upload your payment screenshot.");
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append("screenshot", screenshotFile);
+      if (screenshotFile) {
+        formData.append("screenshot", screenshotFile);
+      }
       formData.append("packageId", packageId);
       formData.append("packageName", packageName);
       formData.append("duration", duration);
@@ -104,162 +107,200 @@ export default function PaymentModal({ isOpen, onClose, targetPackage, selectedP
       formData.append("userNote", userNote.trim());
       formData.append("requestType", requestType);
 
-      await submitPayment(formData);
-      toast.success("Payment submitted successfully! Super admin will verify your screenshot and confirm your subscription.");
+      const res = await submitPayment(formData);
+      if (isTrial) {
+        toast.success(res?.message || "🎉 1-Month Free Trial activated successfully!");
+      } else {
+        toast.success("Payment submitted successfully! Super admin will verify your screenshot and confirm your subscription.");
+      }
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to submit payment proof");
+      toast.error(err.response?.data?.message || err.message || "Failed to submit request");
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={requestType === "renew" ? "Renew Subscription Plan" : `Buy ${packageName} Plan`} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={isTrial ? "Activate 1-Month Free Trial" : requestType === "renew" ? "Renew Subscription Plan" : `Buy ${packageName} Plan`} size="lg">
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Package & Amount Summary Banner */}
         <div className="bg-primary-light/30 border border-theme rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-primary">Selected Package</span>
-            <h3 className="text-lg font-bold text-theme">{packageName} Plan</h3>
+            <h3 className="text-lg font-bold text-theme">{packageName}</h3>
             <p className="text-xs text-secondary mt-0.5">Billing duration: <strong>{durationDisplay}</strong></p>
           </div>
           <div className="sm:text-right">
             <span className="text-xs text-secondary">Payable Amount</span>
             <div className="text-2xl font-black text-theme flex items-center sm:justify-end gap-0.5">
-              <IndianRupee size={20} className="text-primary" />
-              {Number(price).toLocaleString("en-IN")}
+              {isTrial ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xl">₹0 · 100% Free</span>
+              ) : (
+                <>
+                  <IndianRupee size={20} className="text-primary" />
+                  {Number(price).toLocaleString("en-IN")}
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Step 1: Scan QR Code & Pay */}
-        <div className="border border-theme rounded-xl p-4 bg-surface space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-theme">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</div>
-            <h4 className="text-sm font-semibold text-theme">Scan QR Code & Pay</h4>
-          </div>
+        {/* If Free Trial: Show Instant Free Activation Banner */}
+        {isTrial ? (
+          <div className="border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm font-bold text-lg">
+                🎁
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-theme">Full Access Included for 30 Days</h4>
+                <p className="text-xs text-secondary leading-relaxed">
+                  Start your 30 days free trial with zero payment and no credit card required. You get up to 15 tables capacity, digital QR ordering, table games, waiter calling, and marketing features immediately!
+                </p>
+              </div>
+            </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-5">
-            {/* QR Code Container */}
-            <div className="relative p-2.5 bg-white border border-theme rounded-xl shadow-sm shrink-0 flex flex-col items-center">
-              <img
-                src={qrImage}
-                alt="Payment QR Code"
-                className="w-40 h-40 object-contain rounded"
+            <div className="pt-2 border-t border-emerald-500/20">
+              <Input
+                label="Optional Note / Remarks"
+                placeholder="e.g., Excited to try Tablly for our cafe!"
+                value={userNote}
+                onChange={(e) => setUserNote(e.target.value)}
               />
-              <span className="text-[10px] text-gray-500 font-medium mt-1">Scan via GPay / PhonePe / Paytm</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Step 1: Scan QR Code & Pay */}
+            <div className="border border-theme rounded-xl p-4 bg-surface space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-theme">
+                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">1</div>
+                <h4 className="text-sm font-semibold text-theme">Scan QR Code & Pay</h4>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* QR Code Container */}
+                <div className="relative p-2.5 bg-white border border-theme rounded-xl shadow-sm shrink-0 flex flex-col items-center">
+                  <img
+                    src={qrImage}
+                    alt="Payment QR Code"
+                    className="w-40 h-40 object-contain rounded"
+                  />
+                  <span className="text-[10px] text-gray-500 font-medium mt-1">Scan via GPay / PhonePe / Paytm</span>
+                </div>
+
+                {/* UPI & Bank Details */}
+                <div className="flex-1 space-y-3 w-full">
+                  <div className="p-3 bg-surface border border-theme rounded-lg space-y-1">
+                    <span className="text-[11px] text-secondary font-medium block">UPI ID for payment:</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-mono font-bold text-theme select-all">{upiId}</span>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-primary-light text-primary hover:bg-primary-light/80 font-medium transition-colors"
+                      >
+                        {copied ? <Check size={12} /> : <Copy size={12} />}
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-xs space-y-1 text-secondary">
+                    <p><strong className="text-theme">Account Name:</strong> {accountName}</p>
+                    {bankDetails && <p><strong className="text-theme">Bank Details:</strong> {bankDetails}</p>}
+                    <p className="text-[11px] text-secondary/80 mt-1">{instructions}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* UPI & Bank Details */}
-            <div className="flex-1 space-y-3 w-full">
-              <div className="p-3 bg-surface border border-theme rounded-lg space-y-1">
-                <span className="text-[11px] text-secondary font-medium block">UPI ID for payment:</span>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-mono font-bold text-theme select-all">{upiId}</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyUpi}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded bg-primary-light text-primary hover:bg-primary-light/80 font-medium transition-colors"
+            {/* Step 2: Upload Screenshot & Enter Reference */}
+            <div className="border border-theme rounded-xl p-4 bg-surface space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-theme">
+                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</div>
+                <h4 className="text-sm font-semibold text-theme">Upload Payment Proof & Reference</h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Transaction ID / UTR Number"
+                  placeholder="e.g., 402198765432"
+                  value={transactionRef}
+                  onChange={(e) => setTransactionRef(e.target.value)}
+                  helper="12-digit UTR from your UPI payment app"
+                />
+                <Input
+                  label="Optional Note"
+                  placeholder="e.g., Paid via HDFC account"
+                  value={userNote}
+                  onChange={(e) => setUserNote(e.target.value)}
+                />
+              </div>
+
+              {/* Screenshot Uploader */}
+              <div>
+                <label className="text-xs font-medium text-theme block mb-1">
+                  Payment Screenshot <span className="text-red-500">*</span>
+                </label>
+
+                {!previewUrl ? (
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    className="border-2 border-dashed border-theme rounded-xl p-6 text-center hover:border-primary/60 transition-colors bg-surface/50 cursor-pointer"
+                    onClick={() => document.getElementById("payment-ss-input")?.click()}
                   >
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
-              </div>
+                    <Upload size={28} className="mx-auto text-secondary mb-2" />
+                    <p className="text-xs font-semibold text-theme">Click to upload or drag & drop payment screenshot</p>
+                    <p className="text-[11px] text-secondary mt-1">PNG, JPG, WebP up to 5 MB</p>
+                    <input
+                      id="payment-ss-input"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative border border-theme rounded-xl p-3 bg-surface flex items-center gap-3">
+                    <img
+                      src={previewUrl}
+                      alt="Payment screenshot preview"
+                      className="w-16 h-16 object-cover rounded-lg border border-theme shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-theme truncate">{screenshotFile?.name}</p>
+                      <p className="text-[11px] text-secondary">
+                        {screenshotFile?.size ? `${(screenshotFile.size / 1024).toFixed(1)} KB` : "Uploaded screenshot"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScreenshotFile(null);
+                        setPreviewUrl(null);
+                      }}
+                      className="p-1.5 text-secondary hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                      title="Remove screenshot"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
 
-              <div className="text-xs space-y-1 text-secondary">
-                <p><strong className="text-theme">Account Name:</strong> {accountName}</p>
-                {bankDetails && <p><strong className="text-theme">Bank Details:</strong> {bankDetails}</p>}
-                <p className="text-[11px] text-secondary/80 mt-1">{instructions}</p>
+                {fileError && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {fileError}</p>}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Step 2: Upload Screenshot & Enter Reference */}
-        <div className="border border-theme rounded-xl p-4 bg-surface space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-theme">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">2</div>
-            <h4 className="text-sm font-semibold text-theme">Upload Payment Proof & Reference</h4>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Transaction ID / UTR Number"
-              placeholder="e.g., 402198765432"
-              value={transactionRef}
-              onChange={(e) => setTransactionRef(e.target.value)}
-              helper="12-digit UTR from your UPI payment app"
-            />
-            <Input
-              label="Optional Note"
-              placeholder="e.g., Paid via HDFC account"
-              value={userNote}
-              onChange={(e) => setUserNote(e.target.value)}
-            />
-          </div>
-
-          {/* Screenshot Uploader */}
-          <div>
-            <label className="text-xs font-medium text-theme block mb-1">
-              Payment Screenshot <span className="text-red-500">*</span>
-            </label>
-
-            {!previewUrl ? (
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                className="border-2 border-dashed border-theme rounded-xl p-6 text-center hover:border-primary/60 transition-colors bg-surface/50 cursor-pointer"
-                onClick={() => document.getElementById("payment-ss-input")?.click()}
-              >
-                <Upload size={28} className="mx-auto text-secondary mb-2" />
-                <p className="text-xs font-semibold text-theme">Click to upload or drag & drop payment screenshot</p>
-                <p className="text-[11px] text-secondary mt-1">PNG, JPG, WebP up to 5 MB</p>
-                <input
-                  id="payment-ss-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
-            ) : (
-              <div className="relative border border-theme rounded-xl p-3 bg-surface flex items-center gap-3">
-                <img
-                  src={previewUrl}
-                  alt="Payment screenshot preview"
-                  className="w-16 h-16 object-cover rounded-lg border border-theme shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-theme truncate">{screenshotFile?.name}</p>
-                  <p className="text-[11px] text-secondary">
-                    {screenshotFile?.size ? `${(screenshotFile.size / 1024).toFixed(1)} KB` : "Uploaded screenshot"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScreenshotFile(null);
-                    setPreviewUrl(null);
-                  }}
-                  className="p-1.5 text-secondary hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                  title="Remove screenshot"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-
-            {fileError && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={12} /> {fileError}</p>}
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-3 border-t border-theme">
           <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" className="flex-1" loading={submitting} disabled={submitting || !screenshotFile}>
-            Submit Payment for Verification
+          <Button type="submit" className="flex-1" loading={submitting} disabled={submitting || (!isTrial && !screenshotFile)}>
+            {isTrial ? "Activate 30 Days Free Trial Now" : "Submit Payment for Verification"}
           </Button>
         </div>
       </form>
