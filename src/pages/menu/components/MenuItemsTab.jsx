@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, UtensilsCrossed, Star, Filter, Sparkles, Palette } from "lucide-react";
+import { Plus, UtensilsCrossed, Star, Filter, Sparkles, Palette, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useMenuStore } from "../../../store/menuStore";
+import { useSubscriptionPlan } from "../../../hooks/useSubscriptionPlan";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
@@ -17,6 +18,10 @@ import { getImageUrl } from "../../../utils/getImageUrl";
 export default function MenuItemsTab({ onShowAIPrompt, onShowDesigner }) {
   const navigate = useNavigate();
   const { menuItems, categories, deleteMenuItem, updateMenuItem, toggleMenuItemPopular } = useMenuStore();
+  const { hasFeature } = useSubscriptionPlan();
+  const canUseAI = hasFeature("ai_prompts");
+  const canUseDesigner = hasFeature("design_requests");
+
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -141,14 +146,36 @@ export default function MenuItemsTab({ onShowAIPrompt, onShowDesigner }) {
         </Button>
         
         {onShowAIPrompt && (
-          <Button variant="secondary" onClick={onShowAIPrompt}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!canUseAI) {
+                toast.error("AI Menu Prompt Engineering is an Enterprise feature. Please upgrade your package in Subscription to unlock.");
+                return;
+              }
+              onShowAIPrompt();
+            }}
+            title={!canUseAI ? "Locked - Enterprise Plan" : undefined}
+          >
             <Sparkles size={15} /> AI Menu Prompt
+            {!canUseAI && <Lock size={12} className="ml-1 text-amber-500" />}
           </Button>
         )}
         
         {onShowDesigner && (
-          <Button variant="secondary" onClick={onShowDesigner}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!canUseDesigner) {
+                toast.error("Custom Graphic Design Requests is an Enterprise feature. Please upgrade your package in Subscription to unlock.");
+                return;
+              }
+              onShowDesigner();
+            }}
+            title={!canUseDesigner ? "Locked - Enterprise Plan" : undefined}
+          >
             <Palette size={15} /> Contact Designer
+            {!canUseDesigner && <Lock size={12} className="ml-1 text-amber-500" />}
           </Button>
         )}
 

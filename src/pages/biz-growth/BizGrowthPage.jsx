@@ -19,6 +19,8 @@ import { bizGrowthApi } from "../../api/bizGrowth.api";
 import SearchInput from "../../components/ui/SearchInput";
 import EmptyState from "../../components/ui/EmptyState";
 import VideoPlayerModal from "./modals/VideoPlayerModal";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
 
 const TABS = [
   { id: "all", label: "All Resources", icon: null },
@@ -29,6 +31,18 @@ const TABS = [
 ];
 
 export default function BizGrowthPage() {
+  const { hasFeature } = useSubscriptionPlan();
+
+  if (!hasFeature("biz_growth")) {
+    return (
+      <FeatureLockedScreen
+        featureKey="biz_growth"
+        title="Biz Growth Hub & Masterclasses"
+        requiredTier="Pro Growth Plan"
+      />
+    );
+  }
+
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);

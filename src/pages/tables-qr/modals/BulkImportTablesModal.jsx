@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { QrCode, Check, Loader2, Sparkles, AlertCircle, Layers } from "lucide-react";
+import { QrCode, Check, Loader2, Sparkles, AlertCircle, Layers, Lock } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../../components/ui/Modal";
 import Button from "../../../components/ui/Button";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
 import { useProfileStore } from "../../../store/profileStore";
+import { useSubscriptionPlan } from "../../../hooks/useSubscriptionPlan";
 import { getImageUrl } from "../../../utils/getImageUrl";
 
 export default function BulkImportTablesModal({ isOpen, onClose }) {
   const { tables, qrTemplates, fetchQRTemplates, createBulkTables, maxTables: storeMaxTables, planName: storePlanName } = useTablesQRStore();
   const profile = useProfileStore((state) => state.profile);
   const fetchProfile = useProfileStore((state) => state.fetchProfile);
+  const { maxTables: subMaxTables, planName: subPlanName, hasFeature } = useSubscriptionPlan();
+  const canUseDesignerQR = hasFeature("designer_qr");
 
   const [count, setCount] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("plain");
@@ -23,8 +26,8 @@ export default function BulkImportTablesModal({ isOpen, onClose }) {
     }
   }, [isOpen, fetchQRTemplates, profile, fetchProfile]);
 
-  const maxTables = storeMaxTables || profile?.subscription?.maxTables || profile?.subscription?.package?.maxTables || 50;
-  const planName = storePlanName || profile?.subscription?.packageName || "Standard";
+  const maxTables = subMaxTables || storeMaxTables || 15;
+  const planName = subPlanName || storePlanName || "Starter Plan";
   const currentCount = tables.length;
   const remainingAllowed = Math.max(0, maxTables - currentCount);
 
@@ -175,13 +178,27 @@ export default function BulkImportTablesModal({ isOpen, onClose }) {
               return (
                 <div
                   key={tId}
-                  onClick={() => setSelectedTemplateId(tId)}
+                  onClick={() => {
+                    if (!canUseDesignerQR) {
+                      toast.error("Designer QR Standees are included in the Pro Growth and Enterprise plans. Upgrade to unlock this standee.");
+                      return;
+                    }
+                    setSelectedTemplateId(tId);
+                  }}
                   className={`relative rounded-xl border-2 p-2.5 flex flex-col items-center justify-between text-center cursor-pointer transition-all overflow-hidden ${
                     isSelected
                       ? "border-primary bg-primary/10 shadow-xs ring-2 ring-primary/20"
+                      : !canUseDesignerQR
+                      ? "border-theme bg-surface opacity-70 hover:opacity-90 hover:border-amber-500/50"
                       : "border-theme bg-surface hover:border-primary/40"
                   }`}
+                  title={!canUseDesignerQR ? "Requires Pro Growth Plan" : template.name}
                 >
+                  {!canUseDesignerQR && (
+                    <span className="absolute top-2 right-2 p-1 rounded-full bg-amber-500 text-white shadow-xs z-10" title="Locked - Pro Growth Plan">
+                      <Lock size={10} />
+                    </span>
+                  )}
                   {isSelected && (
                     <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold z-10 shadow-sm">
                       <Check size={11} strokeWidth={3} />

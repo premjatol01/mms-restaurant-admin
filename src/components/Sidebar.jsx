@@ -19,22 +19,24 @@ import {
   CreditCard,
   TrendingUp,
   Smartphone,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useSubscriptionPlan } from "../hooks/useSubscriptionPlan";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   { label: "Restaurant Profile", icon: Store, path: "/profile" },
-  { label: "Menu", icon: UtensilsCrossed, path: "/menu" },
-  { label: "Tables & QR", icon: QrCode, path: "/tables" },
+  { label: "Menu", icon: UtensilsCrossed, path: "/menu", featureKey: "qr_menu" },
+  { label: "Tables & QR", icon: QrCode, path: "/tables", featureKey: "table_sessions" },
   { label: "Portal Handler", icon: Smartphone, path: "/portal-handler" },
-  { label: "Design Requests", icon: Palette, path: "/design-requests" },
-  { label: "Orders", icon: ClipboardList, path: "/orders" },
+  { label: "Orders", icon: ClipboardList, path: "/orders", featureKey: "live_orders" },
   { label: "Subscription", icon: CreditCard, path: "/subscription" },
-  { label: "Offers & Promos", icon: Tag, path: "/offers-promos" },
-  { label: "Website", icon: Globe, path: "/website" },
-  { label: "Reviews", icon: Star, path: "/reviews" },
-  { label: "Biz Growth", icon: TrendingUp, path: "/biz-growth" },
+  { label: "Offers & Promos", icon: Tag, path: "/offers-promos", featureKey: "offers_promos", tag: "PRO" },
+  { label: "Design Requests", icon: Palette, path: "/design-requests", featureKey: "design_requests", tag: "ENT" },
+  { label: "Website", icon: Globe, path: "/website", featureKey: "website" },
+  { label: "Reviews", icon: Star, path: "/reviews", featureKey: "google_review", tag: "PRO" },
+  { label: "Biz Growth", icon: TrendingUp, path: "/biz-growth", featureKey: "biz_growth", tag: "PRO" },
 ];
 
 export default function Sidebar() {
@@ -42,6 +44,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, isLoggingOut } = useAuth();
+  const { hasFeature, planName } = useSubscriptionPlan();
 
   const isProfileActive = location.pathname.startsWith("/account") || location.pathname.startsWith("/profile");
   const isSettingsActive = location.pathname.startsWith("/settings");
@@ -93,24 +96,48 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
-        {navItems.map(({ label, icon: Icon, path }) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={path === "/"}
-            title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? "bg-primary text-white"
-                  : "text-theme hover:bg-primary-light"
-              }`
-            }
-          >
-            <Icon size={18} className="flex-shrink-0" />
-            {!collapsed && <span className="truncate">{label}</span>}
-          </NavLink>
-        ))}
+        {navItems.map(({ label, icon: Icon, path, featureKey, tag }) => {
+          const isLocked = featureKey && !hasFeature(featureKey);
+          return (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === "/"}
+              title={
+                collapsed
+                  ? isLocked
+                    ? `${label} (Locked - Requires ${tag === "ENT" ? "Enterprise" : "Pro"})`
+                    : label
+                  : undefined
+              }
+              className={({ isActive }) =>
+                `group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary text-white"
+                    : isLocked
+                    ? "text-secondary hover:bg-primary-light/50"
+                    : "text-theme hover:bg-primary-light"
+                }`
+              }
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Icon size={18} className="flex-shrink-0" />
+                {!collapsed && <span className="truncate">{label}</span>}
+              </div>
+
+              {!collapsed && isLocked && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                  <Lock size={10} />
+                  {tag || "PRO"}
+                </span>
+              )}
+
+              {collapsed && isLocked && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Bottom: Profile, Settings, Logout */}

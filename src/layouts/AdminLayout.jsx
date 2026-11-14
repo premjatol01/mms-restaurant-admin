@@ -6,6 +6,8 @@ import Header from "../components/Header";
 import RoleAccessDenied from "../components/RoleAccessDenied";
 import { useAuth } from "../hooks/useAuth";
 import { apiClient } from "../api/client";
+import { useProfileStore } from "../store/profileStore";
+import { useSubscriptionStore } from "../store/subscriptionStore";
 
 export default function AdminLayout() {
   const { isAuthenticated, isLoggingOut, user } = useAuth();
@@ -14,6 +16,10 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // Pre-fetch live profile and subscription status
+      useProfileStore.getState().fetchProfile().catch(() => {});
+      useSubscriptionStore.getState().loadSubscription().catch(() => {});
+
       apiClient
         .get("/platform-settings")
         .then((res) => {

@@ -13,9 +13,12 @@ import {
   SlidersHorizontal,
   UploadCloud,
   Gamepad2,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { usePortalHandlerStore } from "../../store/portalHandlerStore";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
 import TopCategoriesTab from "./components/TopCategoriesTab";
 import BestSellingTab from "./components/BestSellingTab";
 import PortalOffersTab from "./components/PortalOffersTab";
@@ -28,14 +31,15 @@ import Button from "../../components/ui/Button";
 const TABS = [
   { id: "categories", label: "Top 5 Categories", icon: Layers, badge: "5 Slots" },
   { id: "bestselling", label: "Best Selling Items", icon: Flame, badge: "Curated" },
-  { id: "offers", label: "Offers Management", icon: Tag, badge: "Promos" },
-  { id: "waiter", label: "Request Waiter Handler", icon: Bell, badge: "Service" },
-  { id: "social", label: "Social Media & Wi-Fi", icon: Globe, badge: "Connect" },
-  { id: "games", label: "Table Games", icon: Gamepad2, badge: "3 Games" },
+  { id: "offers", label: "Offers Management", icon: Tag, badge: "Promos", featureKey: "offers_promos" },
+  { id: "waiter", label: "Request Waiter Handler", icon: Bell, badge: "Service", featureKey: "waiter_request" },
+  { id: "social", label: "Social Media & Wi-Fi", icon: Globe, badge: "Connect", featureKey: "social_campaign" },
+  { id: "games", label: "Table Games", icon: Gamepad2, badge: "3 Games", featureKey: "table_games" },
   { id: "operations", label: "Ordering & Operations", icon: SlidersHorizontal, badge: "Controls" },
 ];
 
 export default function PortalHandlerPage() {
+  const { hasFeature } = useSubscriptionPlan();
   const {
     portalData,
     activeTab,
@@ -151,33 +155,42 @@ export default function PortalHandlerPage() {
         {/* Section Navigation Sidebar */}
         <aside className="lg:w-64 flex-shrink-0">
           <nav className="bg-surface rounded-xl border border-theme overflow-hidden shadow-xs">
-            {TABS.map(({ id, label, icon: Icon, badge }) => (
-              <button
-                key={id}
-                onClick={() => handleTabChange(id)}
-                className={`w-full flex items-center justify-between text-left px-4 py-3 text-sm transition-colors border-b border-theme last:border-0 cursor-pointer ${
-                  currentSection === id
-                    ? "bg-primary text-white font-medium"
-                    : "text-theme hover:bg-primary-light"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon size={16} className="flex-shrink-0" />
-                  <span className="truncate">{label}</span>
-                </div>
-                {badge && (
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      currentSection === id
-                        ? "bg-white/20 text-white"
-                        : "bg-surface-soft text-secondary"
-                    }`}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </button>
-            ))}
+            {TABS.map(({ id, label, icon: Icon, badge, featureKey }) => {
+              const isLocked = featureKey && !hasFeature(featureKey);
+              return (
+                <button
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={`w-full flex items-center justify-between text-left px-4 py-3 text-sm transition-colors border-b border-theme last:border-0 cursor-pointer ${
+                    currentSection === id
+                      ? "bg-primary text-white font-medium"
+                      : isLocked
+                      ? "text-secondary hover:bg-primary-light/40"
+                      : "text-theme hover:bg-primary-light"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Icon size={16} className="flex-shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </div>
+                  {isLocked ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                      <Lock size={10} /> Pro
+                    </span>
+                  ) : badge ? (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        currentSection === id
+                          ? "bg-white/20 text-white"
+                          : "bg-surface-soft text-secondary"
+                      }`}
+                    >
+                      {badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
@@ -185,10 +198,37 @@ export default function PortalHandlerPage() {
         <div className="flex-1 min-w-0">
           {currentSection === "categories" && <TopCategoriesTab />}
           {currentSection === "bestselling" && <BestSellingTab />}
-          {currentSection === "offers" && <PortalOffersTab />}
+          {currentSection === "offers" && (
+            hasFeature("offers_promos") ? <PortalOffersTab /> : (
+              <FeatureLockedScreen
+                featureKey="offers_promos"
+                title="Offers & Promo Codes on Guest Portal"
+                description="Showcase live banner discounts, coupon codes, and special table promotions on your customer ordering portal."
+                requiredTier="Pro Growth Plan"
+              />
+            )
+          )}
           {currentSection === "waiter" && <RequestWaiterTab />}
-          {currentSection === "social" && <SocialMediaTab />}
-          {currentSection === "games" && <TableGamesTab />}
+          {currentSection === "social" && (
+            hasFeature("social_campaign") || hasFeature("wifi_sharing") ? <SocialMediaTab /> : (
+              <FeatureLockedScreen
+                featureKey="social_campaign"
+                title="Social Media & Guest Wi-Fi Sharing"
+                description="Drive Instagram follows with instant dining discount incentives and share guest Wi-Fi credentials seamlessly."
+                requiredTier="Pro Growth Plan"
+              />
+            )
+          )}
+          {currentSection === "games" && (
+            hasFeature("table_games") ? <TableGamesTab /> : (
+              <FeatureLockedScreen
+                featureKey="table_games"
+                title="Interactive Table Games Hub"
+                description="Foodie Trivia Showdown, Table Dare & Spin Wheel, and Table Tic-Tac-Toe vs Chef Bot to entertain diners while they wait."
+                requiredTier="Pro Growth Plan"
+              />
+            )
+          )}
           {currentSection === "operations" && <OrderingOperationsTab />}
         </div>
       </div>

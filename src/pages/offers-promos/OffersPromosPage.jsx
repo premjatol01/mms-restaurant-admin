@@ -10,6 +10,8 @@ import Pagination from "../../components/ui/Pagination";
 import OfferDetailsDrawer from "./components/OfferDetailsDrawer";
 import CreateOfferDrawer from "./components/CreateOfferDrawer";
 import ContactDesignerModal from "../menu/modals/ContactDesignerModal";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
 
 const formatCount = (n) => Number(n ?? 0).toLocaleString("en-IN");
 const formatInr = (n) => `₹${Number(n ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -248,6 +250,18 @@ function OfferCard({ offer, onViewOffer, onRequestDelete }) {
 }
 
 export default function OffersPromosPage() {
+  const { hasFeature } = useSubscriptionPlan();
+
+  if (!hasFeature("offers_promos")) {
+    return (
+      <FeatureLockedScreen
+        featureKey="offers_promos"
+        title="Offers & Promo Code Engine"
+        requiredTier="Pro Growth Plan"
+      />
+    );
+  }
+
   const { offers, fetchOffers, deleteOffer, loading, error, loaded } = useOffersStore();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");

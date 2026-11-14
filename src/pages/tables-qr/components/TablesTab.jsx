@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight, Layers } from "lucide-react";
+import { Plus, QrCode, Download, Loader2, MoreVertical, Pencil, Trash2, ToggleRight, Layers, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
+import { useSubscriptionPlan } from "../../../hooks/useSubscriptionPlan";
 import SearchInput from "../../../components/ui/SearchInput";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
@@ -19,7 +21,12 @@ import { buildTableQRUrl } from "../utils/qrLink";
 import { downloadQRCode, downloadAllQRCodes } from "../utils/qrDownload";
 
 export default function TablesTab() {
-  const { tables, qrCodes, updateTable, maxTables, planName } = useTablesQRStore();
+  const { tables, qrCodes, updateTable, maxTables: storeMaxTables, planName: storePlanName } = useTablesQRStore();
+  const { maxTables: subMaxTables, planName: subPlanName, isTrial } = useSubscriptionPlan();
+
+  const maxTables = subMaxTables || storeMaxTables || 15;
+  const planName = subPlanName || storePlanName || "Starter Plan";
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [draftStatus, setDraftStatus] = useState("");
@@ -32,8 +39,8 @@ export default function TablesTab() {
   const [downloadingId, setDownloadingId] = useState(null);
 
   const handleOpenAddTable = () => {
-    if (tables.length >= (maxTables || 50)) {
-      toast.error(`You have reached the limit of ${maxTables || 50} tables for your ${planName || "Standard"} plan.`);
+    if (tables.length >= maxTables) {
+      toast.error(`You have reached the limit of ${maxTables} tables for your ${planName}. Please upgrade your subscription to add more tables.`);
       return;
     }
     setEditTable(null);
@@ -41,8 +48,8 @@ export default function TablesTab() {
   };
 
   const handleOpenBulkAdd = () => {
-    if (tables.length >= (maxTables || 50)) {
-      toast.error(`You have reached the limit of ${maxTables || 50} tables for your ${planName || "Standard"} plan.`);
+    if (tables.length >= maxTables) {
+      toast.error(`You have reached the limit of ${maxTables} tables for your ${planName}. Please upgrade your subscription to add more tables.`);
       return;
     }
     setShowBulkModal(true);
@@ -172,18 +179,37 @@ export default function TablesTab() {
       </div>
 
       {/* Table Capacity Banner */}
-      <div className="flex-none mb-3 flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-surface border border-theme rounded-lg text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-theme">Capacity:</span>
-          <span className="text-secondary font-medium">
-            {tables.length} / {maxTables || 50} Tables Used
+      <div className={`flex-none mb-3 flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border text-xs ${
+        tables.length >= maxTables
+          ? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+          : "bg-surface border-theme text-theme"
+      }`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-theme">Table Capacity:</span>
+          <span className="font-bold">
+            {tables.length} / {maxTables} Tables Used
           </span>
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
-            {planName || "Standard"} Plan
+            {planName}
           </span>
+          {tables.length >= maxTables && (
+            <span className="text-red-500 font-semibold text-[11px]">
+              (Limit Reached)
+            </span>
+          )}
         </div>
-        <div className="text-secondary">
-          <span className="font-semibold text-primary">{Math.max(0, (maxTables || 50) - tables.length)}</span> table slots available
+        <div className="flex items-center gap-3">
+          <span className="text-secondary">
+            <strong className="text-primary">{Math.max(0, maxTables - tables.length)}</strong> slots available
+          </span>
+          {tables.length >= maxTables && (
+            <Link
+              to="/subscription"
+              className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+            >
+              Upgrade Plan <ArrowUpRight size={13} />
+            </Link>
+          )}
         </div>
       </div>
 

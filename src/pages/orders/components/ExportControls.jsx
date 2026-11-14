@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useOrdersStore } from "../../../store/ordersStore";
+import { useSubscriptionPlan } from "../../../hooks/useSubscriptionPlan";
 import Select from "../../../components/ui/Select";
 import Button from "../../../components/ui/Button";
 import { MONTHS } from "../constants";
@@ -15,6 +16,9 @@ const MONTH_OPTIONS = [
 // Month + year pickers and the Excel export button.
 export default function ExportControls() {
   const orders = useOrdersStore((state) => state.orders);
+  const { hasFeature } = useSubscriptionPlan();
+  const canExport = hasFeature("gst_reports");
+
   const [today] = useState(() => new Date());
   const [month, setMonth] = useState(String(today.getMonth()));
   const [year, setYear] = useState(String(today.getFullYear()));
@@ -30,6 +34,11 @@ export default function ExportControls() {
   }, [orders, today]);
 
   const handleExport = async () => {
+    if (!canExport) {
+      toast.error("Detailed Order & GST Excel Reports are an Enterprise Plan feature. Please upgrade your package in Subscription to unlock.");
+      return;
+    }
+
     const { orders: allOrders, sessions, completedSessions, getTableName } = useOrdersStore.getState();
     const isAllMonths = month === "all";
     const selectedMonth = isAllMonths ? "all" : Number(month);
@@ -71,8 +80,9 @@ export default function ExportControls() {
     <div className="flex flex-wrap items-center gap-2">
       <Select value={month} onChange={setMonth} options={MONTH_OPTIONS} className="w-36" />
       <Select value={year} onChange={setYear} options={yearOptions} className="w-24" />
-      <Button onClick={handleExport} disabled={exporting}>
+      <Button onClick={handleExport} disabled={exporting} title={!canExport ? "Requires Enterprise Plan" : undefined}>
         <FileSpreadsheet size={16} /> {exporting ? "Exporting..." : "Export Excel"}
+        {!canExport && <Lock size={12} className="ml-1 text-amber-500" />}
       </Button>
     </div>
   );

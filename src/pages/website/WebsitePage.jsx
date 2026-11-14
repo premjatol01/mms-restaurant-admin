@@ -8,8 +8,21 @@ import PublishConfirmModal from "./modals/PublishConfirmModal";
 import { MAIN_WEBSITE_DOMAIN } from "./utils/constants";
 import WebsiteBuilder from "./components/WebsiteBuilder";
 import InquiryList from "./components/InquiryList";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
 
 export default function WebsitePage() {
+  const { hasFeature } = useSubscriptionPlan();
+
+  if (!hasFeature("website")) {
+    return (
+      <FeatureLockedScreen
+        featureKey="website"
+        title="Branded Restaurant Website & Subdomain"
+      />
+    );
+  }
+
   const [activeTab, setActiveTab] = useState("builder");
   const { websiteStatus, hasDraft, restaurantSlug, publishWebsite, unpublishWebsite, loadProfile, loading, restaurantId } = useWebsiteStore();
   const [copied, setCopied] = useState(false);

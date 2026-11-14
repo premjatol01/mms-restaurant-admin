@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Unlink, Palette, QrCode } from "lucide-react";
+import { Unlink, Palette, QrCode, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useTablesQRStore } from "../../../store/tablesQRStore";
+import { useSubscriptionPlan } from "../../../hooks/useSubscriptionPlan";
 import Modal from "../../../components/ui/Modal";
 import Button from "../../../components/ui/Button";
 import ContactDesignerModal from "../../menu/modals/ContactDesignerModal";
@@ -18,6 +19,9 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
   const [showDesigner, setShowDesigner] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  const { hasFeature } = useSubscriptionPlan();
+  const canUseDesignerQR = hasFeature("designer_qr");
 
   const liveTable = tables.find((t) => t.id === table.id) || table;
   const currentQR = typeof liveTable.qrCodeId === "object" && liveTable.qrCodeId !== null
@@ -143,13 +147,27 @@ export default function AssignQRDialog({ table, onClose, onAssigned }) {
               <button
                 key={tpl.id}
                 type="button"
-                onClick={() => setSelectedTemplateId(tpl.id)}
-                className={`border-2 rounded-xl p-2 transition-all text-center cursor-pointer ${
+                onClick={() => {
+                  if (!canUseDesignerQR) {
+                    toast.error("Branded Designer QR Standees are available in the Pro Growth and Enterprise plans. Please upgrade to unlock.");
+                    return;
+                  }
+                  setSelectedTemplateId(tpl.id);
+                }}
+                className={`relative border-2 rounded-xl p-2 transition-all text-center cursor-pointer ${
                   selectedTemplateId === tpl.id
                     ? "border-primary bg-primary-light/30 ring-2 ring-primary/20"
+                    : !canUseDesignerQR
+                    ? "border-theme opacity-70 hover:opacity-90 hover:border-amber-500/50"
                     : "border-theme hover:border-primary/40"
                 }`}
+                title={!canUseDesignerQR ? "Requires Pro Growth Plan" : tpl.name}
               >
+                {!canUseDesignerQR && (
+                  <span className="absolute top-1.5 right-1.5 p-1 rounded-full bg-amber-500 text-white shadow-xs z-10" title="Locked - Pro Growth Plan">
+                    <Lock size={10} />
+                  </span>
+                )}
                 <img
                   src={getImageUrl(tpl.imagePath)}
                   alt={tpl.name}

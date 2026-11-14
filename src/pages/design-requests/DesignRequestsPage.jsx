@@ -23,6 +23,8 @@ import Select from "../../components/ui/Select";
 import EmptyState from "../../components/ui/EmptyState";
 import ContactDesignerModal from "../menu/modals/ContactDesignerModal";
 import { getImageUrl } from "../../utils/getImageUrl";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
 
 const STATUS_CONFIG = {
   pending: {
@@ -48,6 +50,18 @@ const STATUS_CONFIG = {
 };
 
 export default function DesignRequestsPage() {
+  const { hasFeature } = useSubscriptionPlan();
+
+  if (!hasFeature("design_requests")) {
+    return (
+      <FeatureLockedScreen
+        featureKey="design_requests"
+        title="Custom Graphic Design Requests"
+        requiredTier="Enterprise Plan"
+      />
+    );
+  }
+
   const { requests, loading, fetchRequests } = useDesignRequestStore();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("Menu Design");

@@ -8,6 +8,8 @@ import ReviewFilterDrawer from "./components/ReviewFilterDrawer";
 import ReviewList from "./components/ReviewList";
 import Pagination from "../../components/ui/Pagination";
 import ReviewActionModal from "./modals/ReviewActionModal";
+import FeatureLockedScreen from "../../components/FeatureLockedScreen";
+import { useSubscriptionPlan } from "../../hooks/useSubscriptionPlan";
 
 const SUCCESS_MESSAGES = {
   accepted: "Review accepted. It's now visible to customers.",
@@ -80,6 +82,18 @@ function ErrorState({ message, onRetry }) {
 }
 
 export default function ReviewsPage() {
+  const { hasFeature } = useSubscriptionPlan();
+
+  if (!hasFeature("google_review")) {
+    return (
+      <FeatureLockedScreen
+        featureKey="google_review"
+        title="Google Review Booster & Ratings"
+        requiredTier="Pro Growth Plan"
+      />
+    );
+  }
+
   const {
     reviews, total, stats, filters, shownPage, pageSize, loading, loaded, error,
     fetchReviews, setFilters, clearFilters, setPage, moderateReview, togglePortfolio,
